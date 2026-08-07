@@ -22,6 +22,7 @@ import { repairRouter } from "../modules/repairs/index.js";
 import { warrantyRouter } from "../modules/warranties/index.js";
 import { expenseRouter } from "../modules/expenses/index.js";
 import { reportRouter } from "../modules/reports/index.js";
+import { exportRouter } from "../modules/export/index.js";
 
 // Root API router — mounted at /api/v1 in app.ts. Each feature module keeps
 // its own router (e.g. modules/products/product.routes.ts per SAD Chapter
@@ -55,4 +56,5 @@ apiRouter.use("/repairs", repairRouter);
 apiRouter.use("/warranties", warrantyRouter);
 apiRouter.use("/expenses", expenseRouter);
 apiRouter.use("/reports", reportRouter);
+apiRouter.use("/export", exportRouter);
 // ...

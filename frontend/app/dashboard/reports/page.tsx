@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatTile } from "@/components/stat-tile";
+import { ExportMenu } from "@/components/export-menu";
 import {
   fetchCustomerBalance,
   fetchCustomerPurchases,
@@ -104,6 +105,10 @@ function SalesReports({ range }: { range: Range }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground">Sales Summary</h2>
+        <ExportMenu reportType="sales/summary" filters={range} />
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatTile label="Total Sales" value={summary?.totalSales ?? 0} icon={Wallet} />
         <StatTile label="Total Invoices" value={summary?.totalInvoices ?? 0} icon={ReceiptText} />
@@ -112,8 +117,9 @@ function SalesReports({ range }: { range: Range }) {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Daily Sales</CardTitle>
+            <ExportMenu reportType="sales/daily" filters={range} />
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -150,8 +156,9 @@ function SalesReports({ range }: { range: Range }) {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Sales by Employee</CardTitle>
+            <ExportMenu reportType="sales/employees" filters={range} />
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -185,8 +192,9 @@ function SalesReports({ range }: { range: Range }) {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Sales by Product</CardTitle>
+          <ExportMenu reportType="sales/products" filters={range} />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -232,6 +240,10 @@ function PurchaseReports({ range }: { range: Range }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium text-muted-foreground">Purchase Summary</h2>
+        <ExportMenu reportType="purchases/summary" filters={range} />
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile label="Total Purchases" value={summary?.totalPurchases ?? 0} icon={ReceiptText} />
         <StatTile label="Total Amount" value={summary?.totalAmount ?? 0} icon={Wallet} />
@@ -245,8 +257,9 @@ function PurchaseReports({ range }: { range: Range }) {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Purchases by Supplier</CardTitle>
+          <ExportMenu reportType="purchases/suppliers" filters={range} />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -308,8 +321,9 @@ function InventoryReports() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Low Stock</CardTitle>
+          <ExportMenu reportType="inventory/low-stock" />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -344,8 +358,9 @@ function InventoryReports() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Stock Value</CardTitle>
+          <ExportMenu reportType="inventory/stock" />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -391,8 +406,9 @@ function FinancialReports({ range }: { range: Range }) {
   return (
     <div className="flex flex-col gap-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Profit &amp; Loss</CardTitle>
+          <ExportMenu reportType="financial/profit-loss" filters={range} />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -410,8 +426,9 @@ function FinancialReports({ range }: { range: Range }) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Cash Flow</CardTitle>
+          <ExportMenu reportType="financial/cash-flow" filters={range} />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
@@ -438,8 +455,9 @@ function CustomerReports({ range }: { range: Range }) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Customer Purchases</CardTitle>
+          <ExportMenu reportType="customers/purchases" filters={range} />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -474,8 +492,9 @@ function CustomerReports({ range }: { range: Range }) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Customer Balances</CardTitle>
+          <ExportMenu reportType="customers/balance" />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -527,8 +546,9 @@ function SupplierReports() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Supplier Balances</CardTitle>
+          <ExportMenu reportType="suppliers/balance" />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -565,8 +585,9 @@ function SupplierReports() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Purchase History</CardTitle>
+          <ExportMenu reportType="suppliers/payments" />
         </CardHeader>
         <CardContent className="p-0">
           <Table>
