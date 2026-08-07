@@ -1,0 +1,10910 @@
+﻿📘 Volume 1 – Business Requirements Document (BRD)
+Part 1
+Project: Mobile Shop Point of Sale (POS) System
+Technology Stack
+Frontend: Next.js 
+Backend: Node.js (Express.js) 
+Database: PostgreSQL 
+Image Storage: Cloudinary 
+Version: 1.0
+Document Type: Business Requirements Document (BRD)
+
+Chapter 1 – Cover Page
+Business Requirements Document (BRD)
+Project Name: Mobile Shop Point of Sale (POS) System
+Project Type: Web-Based Point of Sale & Inventory Management System
+Version: 1.0
+Prepared By: Software Development Team
+Prepared For: Business Owner / Client
+Date: August 2026
+Document Status: Draft
+Confidentiality: This document contains the business requirements for the Mobile Shop POS System and is intended for project stakeholders, developers, testers, designers, and project managers.
+
+Chapter 2 – Document Control
+Document Information
+Field
+Value
+Document Name
+Business Requirements Document
+Project Name
+Mobile Shop POS System
+Version
+1.0
+Status
+Draft
+Prepared By
+Software Development Team
+Reviewed By
+Project Manager
+Approved By
+Client
+Date
+August 2026
+Purpose
+This document defines the business needs and objectives of the Mobile Shop POS System. It provides the foundation for system design, development, testing, and deployment.
+Intended Audience
+Business Owner 
+Project Manager 
+Business Analyst 
+Software Architect 
+UI/UX Designer 
+Frontend Developer 
+Backend Developer 
+Database Developer 
+QA Engineer 
+DevOps Engineer 
+
+Chapter 3 – Revision History
+Version
+Date
+Author
+Description
+0.1
+August 2026
+Development Team
+Initial Draft
+0.5
+August 2026
+Business Analyst
+Requirements Updated
+1.0
+August 2026
+Project Team
+Approved Version
+
+Chapter 4 – Table of Contents
+Cover Page 
+Document Control 
+Revision History 
+Table of Contents 
+Executive Summary 
+Business Overview 
+Business Goals 
+Business Objectives 
+Business Problems 
+Proposed Solution 
+Project Scope 
+In Scope 
+Out of Scope 
+Stakeholders 
+Business Process Overview 
+Business Requirements 
+Business Rules 
+Assumptions 
+Constraints 
+Risks 
+Success Criteria 
+Future Roadmap 
+Approval Section 
+
+Chapter 5 – Executive Summary
+The Mobile Shop Point of Sale (POS) System is a web-based business management solution designed for mobile phone retailers. The system aims to simplify and automate daily business operations such as inventory management, product sales, purchases, customer management, supplier management, repair services, warranty tracking, expenses, and reporting.
+The software will provide a centralized platform that enables users to perform sales quickly, monitor stock accurately, generate invoices, and access business reports in real time. The system is designed with scalability in mind so that future versions can support Pharmacy POS and Mart POS businesses without major architectural changes.
+
+Chapter 6 – Business Overview
+Mobile shops handle various business activities including selling smartphones, accessories, repair services, SIM cards, and warranty claims. Many small and medium-sized businesses still rely on manual record keeping or basic software, resulting in inventory inaccuracies, delayed reporting, and inefficient business operations.
+The proposed Mobile Shop POS System will replace manual processes with a centralized digital solution that improves operational efficiency, inventory accuracy, sales tracking, and customer service. The system will provide real-time business information and support informed decision-making.
+
+Chapter 7 – Business Goals
+The primary goals of the Mobile Shop POS System are:
+Digitize daily business operations. 
+Improve sales efficiency. 
+Maintain accurate inventory records. 
+Track products using IMEI numbers. 
+Manage customers and suppliers effectively. 
+Simplify purchase and sales processes. 
+Reduce manual errors. 
+Generate business reports. 
+Improve customer satisfaction. 
+Support future business expansion. 
+
+Chapter 8 – Business Objectives
+The objectives of this project are:
+Develop a secure web-based POS application. 
+Provide fast and user-friendly sales processing. 
+Enable barcode and IMEI-based product management. 
+Record all purchase and sales transactions. 
+Maintain complete customer and supplier information. 
+Support warranty and repair management. 
+Generate invoices and receipts. 
+Produce sales, inventory, and financial reports. 
+Implement role-based user access. 
+Provide secure authentication and authorization. 
+Ensure data integrity and reliability. 
+Build a scalable system for future enhancements. 
+
+Progress
+Chapter
+Status
+1. Cover Page
+✅ Completed
+2. Document Control
+✅ Completed
+3. Revision History
+✅ Completed
+4. Table of Contents
+✅ Completed
+5. Executive Summary
+✅ Completed
+6. Business Overview
+✅ Completed
+7. Business Goals
+✅ Completed
+8. Business Objectives
+✅ Completed
+Chapter 9 – Business Problems
+The Mobile Shop POS System is designed to solve common operational challenges faced by mobile phone retailers. Many businesses still rely on manual processes or basic software that cannot efficiently manage inventory, sales, repairs, and customer information.
+Current Business Problems
+Manual billing consumes time and increases errors. 
+Difficulty tracking stock accurately. 
+No centralized customer database. 
+IMEI numbers are not properly managed. 
+Limited visibility of business performance. 
+Inaccurate inventory due to manual stock updates. 
+Difficulty managing product warranties. 
+Repair jobs are tracked manually. 
+Supplier purchase records are scattered. 
+Lack of proper expense tracking. 
+Difficulty calculating daily and monthly profits. 
+Limited reporting capabilities. 
+No proper user access control. 
+Increased risk of data loss. 
+Time-consuming invoice generation. 
+
+Chapter 10 – Proposed Solution
+The proposed solution is a web-based Mobile Shop Point of Sale (POS) System that centralizes business operations into a single platform. The system will automate inventory management, sales processing, purchases, repairs, warranty tracking, customer management, supplier management, reporting, and user administration.
+Key Features
+Product Management 
+IMEI Management 
+Barcode Support 
+Sales & Billing 
+Purchase Management 
+Inventory Management 
+Customer Management 
+Supplier Management 
+Repair Management 
+Warranty Management 
+Expense Management 
+Employee Management 
+Dashboard & Reports 
+User Role Management 
+Invoice Printing 
+Audit Logs 
+Backup & Restore 
+Expected Benefits
+Faster sales process. 
+Improved inventory accuracy. 
+Better customer service. 
+Reduced manual work. 
+Improved decision-making through reports. 
+Secure access with role-based permissions. 
+Scalable architecture for future business growth. 
+
+Chapter 11 – Project Scope
+The Mobile Shop POS System will provide a complete solution for managing daily business operations of a mobile retail store.
+The project covers:
+Product inventory 
+Mobile phones 
+Accessories 
+Repair services 
+Customer records 
+Supplier management 
+Sales transactions 
+Purchase transactions 
+Warranty records 
+Expense management 
+Employee management 
+Business reporting 
+System configuration 
+Security and user management 
+The system will initially support a single shop while keeping the architecture flexible for future multi-branch expansion.
+
+Chapter 12 – In Scope
+The following functionalities are included in this project.
+User Management
+User Login 
+User Logout 
+Password Management 
+Role-Based Access Control 
+User Profiles 
+
+Dashboard
+Daily Sales Summary 
+Monthly Sales Summary 
+Purchase Summary 
+Expense Summary 
+Inventory Overview 
+Low Stock Alerts 
+Recent Transactions 
+Quick Statistics 
+
+Product Management
+Brands 
+Categories 
+Products 
+Product Images 
+Pricing 
+Product Specifications 
+Barcode 
+IMEI Numbers 
+Product Status 
+
+Inventory Management
+Stock In 
+Stock Out 
+Stock Adjustment 
+Inventory Tracking 
+Stock History 
+Low Stock Alerts 
+
+Sales Management
+POS Billing 
+Barcode Scanning 
+IMEI Selection 
+Discounts 
+Taxes 
+Invoice Generation 
+Receipt Printing 
+Sales History 
+
+Purchase Management
+Purchase Orders 
+Supplier Purchases 
+Purchase Returns 
+Purchase History 
+
+Customer Management
+Customer Registration 
+Customer Details 
+Purchase History 
+Warranty History 
+Outstanding Balance 
+
+Supplier Management
+Supplier Information 
+Purchase Records 
+Outstanding Payments 
+
+Repair Management
+Repair Tickets 
+Device Information 
+IMEI Tracking 
+Repair Status 
+Technician Assignment 
+Repair Charges 
+
+Warranty Management
+Warranty Registration 
+Warranty Expiry 
+Warranty Claims 
+
+Expense Management
+Expense Categories 
+Daily Expenses 
+Monthly Expenses 
+Expense Reports 
+
+Reporting
+Sales Reports 
+Purchase Reports 
+Inventory Reports 
+Customer Reports 
+Supplier Reports 
+Expense Reports 
+Profit Reports 
+
+Settings
+Shop Information 
+Tax Settings 
+Receipt Settings 
+Printer Configuration 
+User Settings 
+
+Chapter 13 – Out of Scope
+The following features are not included in the initial release.
+Mobile Application 
+Customer Mobile App 
+Supplier Portal 
+Online Store 
+E-commerce Integration 
+AI-Based Demand Prediction 
+Multi-Country Tax Support 
+Cryptocurrency Payments 
+Biometric Authentication 
+Offline Synchronization 
+Franchise Management 
+Marketplace Integration 
+Advanced CRM 
+Loyalty Rewards Program 
+Multi-Warehouse Management 
+These features may be considered in future versions.
+
+Chapter 14 – Stakeholders
+The success of the project depends on collaboration among various stakeholders.
+Stakeholder
+Responsibility
+Business Owner
+Defines business requirements and approves the project
+Project Manager
+Plans and manages the project
+Business Analyst
+Gathers and documents requirements
+Software Architect
+Designs the system architecture
+UI/UX Designer
+Designs user interfaces and user experience
+Frontend Developer
+Develops the Next.js application
+Backend Developer
+Develops REST APIs using Node.js
+Database Developer
+Designs and manages PostgreSQL database
+QA Engineer
+Tests system functionality
+DevOps Engineer
+Deployment and server management
+End Users
+Daily operation of the system
+
+Chapter 15 – Business Process Overview
+The Mobile Shop POS System follows a structured workflow for managing business operations.
+Inventory Process
+Supplier → Purchase Order → Product Received → Stock Updated → Available for Sale
+
+Sales Process
+Customer → Product Selection → Barcode/IMEI Verification → Billing → Payment → Invoice → Inventory Updated
+
+Purchase Process
+Supplier Selected → Purchase Created → Stock Received → Inventory Updated → Supplier Payment Recorded
+
+Repair Process
+Customer Device Received → Repair Ticket Created → Technician Assigned → Repair Completed → Customer Notified → Device Delivered
+
+Warranty Process
+Product Sold → Warranty Registered → Warranty Period Tracked → Claim Processed if Required
+
+Reporting Process
+Business Transactions → Database → Reports Generated → Business Analysis
+
+Chapter 16 – Business Requirements
+The Mobile Shop POS System shall provide the following business capabilities.
+Sales
+Process product sales. 
+Generate invoices. 
+Support multiple payment methods. 
+Apply discounts. 
+Print receipts. 
+Maintain sales history. 
+
+Inventory
+Maintain product inventory. 
+Track stock movement. 
+Monitor low stock. 
+Track IMEI numbers. 
+Manage accessories inventory. 
+
+Purchase
+Record supplier purchases. 
+Update inventory automatically. 
+Maintain purchase history. 
+Process purchase returns. 
+
+Customer
+Store customer information. 
+View purchase history. 
+Track warranties. 
+Maintain customer balances. 
+
+Supplier
+Manage supplier information. 
+Record supplier purchases. 
+Track supplier payments. 
+
+Repair
+Register repair jobs. 
+Assign technicians. 
+Track repair progress. 
+Record repair costs. 
+
+Warranty
+Register warranties. 
+Monitor warranty expiry. 
+Process warranty claims. 
+
+Expense
+Record business expenses. 
+Categorize expenses. 
+Generate expense reports. 
+
+Reporting
+Sales Reports 
+Inventory Reports 
+Purchase Reports 
+Profit Reports 
+Expense Reports 
+Customer Reports 
+Supplier Reports 
+
+Administration
+User Management 
+Role Management 
+Permission Management 
+Audit Logs 
+System Settings 
+Backup Management 
+
+Progress
+Chapter
+Status
+9. Business Problems
+✅ Completed
+10. Proposed Solution
+✅ Completed
+11. Project Scope
+✅ Completed
+12. In Scope
+✅ Completed
+13. Out of Scope
+✅ Completed
+14. Stakeholders
+✅ Completed
+15. Business Process Overview
+✅ Completed
+16. Business Requirements
+✅ Completed
+Chapter 17 – Business Rules
+Business rules define the policies and guidelines that the Mobile Shop POS System must follow during daily operations.
+17.1 User Management Rules
+Every user must have a unique username or email. 
+Users can only access features based on their assigned role. 
+Inactive users cannot log in. 
+Passwords must be securely stored in encrypted form. 
+User activities should be recorded for auditing purposes. 
+
+17.2 Product Rules
+Every product must belong to a category. 
+Every product must have a unique SKU. 
+Mobile phones should be tracked using IMEI numbers. 
+Accessories should be managed by quantity. 
+Products can be marked as Active or Inactive. 
+Products cannot be sold if they are out of stock. 
+
+17.3 Inventory Rules
+Stock increases after a successful purchase. 
+Stock decreases after a successful sale. 
+Stock adjustments must be recorded with a reason. 
+Inventory history should be maintained. 
+Low stock alerts should be generated automatically. 
+
+17.4 Sales Rules
+Each sale must generate a unique invoice number. 
+Discounts must not exceed the configured limit. 
+Completed sales cannot be edited directly. 
+Sales returns must update inventory automatically. 
+Payment status must be recorded for every sale. 
+
+17.5 Purchase Rules
+Every purchase must be linked to a supplier. 
+Purchase invoices must have unique reference numbers. 
+Stock should update only after purchase confirmation. 
+Purchase returns should reduce inventory. 
+
+17.6 Customer Rules
+Customers can have multiple purchases. 
+Customer purchase history should be maintained. 
+Warranty information should be linked to customers. 
+Customer balances should be updated automatically. 
+
+17.7 Repair Rules
+Every repair must have a unique repair ticket. 
+Device IMEI should be recorded when available. 
+Repair status must be updated throughout the process. 
+Completed repairs should be stored in history. 
+
+17.8 Warranty Rules
+Warranty starts from the date of sale. 
+Warranty period depends on the product. 
+Expired warranties cannot be claimed. 
+Warranty history should remain available. 
+
+Chapter 18 – Assumptions
+The project is based on the following assumptions:
+Users have basic computer knowledge. 
+A stable internet connection is available. 
+Barcode scanners and receipt printers are compatible with the system. 
+PostgreSQL server is available. 
+Cloudinary services remain operational. 
+Required hardware is installed before deployment. 
+Business data provided by users is accurate. 
+Users follow the defined business processes. 
+
+Chapter 19 – Constraints
+The following constraints apply to the project:
+Technical Constraints
+Frontend will use Next.js. 
+Backend will use Node.js (Express.js). 
+Database will be PostgreSQL. 
+Images will be stored in Cloudinary. 
+Communication will use REST APIs. 
+
+Business Constraints
+Initial release supports a single shop. 
+English language only in Version 1. 
+Web application only. 
+Desktop browsers are the primary target. 
+
+Time Constraints
+Development will be completed in planned phases. 
+New features outside the agreed scope may be scheduled for future releases. 
+
+Chapter 20 – Risks
+The following risks may affect the project:
+Risk
+Impact
+Mitigation
+Changing business requirements
+High
+Review and approve requirements before development
+Data loss
+High
+Regular database backups
+Server downtime
+Medium
+Reliable hosting and monitoring
+Internet connectivity issues
+Medium
+Stable internet connection
+User resistance to change
+Medium
+User training and documentation
+Security threats
+High
+Secure authentication and regular updates
+Schedule delays
+Medium
+Regular project tracking and reviews
+Hardware failures
+Medium
+Backup hardware and maintenance
+
+Chapter 21 – Success Criteria
+The project will be considered successful if:
+The system is deployed successfully. 
+Users can perform sales without issues. 
+Inventory is updated accurately. 
+IMEI tracking works correctly. 
+Purchase and sales records are maintained. 
+Customer and supplier management functions operate correctly. 
+Reports are generated accurately. 
+Role-based access control is enforced. 
+Business operations become faster and more efficient. 
+User acceptance testing (UAT) is completed successfully. 
+Stakeholders approve the final system. 
+
+Chapter 22 – Future Roadmap
+The system is designed for future expansion.
+Phase 2
+Multi-Branch Management 
+Branch Stock Transfers 
+Centralized Reporting 
+Branch Performance Dashboard 
+
+Phase 3
+Pharmacy Point of Sale 
+Medicine Inventory 
+Batch Number Management 
+Expiry Date Tracking 
+Prescription Management 
+
+Phase 4
+Mart / Grocery Point of Sale 
+Barcode-Based Retail Sales 
+Multiple Product Variants 
+Shelf Management 
+Promotions and Offers 
+
+Phase 5
+Mobile Application 
+Customer Portal 
+Supplier Portal 
+Online Ordering 
+Home Delivery 
+Loyalty Program 
+SMS & Email Notifications 
+Business Intelligence Dashboard 
+AI Sales Forecasting 
+E-commerce Integration 
+
+Chapter 23 – Approval Section
+The undersigned confirm that the business requirements described in this document have been reviewed and approved.
+Role
+Name
+Signature
+Date
+Business Owner
+__________________
+__________
+__________
+Project Manager
+__________________
+__________
+__________
+Business Analyst
+__________________
+__________
+__________
+Software Architect
+__________________
+__________
+__________
+Development Team Lead
+__________________
+__________
+__________
+QA Team Lead
+__________________
+__________
+__________
+
+Glossary
+Term
+Description
+POS
+Point of Sale
+IMEI
+International Mobile Equipment Identity
+SKU
+Stock Keeping Unit
+API
+Application Programming Interface
+JWT
+JSON Web Token
+RBAC
+Role-Based Access Control
+UAT
+User Acceptance Testing
+ERP
+Enterprise Resource Planning
+
+Document Summary
+Project Name: Mobile Shop Point of Sale (POS) System
+Purpose: To define the business vision, goals, scope, stakeholders, business processes, and high-level requirements for developing a modern web-based Mobile Shop POS.
+Technology Stack:
+Frontend: Next.js 
+Backend: Node.js (Express.js) 
+Database: PostgreSQL 
+Image Storage: Cloudinary 
+Target Users:
+Business Owner 
+Manager 
+Cashier 
+Inventory Staff 
+Technician 
+Accountant 
+Core Business Modules:
+User Management 
+Dashboard 
+Product Management 
+IMEI Management 
+Inventory Management 
+Sales & Billing 
+Purchase Management 
+Customer Management 
+Supplier Management 
+Repair Management 
+Warranty Management 
+Expense Management 
+Reporting 
+Settings 
+Audit Logs 
+
+✅ Volume 1 Completed
+Chapter
+Status
+1. Cover Page
+✅
+2. Document Control
+✅
+3. Revision History
+✅
+4. Table of Contents
+✅
+5. Executive Summary
+✅
+6. Business Overview
+✅
+7. Business Goals
+✅
+8. Business Objectives
+✅
+9. Business Problems
+✅
+10. Proposed Solution
+✅
+11. Project Scope
+✅
+12. In Scope
+✅
+13. Out of Scope
+✅
+14. Stakeholders
+✅
+15. Business Process Overview
+✅
+16. Business Requirements
+✅
+17. Business Rules
+✅
+18. Assumptions
+✅
+19. Constraints
+✅
+20. Risks
+✅
+21. Success Criteria
+✅
+22. Future Roadmap
+✅
+23. Approval Section
+✅
+📗 Volume 2 – Software Requirements Specification (SRS)
+Part 1
+Project: Mobile Shop Point of Sale (POS) System
+Technology Stack
+Frontend: Next.js 
+Backend: Node.js (Express.js) 
+Database: PostgreSQL 
+Image Storage: Cloudinary 
+Version: 1.0
+Document Type: Software Requirements Specification (SRS)
+
+Chapter 1 – Cover Page
+Software Requirements Specification (SRS)
+Project Name: Mobile Shop Point of Sale (POS) System
+Project Type: Web-Based Point of Sale & Inventory Management System
+Document Version: 1.0
+Prepared By: Software Development Team
+Prepared For: Business Owner / Client
+Date: August 2026
+Document Status: Draft
+
+Chapter 2 – Document Control
+Field
+Value
+Document Name
+Software Requirements Specification
+Project Name
+Mobile Shop POS System
+Version
+1.0
+Status
+Draft
+Prepared By
+Software Development Team
+Reviewed By
+Software Architect
+Approved By
+Project Manager
+Date
+August 2026
+Purpose
+This Software Requirements Specification (SRS) defines the functional and non-functional requirements of the Mobile Shop POS System. It serves as the primary technical reference for software development, testing, deployment, and maintenance.
+
+Chapter 3 – Revision History
+Version
+Date
+Author
+Description
+0.1
+August 2026
+Development Team
+Initial Draft
+0.5
+August 2026
+Software Architect
+Functional Requirements Added
+1.0
+August 2026
+Project Team
+Approved Version
+
+Chapter 4 – Table of Contents
+Introduction 
+Overall Description 
+System Architecture 
+Technology Stack 
+User Roles & Permissions 
+Functional Requirements 
+Non-Functional Requirements 
+Business Rules 
+Database Requirements 
+API Requirements 
+Security Requirements 
+Reporting Requirements 
+Notifications 
+Audit Logs 
+Backup & Recovery 
+Deployment Requirements 
+Future Scalability 
+
+Chapter 5 – Introduction
+Purpose
+The Mobile Shop POS System is designed to automate the daily operations of a mobile phone retail business. It provides a centralized platform for managing inventory, sales, purchases, repairs, warranties, customers, suppliers, expenses, and business reports.
+This document defines the software behavior, required features, system constraints, and technical requirements that must be implemented by the development team.
+
+Intended Users
+This document is intended for:
+Software Architect 
+Frontend Developers 
+Backend Developers 
+Database Developers 
+UI/UX Designers 
+QA Engineers 
+DevOps Engineers 
+Project Manager 
+Business Analyst 
+
+System Objectives
+The system shall:
+Simplify business operations. 
+Automate inventory management. 
+Improve sales efficiency. 
+Track IMEI numbers. 
+Generate business reports. 
+Secure business data. 
+Support future expansion to Pharmacy and Mart POS. 
+
+Chapter 6 – Overall Description
+The Mobile Shop POS System is a web-based application that enables businesses to manage their operations through a centralized dashboard.
+The system provides modules for:
+User Management 
+Dashboard 
+Product Management 
+Inventory Management 
+Sales 
+Purchases 
+Customers 
+Suppliers 
+Repairs 
+Warranty 
+Expenses 
+Reports 
+Settings 
+The application will use REST APIs for communication between the frontend and backend, while PostgreSQL will be used for persistent data storage. Product images will be stored in Cloudinary.
+
+Chapter 7 – System Architecture
+The application follows a three-tier architecture.
+Presentation Layer
+Next.js Web Application 
+Responsive User Interface 
+Dashboard 
+Forms 
+Reports 
+
+Application Layer
+Node.js 
+Express.js 
+REST APIs 
+Authentication 
+Business Logic 
+Validation 
+Authorization 
+
+Data Layer
+PostgreSQL Database 
+Cloudinary Image Storage 
+
+High-Level Workflow
+User
+   │
+▼
+Next.js Frontend
+   │
+REST API
+   │
+Node.js (Express)
+   │
+Business Logic
+   │
+PostgreSQL Database
+   │
+Cloudinary (Images)
+
+Chapter 8 – Technology Stack
+Component
+Technology
+Frontend
+Next.js
+Backend
+Node.js
+Framework
+Express.js
+Database
+PostgreSQL
+ORM
+Prisma ORM (Recommended)
+Authentication
+JWT
+Image Storage
+Cloudinary
+File Upload
+Multer
+API Style
+REST API
+Version Control
+Git
+Repository
+GitHub
+Deployment
+Docker (Future)
+
+Chapter 9 – User Roles & Permissions
+The system shall support role-based access control (RBAC).
+Role
+Description
+Owner
+Full system access
+Manager
+Manage daily operations
+Cashier
+Sales and customer transactions
+Inventory Staff
+Inventory and purchases
+Technician
+Repair management
+Accountant
+Financial reports and expenses
+
+Owner Permissions
+Manage users 
+Manage products 
+View reports 
+Manage settings 
+View audit logs 
+Manage inventory 
+Manage purchases 
+Manage expenses 
+Access all modules 
+
+Manager Permissions
+Manage products 
+Manage sales 
+Manage purchases 
+View reports 
+Manage customers 
+Manage suppliers 
+
+Cashier Permissions
+Create sales 
+Generate invoices 
+Manage customers 
+Accept payments 
+View product inventory 
+
+Inventory Staff Permissions
+Add products 
+Update stock 
+Record purchases 
+Manage suppliers 
+Print barcodes 
+
+Technician Permissions
+Create repair jobs 
+Update repair status 
+Record repair charges 
+Manage warranties 
+
+Accountant Permissions
+Record expenses 
+View financial reports 
+Export reports 
+
+Progress
+Chapter
+Status
+1. Cover Page
+✅
+2. Document Control
+✅
+3. Revision History
+✅
+4. Table of Contents
+✅
+5. Introduction
+✅
+6. Overall Description
+✅
+7. System Architecture
+✅
+8. Technology Stack
+✅
+9. User Roles & Permissions
+✅
+Chapter 10 – Functional Requirements
+10.1 Overview
+The functional requirements describe the features and operations that the Mobile Shop POS System must provide. Each module is responsible for a specific business function and must work together with the other modules.
+
+Module 1 – Authentication & Authorization
+Purpose
+This module manages user authentication and controls access to the system.
+Features
+User Login 
+User Logout 
+Forgot Password 
+Reset Password 
+Change Password 
+User Profile 
+JWT Authentication 
+Session Management 
+Role-Based Access Control (RBAC) 
+Permission Management 
+Functional Requirements
+Users must log in using valid credentials. 
+The system shall validate user credentials. 
+The system shall generate a secure JWT after successful login. 
+Unauthorized users shall not access protected pages. 
+Users shall only access modules assigned to their role. 
+Users shall be able to change their password. 
+The system shall allow secure logout. 
+
+Module 2 – Dashboard
+Purpose
+The dashboard provides an overview of business performance and quick access to important information.
+Dashboard Widgets
+Today's Sales 
+Today's Purchases 
+Today's Expenses 
+Total Customers 
+Total Suppliers 
+Total Products 
+Low Stock Products 
+Out of Stock Products 
+Pending Repairs 
+Monthly Sales 
+Monthly Profit 
+Recent Sales 
+Recent Purchases 
+Functional Requirements
+Display business statistics in real time. 
+Show charts for sales and purchases. 
+Display recent activities. 
+Show low-stock notifications. 
+Provide quick navigation to major modules. 
+
+Module 3 – Brand Management
+Purpose
+Manage mobile phone and accessory brands.
+Features
+Add Brand 
+Edit Brand 
+Delete Brand 
+View Brand List 
+Search Brand 
+Activate/Deactivate Brand 
+Brand Information
+Brand Name 
+Description 
+Logo (Optional) 
+Status 
+Functional Requirements
+Brand names must be unique. 
+Inactive brands cannot be assigned to new products. 
+Brand information shall be editable. 
+
+Module 4 – Category Management
+Purpose
+Organize products into categories.
+Example Categories
+Mobile Phones 
+Accessories 
+Tablets 
+Smart Watches 
+Repair Parts 
+SIM Cards 
+Chargers 
+Power Banks 
+Features
+Add Category 
+Edit Category 
+Delete Category 
+Search Category 
+Activate/Deactivate Category 
+Functional Requirements
+Every product must belong to one category. 
+Categories shall support descriptions. 
+Categories shall support active and inactive status. 
+
+Module 5 – Product Model Management
+Purpose
+Store information about phone models and product variants.
+Example Models
+Samsung Galaxy S25 
+iPhone 17 Pro 
+Redmi Note 15 
+Oppo Reno 
+Vivo V Series 
+Features
+Add Model 
+Edit Model 
+Delete Model 
+Search Model 
+Assign Brand 
+Functional Requirements
+Each model must belong to a brand. 
+Duplicate models under the same brand are not allowed. 
+Models can be activated or deactivated. 
+
+Module 6 – Product Management
+Purpose
+Manage all products available for sale.
+Product Types
+Mobile Phones 
+Accessories 
+Spare Parts 
+Tablets 
+Smart Watches 
+SIM Cards 
+Product Information
+Product Name 
+SKU 
+Brand 
+Category 
+Model 
+Purchase Price 
+Selling Price 
+Wholesale Price 
+Tax 
+Discount 
+Warranty 
+Description 
+Image 
+Barcode 
+Status 
+Features
+Add Product 
+Update Product 
+Delete Product 
+Search Product 
+Filter Products 
+Import Products 
+Export Products 
+Upload Product Image 
+Print Barcode 
+View Product Details 
+Functional Requirements
+Each product must have a unique SKU. 
+Product images shall be stored in Cloudinary. 
+Product status shall indicate whether it is available for sale. 
+Products shall support searching and filtering. 
+Bulk import and export shall be supported. 
+
+Module 7 – IMEI Management
+Purpose
+Track every mobile phone using its unique IMEI number.
+IMEI Information
+IMEI Number 
+Product 
+Serial Number 
+Purchase Date 
+Warranty Start 
+Warranty End 
+Current Status 
+Supplier 
+Customer 
+Invoice Number 
+Features
+Register IMEI 
+Search IMEI 
+Assign IMEI to Product 
+Track IMEI History 
+View Warranty 
+View Sales History 
+Functional Requirements
+Every IMEI must be unique. 
+The system shall prevent duplicate IMEI entries. 
+Sold IMEI numbers shall not be available for resale. 
+IMEI history shall be maintained. 
+Users shall search products using IMEI. 
+
+Module 8 – Barcode Management
+Purpose
+Generate and manage product barcodes.
+Features
+Generate Barcode 
+Print Barcode 
+Scan Barcode 
+Reprint Barcode 
+Functional Requirements
+Each product shall have a barcode. 
+Barcode scanning shall retrieve product details. 
+Barcode labels shall be printable. 
+Duplicate barcodes shall not be allowed. 
+
+Module 9 – Inventory Management
+Purpose
+Manage stock movement and inventory records.
+Inventory Features
+Opening Stock 
+Stock In 
+Stock Out 
+Stock Adjustment 
+Damaged Stock 
+Returned Stock 
+Lost Stock 
+Inventory History 
+Low Stock Alerts 
+Inventory Information
+Product 
+Quantity 
+Location 
+Transaction Type 
+Date 
+Reference Number 
+Remarks 
+Functional Requirements
+Inventory shall update automatically after purchases. 
+Inventory shall reduce automatically after sales. 
+Stock adjustments shall require a reason. 
+Low-stock products shall trigger alerts. 
+Inventory history shall be maintained. 
+
+Summary of Part 2
+Module
+Status
+Authentication & Authorization
+✅
+Dashboard
+✅
+Brand Management
+✅
+Category Management
+✅
+Product Model Management
+✅
+Product Management
+✅
+IMEI Management
+✅
+Barcode Management
+✅
+Inventory Management
+✅
+
+
+
+
+Chapter 10 – Functional Requirements (Continued)
+
+Module 10 – Sales (POS Billing)
+Purpose
+The Sales module is the core functionality of the POS system. It allows users to create sales transactions, generate invoices, accept payments, and update inventory automatically.
+Features
+New Sale 
+Barcode Search 
+Product Search 
+IMEI Selection 
+Shopping Cart 
+Apply Discount 
+Apply Tax 
+Multiple Payment Methods 
+Generate Invoice 
+Print Receipt 
+Save Draft Sale 
+Hold Sale 
+Cancel Sale 
+Sales History 
+Sale Information
+Invoice Number 
+Invoice Date 
+Customer 
+Products 
+IMEI Numbers 
+Quantity 
+Unit Price 
+Discount 
+Tax 
+Grand Total 
+Payment Method 
+Payment Status 
+Salesperson 
+Functional Requirements
+Each sale shall generate a unique invoice number. 
+The system shall update inventory automatically after completing a sale. 
+Sold IMEI numbers shall be marked as unavailable. 
+The system shall generate printable invoices. 
+Users shall search products by barcode, SKU, product name, or IMEI. 
+Sales history shall be searchable. 
+
+Module 11 – Sales Return
+Purpose
+Manage returned products from customers.
+Features
+Create Sales Return 
+Return Full Invoice 
+Return Partial Invoice 
+Refund Customer 
+Exchange Product 
+Update Inventory 
+Functional Requirements
+Sales returns must reference an existing invoice. 
+Inventory shall be updated after a successful return. 
+Refund details shall be recorded. 
+Return history shall be maintained. 
+
+Module 12 – Exchange Management
+Purpose
+Allow customers to exchange purchased products.
+Features
+Product Exchange 
+Difference Payment 
+Exchange Invoice 
+Warranty Verification 
+IMEI Replacement 
+Functional Requirements
+Exchange transactions shall reference the original sale. 
+The exchanged product shall update inventory automatically. 
+IMEI records shall be updated. 
+Price differences shall be calculated automatically. 
+
+Module 13 – Purchase Management
+Purpose
+Record purchases from suppliers and update inventory.
+Features
+Create Purchase 
+Purchase Invoice 
+Supplier Selection 
+Product Entry 
+IMEI Entry 
+Bulk Purchase 
+Import Purchase 
+Purchase History 
+Purchase Information
+Purchase Number 
+Supplier 
+Purchase Date 
+Products 
+Quantity 
+Purchase Price 
+Total Amount 
+Payment Status 
+Functional Requirements
+Each purchase shall have a unique purchase number. 
+Inventory shall increase after purchase confirmation. 
+IMEI numbers shall be registered during purchase. 
+Purchase records shall be editable before confirmation. 
+Purchase history shall be searchable. 
+
+Module 14 – Purchase Return
+Purpose
+Manage products returned to suppliers.
+Features
+Create Purchase Return 
+Return Quantity 
+Return IMEI Devices 
+Supplier Refund 
+Return History 
+Functional Requirements
+Purchase returns must reference an existing purchase. 
+Inventory shall decrease automatically. 
+Supplier balances shall be updated. 
+Return history shall be maintained. 
+
+Module 15 – Customer Management
+Purpose
+Store and manage customer information.
+Customer Information
+Customer ID 
+Full Name 
+Mobile Number 
+Email 
+Address 
+City 
+Customer Type 
+Credit Limit 
+Outstanding Balance 
+Notes 
+Features
+Add Customer 
+Edit Customer 
+Delete Customer 
+Search Customer 
+Purchase History 
+Warranty History 
+Repair History 
+Functional Requirements
+Customer mobile numbers should be unique. 
+Purchase history shall be maintained. 
+Customers can have multiple invoices. 
+Customer balances shall be updated automatically. 
+
+Module 16 – Supplier Management
+Purpose
+Manage supplier information and purchases.
+Supplier Information
+Supplier Name 
+Contact Person 
+Mobile Number 
+Email 
+Address 
+Tax Number 
+Payment Terms 
+Outstanding Balance 
+Features
+Add Supplier 
+Update Supplier 
+Delete Supplier 
+Search Supplier 
+Purchase History 
+Payment History 
+Functional Requirements
+Suppliers shall have unique records. 
+Purchase history shall be maintained. 
+Outstanding balances shall be calculated automatically. 
+Supplier details shall be editable. 
+
+Module 17 – Payment Management
+Purpose
+Manage all incoming and outgoing payments.
+Payment Methods
+Cash 
+Credit Card 
+Debit Card 
+Bank Transfer 
+Mobile Wallet 
+Mixed Payment 
+Features
+Receive Payment 
+Make Payment 
+Partial Payment 
+Payment History 
+Outstanding Balance 
+Functional Requirements
+Every payment shall be linked to a transaction. 
+Payment status shall be updated automatically. 
+Partial payments shall be supported. 
+Payment history shall be searchable. 
+
+Module 18 – Cash Drawer Management
+Purpose
+Track daily cash operations.
+Features
+Open Cash Drawer 
+Close Cash Drawer 
+Opening Balance 
+Closing Balance 
+Cash In 
+Cash Out 
+Cash Adjustment 
+Daily Cash Summary 
+Functional Requirements
+Cash drawer must be opened before sales begin. 
+Closing balance shall be calculated automatically. 
+Cash adjustments shall require a reason. 
+Daily cash reports shall be generated. 
+
+Business Workflow
+Purchase Workflow
+Supplier → Purchase Order → Product Received → IMEI Registration → Inventory Updated
+
+Sales Workflow
+Customer → Product Selection → Barcode/IMEI Scan → Billing → Payment → Invoice → Inventory Updated
+
+Return Workflow
+Customer → Return Request → Invoice Verification → Product Returned → Inventory Updated → Refund
+
+Exchange Workflow
+Customer → Existing Invoice → New Product → Price Difference → Inventory Updated
+
+Payment Workflow
+Invoice → Payment → Receipt → Transaction History
+
+Summary of Part 3
+Module
+Status
+Sales (POS Billing)
+✅
+Sales Return
+✅
+Exchange Management
+✅
+Purchase Management
+✅
+Purchase Return
+✅
+Customer Management
+✅
+Supplier Management
+✅
+Payment Management
+✅
+Cash Drawer Management
+✅
+
+
+
+Chapter 10 – Functional Requirements (Continued)
+
+Module 19 – Repair Management
+Purpose
+The Repair Management module is used to manage customer repair requests, assign technicians, track repair progress, and record repair costs.
+Features
+Create Repair Ticket 
+Assign Technician 
+Update Repair Status 
+Record Parts Used 
+Record Labor Charges 
+Print Repair Receipt 
+Complete Repair 
+Deliver Device 
+Repair History 
+Repair Information
+Repair Ticket Number 
+Customer 
+Device Name 
+Brand 
+Model 
+IMEI Number 
+Problem Description 
+Technician 
+Estimated Cost 
+Actual Cost 
+Parts Used 
+Repair Status 
+Received Date 
+Delivery Date 
+Notes 
+Repair Status
+Received 
+Under Inspection 
+Waiting for Parts 
+In Progress 
+Ready for Delivery 
+Delivered 
+Cancelled 
+Functional Requirements
+Every repair shall have a unique repair ticket number. 
+IMEI shall be recorded when applicable. 
+Repair status shall be updated throughout the repair process. 
+Customers shall be able to collect repaired devices using the repair ticket. 
+Repair history shall remain available for future reference. 
+
+Module 20 – Warranty Management
+Purpose
+Manage product and repair warranties.
+Features
+Register Warranty 
+View Warranty 
+Warranty Expiry Tracking 
+Warranty Claim 
+Warranty History 
+Warranty Information
+Warranty Number 
+Product 
+Customer 
+Invoice Number 
+Warranty Type 
+Warranty Period 
+Start Date 
+Expiry Date 
+Status 
+Functional Requirements
+Warranty shall be linked to the product sale. 
+Warranty period shall start from the sale date. 
+Expired warranties shall not be accepted for claims. 
+Warranty history shall be maintained. 
+
+Module 21 – Expense Management
+Purpose
+Record and manage business expenses.
+Expense Categories
+Shop Rent 
+Electricity 
+Internet 
+Salaries 
+Maintenance 
+Marketing 
+Transportation 
+Office Supplies 
+Miscellaneous 
+Features
+Add Expense 
+Edit Expense 
+Delete Expense 
+Expense Categories 
+Daily Expenses 
+Monthly Expenses 
+Expense Reports 
+Expense Information
+Expense Number 
+Expense Category 
+Amount 
+Payment Method 
+Date 
+Description 
+Recorded By 
+Functional Requirements
+Every expense shall belong to a category. 
+Expense reports shall be generated. 
+Expenses shall be included in profit calculations. 
+
+Module 22 – Employee Management
+Purpose
+Manage employee information.
+Employee Information
+Employee ID 
+Name 
+Mobile Number 
+Email 
+Address 
+Designation 
+Salary 
+Joining Date 
+Status 
+Features
+Add Employee 
+Update Employee 
+Delete Employee 
+Search Employee 
+Employee List 
+Employee Status 
+Functional Requirements
+Every employee shall have a unique employee ID. 
+Employee records shall remain available even if inactive. 
+Employee information shall be editable. 
+
+Module 23 – User & Role Management
+Purpose
+Control system access using roles and permissions.
+Features
+Create User 
+Edit User 
+Delete User 
+Create Role 
+Assign Permissions 
+Reset Password 
+Activate User 
+Deactivate User 
+Default Roles
+Owner 
+Manager 
+Cashier 
+Inventory Staff 
+Technician 
+Accountant 
+Functional Requirements
+Each user shall be assigned at least one role. 
+Permissions shall control module access. 
+Inactive users shall not be allowed to log in. 
+Password reset shall be available to authorized users. 
+
+Module 24 – Notifications
+Purpose
+Notify users about important events.
+Notification Types
+Low Stock Alert 
+Out of Stock Alert 
+New Purchase 
+New Sale 
+Pending Repair 
+Warranty Expiry 
+Payment Reminder 
+Daily Backup Status 
+System Updates 
+Features
+Notification List 
+Mark as Read 
+Delete Notification 
+Real-Time Alerts 
+Functional Requirements
+Notifications shall appear on the dashboard. 
+Users shall receive notifications based on their role. 
+Notification history shall be maintained. 
+
+Module 25 – Reports & Analytics
+Purpose
+Provide business insights and performance reports.
+Reports
+Sales Reports
+Daily Sales 
+Weekly Sales 
+Monthly Sales 
+Yearly Sales 
+
+Purchase Reports
+Purchase Summary 
+Supplier Purchases 
+Purchase Returns 
+
+Inventory Reports
+Current Stock 
+Low Stock 
+Out of Stock 
+Stock Movement 
+
+Financial Reports
+Profit & Loss 
+Expenses 
+Revenue Summary 
+Cash Flow 
+
+Customer Reports
+Customer Purchases 
+Outstanding Balances 
+
+Supplier Reports
+Supplier Payments 
+Purchase History 
+
+Repair Reports
+Pending Repairs 
+Completed Repairs 
+Technician Performance 
+Functional Requirements
+Reports shall support filtering by date. 
+Reports shall support printing. 
+Reports shall support export to PDF and Excel. 
+Reports shall display accurate business data. 
+
+Module 26 – Settings & Configuration
+Purpose
+Configure system-wide settings.
+Settings
+Business Settings
+Shop Name 
+Address 
+Contact Number 
+Email 
+Logo 
+Currency 
+Time Zone 
+
+Tax Settings
+Tax Percentage 
+Tax Type 
+
+Invoice Settings
+Invoice Prefix 
+Receipt Footer 
+Invoice Notes 
+
+Printer Settings
+Receipt Printer 
+Barcode Printer 
+
+Security Settings
+Password Policy 
+Session Timeout 
+Functional Requirements
+Only authorized users shall access settings. 
+Configuration changes shall be saved immediately. 
+Business information shall appear on invoices. 
+
+Module 27 – Audit Logs
+Purpose
+Maintain records of important system activities.
+Logged Activities
+Login 
+Logout 
+Product Creation 
+Product Updates 
+Stock Adjustment 
+Sales 
+Purchases 
+Expense Updates 
+User Management 
+Settings Changes 
+Log Information
+User 
+Action 
+Module 
+Date & Time 
+IP Address 
+Remarks 
+Functional Requirements
+Every important action shall be logged. 
+Logs shall be searchable. 
+Audit records shall not be editable by normal users. 
+Logs shall be retained for future review. 
+
+Summary of Part 4
+Module
+Status
+Repair Management
+✅
+Warranty Management
+✅
+Expense Management
+✅
+Employee Management
+✅
+User & Role Management
+✅
+Notifications
+✅
+Reports & Analytics
+✅
+Settings & Configuration
+✅
+Audit Logs
+✅
+
+
+
+Chapter 11 – Non-Functional Requirements
+Purpose
+Non-functional requirements define the quality standards and technical characteristics that the Mobile Shop POS System must satisfy.
+
+11.1 Performance
+Requirements
+The system should load the dashboard within a few seconds under normal conditions. 
+Product search should return results quickly. 
+Barcode and IMEI searches should be responsive. 
+Reports should be generated efficiently for normal business data volumes. 
+Multiple users should be able to work simultaneously without significant performance degradation. 
+
+11.2 Availability
+Requirements
+The system should be available during business hours. 
+Scheduled maintenance should be planned outside business hours. 
+Unexpected downtime should be minimized. 
+
+11.3 Scalability
+The application should support future expansion including:
+Multi-Branch POS 
+Pharmacy POS 
+Mart POS 
+Mobile Application 
+Online Store 
+Additional business modules 
+
+11.4 Reliability
+Requirements
+Business transactions should be recorded accurately. 
+Data consistency should be maintained. 
+System failures should not corrupt business data. 
+Automatic error logging should be implemented. 
+
+11.5 Usability
+Requirements
+User-friendly interface. 
+Simple navigation. 
+Consistent design. 
+Responsive layout. 
+Easy-to-understand forms. 
+Helpful validation messages. 
+
+11.6 Maintainability
+Requirements
+Modular architecture. 
+Clean source code. 
+Standard naming conventions. 
+Reusable components. 
+Well-organized project structure. 
+
+11.7 Compatibility
+The system should support modern web browsers, including:
+Google Chrome 
+Microsoft Edge 
+Mozilla Firefox 
+Safari (latest versions) 
+
+Chapter 12 – Business Rules
+The software shall follow the following business rules.
+
+Product Rules
+Every product must belong to a category. 
+Every product must have a unique SKU. 
+Mobile phones must have unique IMEI numbers. 
+Accessories are quantity-based and do not require IMEI tracking. 
+Inactive products cannot be sold. 
+
+Inventory Rules
+Purchases increase stock. 
+Sales decrease stock. 
+Sales returns increase stock. 
+Purchase returns decrease stock. 
+Manual stock adjustments require a reason. 
+
+Sales Rules
+Every sale must generate a unique invoice number. 
+Completed sales cannot be edited directly. 
+Discounts must follow the configured business policy. 
+Taxes must be calculated according to system settings. 
+
+Purchase Rules
+Purchases must be linked to suppliers. 
+Products received through purchases update inventory. 
+Purchase invoices must have unique reference numbers. 
+
+Repair Rules
+Every repair must have a repair ticket. 
+Device status must be updated during the repair process. 
+Delivered repairs cannot be edited without authorization. 
+
+Warranty Rules
+Warranty starts on the sale date. 
+Warranty expiry is calculated automatically. 
+Warranty claims require proof of purchase. 
+
+Chapter 13 – Security Requirements
+Authentication
+Users must log in before accessing the system. 
+Passwords should be securely hashed. 
+JWT authentication should be used. 
+Session expiration should be configurable. 
+
+Authorization
+Access should be controlled using role-based permissions. 
+Unauthorized access must be denied. 
+Sensitive modules should be restricted to authorized roles. 
+
+Data Protection
+User passwords must never be stored in plain text. 
+Database access should be restricted. 
+Uploaded files should be validated. 
+Sensitive configuration values should be stored securely. 
+
+Audit & Logging
+The system should record:
+Login attempts 
+Logout events 
+Product updates 
+Inventory changes 
+Sales 
+Purchases 
+User management activities 
+Settings changes 
+
+Backup & Recovery
+Database backups should be scheduled regularly. 
+Backup restoration procedures should be documented. 
+Backup files should be protected from unauthorized access. 
+
+Chapter 14 – Database Requirements
+Database
+PostgreSQL 
+
+Database Design
+The database should follow normalization principles to reduce redundancy and improve data integrity.
+
+Core Entities
+Users 
+Roles 
+Permissions 
+Employees 
+Customers 
+Suppliers 
+Brands 
+Categories 
+Product Models 
+Products 
+Product Images 
+IMEI Records 
+Inventory 
+Purchases 
+Purchase Items 
+Sales 
+Sale Items 
+Payments 
+Repairs 
+Warranties 
+Expenses 
+Notifications 
+Audit Logs 
+Settings 
+
+Database Requirements
+Primary keys for all tables. 
+Foreign key relationships where applicable. 
+Unique constraints on identifiers such as SKU and IMEI. 
+Timestamp fields for record creation and updates. 
+Support for soft deletion where appropriate. 
+
+Chapter 15 – API Requirements
+The backend shall expose RESTful APIs for all major modules.
+
+Authentication APIs
+Login 
+Logout 
+Refresh Token 
+Forgot Password 
+Reset Password 
+
+User APIs
+Create User 
+Update User 
+Delete User 
+List Users 
+Assign Roles 
+
+Product APIs
+Add Product 
+Update Product 
+Delete Product 
+Search Product 
+Upload Image 
+Product Details 
+
+Inventory APIs
+Stock In 
+Stock Out 
+Stock Adjustment 
+Inventory History 
+
+Sales APIs
+Create Sale 
+Update Sale Status 
+Sales History 
+Sales Return 
+
+Purchase APIs
+Create Purchase 
+Purchase Return 
+Purchase History 
+
+Customer APIs
+Add Customer 
+Update Customer 
+Customer History 
+
+Supplier APIs
+Add Supplier 
+Update Supplier 
+Supplier History 
+
+Repair APIs
+Create Repair 
+Update Repair Status 
+Repair History 
+
+Report APIs
+Sales Report 
+Purchase Report 
+Inventory Report 
+Expense Report 
+Profit Report 
+
+API Standards
+JSON request and response format. 
+Appropriate HTTP status codes. 
+Input validation. 
+Pagination for list endpoints. 
+Filtering and sorting support where applicable. 
+Consistent error response format. 
+
+Summary of Part 5
+Chapter
+Status
+Non-Functional Requirements
+✅
+Business Rules
+✅
+Security Requirements
+✅
+Database Requirements
+✅
+API Requirements
+✅
+
+
+
+Chapter 16 – Reporting Requirements
+Purpose
+The reporting module provides business insights and helps management monitor business performance.
+
+Sales Reports
+The system shall generate:
+Daily Sales Report 
+Weekly Sales Report 
+Monthly Sales Report 
+Yearly Sales Report 
+Sales by Product 
+Sales by Category 
+Sales by Brand 
+Sales by Customer 
+Sales by Employee 
+
+Purchase Reports
+The system shall generate:
+Daily Purchases 
+Monthly Purchases 
+Supplier Purchase Report 
+Purchase Return Report 
+
+Inventory Reports
+The system shall generate:
+Current Stock Report 
+Stock Movement Report 
+Low Stock Report 
+Out of Stock Report 
+Inventory Valuation Report 
+Damaged Stock Report 
+
+Customer Reports
+The system shall generate:
+Customer List 
+Customer Purchase History 
+Customer Outstanding Balance 
+Customer Warranty Report 
+
+Supplier Reports
+The system shall generate:
+Supplier List 
+Supplier Purchase History 
+Supplier Payment Report 
+
+Financial Reports
+The system shall generate:
+Profit & Loss Report 
+Expense Report 
+Revenue Summary 
+Cash Flow Report 
+Payment Collection Report 
+
+Repair Reports
+The system shall generate:
+Pending Repairs 
+Completed Repairs 
+Technician Performance 
+Repair Charges Report 
+
+Warranty Reports
+The system shall generate:
+Active Warranties 
+Expired Warranties 
+Warranty Claims 
+
+Report Features
+Search 
+Filter 
+Sort 
+Print 
+Export to PDF 
+Export to Excel 
+
+Chapter 17 – Notification Requirements
+Purpose
+The notification module keeps users informed about important business events.
+
+Notification Types
+Low Stock Alert 
+Out of Stock Alert 
+New Sale 
+New Purchase 
+Repair Status Update 
+Warranty Expiry 
+Payment Reminder 
+System Announcement 
+User Account Activity 
+Backup Status 
+
+Notification Features
+Notification List 
+Mark as Read 
+Delete Notification 
+Role-Based Notifications 
+Dashboard Notifications 
+
+Chapter 18 – Audit Log Requirements
+Purpose
+Maintain a complete history of important user activities.
+
+Activities to Record
+User Login 
+User Logout 
+Product Creation 
+Product Updates 
+Product Deletion 
+Inventory Changes 
+Sales Transactions 
+Purchase Transactions 
+Expense Records 
+User Creation 
+User Updates 
+Settings Changes 
+
+Audit Log Information
+User Name 
+Module 
+Action 
+Date 
+Time 
+IP Address 
+Description 
+
+Requirements
+Audit logs shall be searchable. 
+Audit logs shall not be editable by standard users. 
+Logs shall remain available for future reference. 
+
+Chapter 19 – Backup & Recovery Requirements
+Purpose
+Ensure business data can be restored in case of system failure or accidental data loss.
+
+Backup Requirements
+Regular database backups. 
+Backup before major system updates. 
+Secure backup storage. 
+Backup verification. 
+
+Recovery Requirements
+Restore database from backup. 
+Verify recovered data. 
+Minimize downtime during recovery. 
+Document recovery procedures. 
+
+Chapter 20 – Deployment Requirements
+Deployment Environment
+Frontend
+Next.js Application 
+Backend
+Node.js 
+Express.js 
+Database
+PostgreSQL 
+Image Storage
+Cloudinary 
+
+Deployment Components
+Web Server 
+Application Server 
+Database Server 
+Image Storage Service 
+SSL Certificate 
+Domain Configuration 
+
+Deployment Requirements
+Environment configuration files. 
+Secure API keys. 
+HTTPS support. 
+Production logging. 
+Database migration before deployment. 
+Health check after deployment. 
+
+Chapter 21 – Future Scalability
+The system architecture should support future expansion without major redesign.
+
+Planned Enhancements
+Multi-Branch POS
+Branch Management 
+Branch Inventory 
+Branch Transfers 
+Centralized Reporting 
+
+Pharmacy POS
+Medicine Categories 
+Batch Numbers 
+Expiry Dates 
+Prescription Sales 
+Medicine Suppliers 
+
+Mart POS
+Grocery Products 
+Product Variants 
+Promotional Discounts 
+Shelf Management 
+Bulk Sales 
+
+Additional Features
+Mobile Application 
+Customer Portal 
+Supplier Portal 
+E-Commerce Integration 
+Loyalty Program 
+SMS Notifications 
+Email Notifications 
+AI Sales Forecasting 
+Business Intelligence Dashboard 
+
+Chapter 22 – Acceptance Criteria
+The Mobile Shop POS System shall be accepted when the following conditions are met:
+Users can log in successfully. 
+User roles and permissions function correctly. 
+Products can be created, updated, and searched. 
+IMEI tracking works correctly. 
+Inventory updates automatically after purchases and sales. 
+Sales invoices are generated successfully. 
+Purchases are recorded successfully. 
+Customer and supplier records function correctly. 
+Repair tickets can be created and managed. 
+Warranty tracking functions correctly. 
+Reports generate accurate information. 
+Notifications are displayed correctly. 
+Audit logs record important activities. 
+System settings are saved successfully. 
+All critical modules pass User Acceptance Testing (UAT). 
+
+Chapter 23 – Appendix
+Technologies Used
+Component
+Technology
+Frontend
+Next.js
+Backend
+Node.js
+Framework
+Express.js
+Database
+PostgreSQL
+ORM
+Prisma ORM (Recommended)
+Image Storage
+Cloudinary
+Authentication
+JWT
+API
+REST API
+Version Control
+Git
+Repository
+GitHub
+
+Project Modules
+Authentication 
+Dashboard 
+Brand Management 
+Category Management 
+Product Management 
+IMEI Management 
+Inventory Management 
+Sales 
+Sales Return 
+Purchase 
+Purchase Return 
+Customer Management 
+Supplier Management 
+Repair Management 
+Warranty Management 
+Expense Management 
+Employee Management 
+User & Role Management 
+Reports 
+Notifications 
+Audit Logs 
+Settings 
+
+Chapter 24 – Glossary
+Term
+Meaning
+POS
+Point of Sale
+SKU
+Stock Keeping Unit
+IMEI
+International Mobile Equipment Identity
+JWT
+JSON Web Token
+REST API
+Representational State Transfer API
+RBAC
+Role-Based Access Control
+ORM
+Object Relational Mapping
+UAT
+User Acceptance Testing
+CRUD
+Create, Read, Update, Delete
+
+Chapter 25 – Document Summary
+The Software Requirements Specification (SRS) defines the complete functional and technical requirements for the Mobile Shop POS System. It serves as the primary implementation reference for developers, testers, architects, and project stakeholders.
+The document covers:
+Functional Requirements 
+User Roles 
+Business Modules 
+Technical Requirements 
+Security 
+Database 
+APIs 
+Reporting 
+Deployment 
+Scalability 
+Acceptance Criteria 
+The system is designed to provide a secure, scalable, and maintainable solution for mobile retail businesses while allowing future expansion to Pharmacy POS and Mart POS.
+
+✅ Volume 2 Completed
+Document Overview
+Section
+Status
+Introduction
+✅
+Overall Description
+✅
+System Architecture
+✅
+Technology Stack
+✅
+User Roles
+✅
+Functional Requirements
+✅
+Non-Functional Requirements
+✅
+Business Rules
+✅
+Security Requirements
+✅
+Database Requirements
+✅
+API Requirements
+✅
+Reporting Requirements
+✅
+Notifications
+✅
+Audit Logs
+✅
+Backup & Recovery
+✅
+Deployment Requirements
+✅
+Future Scalability
+✅
+Acceptance Criteria
+✅
+Appendix
+✅
+Glossary
+✅
+Document Summary
+✅
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+📙 Volume 3 – Database Design Document (DDD)
+Part 1
+Project: Mobile Shop Point of Sale (POS) System
+Technology Stack
+Frontend: Next.js 
+Backend: Node.js (Express.js) 
+Database: PostgreSQL 
+ORM: Prisma ORM 
+Image Storage: Cloudinary 
+Version: 1.0
+
+Chapter 1 – Cover Page
+Database Design Document (DDD)
+Project Name: Mobile Shop Point of Sale (POS) System
+Document Version: 1.0
+Prepared By: Database Architect
+Prepared For: Development Team
+Document Status: Draft
+Date: August 2026
+
+Chapter 2 – Document Control
+Field
+Value
+Document Name
+Database Design Document
+Project
+Mobile Shop POS System
+Version
+1.0
+Status
+Draft
+Database
+PostgreSQL
+ORM
+Prisma ORM
+Prepared By
+Database Architect
+Purpose
+This document defines the complete database structure for the Mobile Shop POS System. It describes tables, relationships, keys, constraints, naming conventions, and database standards required for implementation.
+
+Chapter 3 – Revision History
+Version
+Date
+Author
+Description
+0.1
+August 2026
+Database Architect
+Initial Draft
+0.5
+August 2026
+Development Team
+Database Review
+1.0
+August 2026
+Project Team
+Approved Version
+
+Chapter 4 – Table of Contents
+Introduction 
+Database Overview 
+Database Standards 
+Naming Conventions 
+Database Architecture 
+Core Entities 
+Entity Relationships 
+Primary Keys 
+Foreign Keys 
+Database Constraints 
+Indexing Strategy 
+Data Dictionary 
+Backup Strategy 
+Database Security 
+Maintenance Strategy 
+
+Chapter 5 – Introduction
+Purpose
+The Mobile Shop POS System uses PostgreSQL as its primary relational database.
+The database is designed to:
+Store business data securely. 
+Maintain data integrity. 
+Support fast data retrieval. 
+Support future expansion. 
+Reduce duplicate data through normalization. 
+Work efficiently with Prisma ORM. 
+
+Database Goals
+High performance 
+Data consistency 
+Data integrity 
+Easy maintenance 
+Scalability 
+Security 
+Reliability 
+
+Chapter 6 – Database Overview
+The database manages all business information required by the POS system.
+Major Database Modules
+Authentication 
+User Management 
+Employee Management 
+Customer Management 
+Supplier Management 
+Product Management 
+Brand Management 
+Category Management 
+Inventory 
+Sales 
+Purchases 
+Payments 
+Repairs 
+Warranty 
+Expenses 
+Reports 
+Notifications 
+Audit Logs 
+Settings 
+
+Database Type
+Relational Database 
+
+Database Engine
+PostgreSQL 
+
+ORM
+Prisma ORM 
+
+Character Encoding
+UTF-8 
+
+Time Zone
+UTC (Recommended) 
+
+Chapter 7 – Database Standards
+The following standards shall be followed throughout the database.
+Naming Standards
+Table names should use PascalCase in Prisma models. 
+Database table names should use snake_case. 
+Column names should use snake_case. 
+Primary keys should end with _id. 
+Foreign keys should reference the related table's primary key. 
+Timestamps should be included where appropriate. 
+
+Data Standards
+Avoid duplicate data. 
+Normalize data (up to Third Normal Form where practical). 
+Use foreign keys to maintain relationships. 
+Store images as Cloudinary URLs instead of binary data. 
+
+Audit Standards
+Important tables should include:
+created_at 
+updated_at 
+created_by 
+updated_by 
+Soft-delete support may also include:
+deleted_at 
+deleted_by 
+
+Chapter 8 – Naming Conventions
+Table Naming
+Examples:
+users 
+roles 
+permissions 
+products 
+product_images 
+customers 
+suppliers 
+purchases 
+purchase_items 
+sales 
+sale_items 
+expenses 
+repairs 
+warranties 
+
+Primary Key Naming
+Examples:
+user_id 
+product_id 
+sale_id 
+purchase_id 
+customer_id 
+supplier_id 
+
+Foreign Key Naming
+Examples:
+role_id 
+category_id 
+brand_id 
+supplier_id 
+customer_id 
+sale_id 
+
+Boolean Fields
+Examples:
+is_active 
+is_deleted 
+is_verified 
+is_default 
+
+Date Fields
+Examples:
+created_at 
+updated_at 
+deleted_at 
+purchase_date 
+sale_date 
+warranty_expiry 
+
+Chapter 9 – Database Architecture
+The database is divided into logical modules.
+Authentication Module
+Tables:
+users 
+roles 
+permissions 
+role_permissions 
+user_roles 
+
+Product Module
+Tables:
+brands 
+categories 
+product_models 
+products 
+product_images 
+imei_numbers 
+barcodes 
+
+Inventory Module
+Tables:
+inventory 
+inventory_transactions 
+stock_adjustments 
+
+Purchase Module
+Tables:
+purchases 
+purchase_items 
+purchase_returns 
+
+Sales Module
+Tables:
+sales 
+sale_items 
+sales_returns 
+
+Customer Module
+Tables:
+customers 
+customer_addresses 
+
+Supplier Module
+Tables:
+suppliers 
+
+Repair Module
+Tables:
+repairs 
+repair_items 
+
+Warranty Module
+Tables:
+warranties 
+
+Financial Module
+Tables:
+expenses 
+payments 
+
+Administration Module
+Tables:
+notifications 
+audit_logs 
+settings 
+
+Chapter 10 – Core Entities
+The following are the primary entities in the Mobile Shop POS database.
+Authentication
+User 
+Role 
+Permission 
+
+Business
+Customer 
+Supplier 
+Employee 
+
+Product
+Brand 
+Category 
+Product Model 
+Product 
+Product Image 
+IMEI Number 
+Barcode 
+
+Inventory
+Inventory 
+Inventory Transaction 
+Stock Adjustment 
+
+Sales
+Sale 
+Sale Item 
+Sales Return 
+
+Purchase
+Purchase 
+Purchase Item 
+Purchase Return 
+
+Repair
+Repair 
+Repair Item 
+
+Warranty
+Warranty 
+
+Finance
+Payment 
+Expense 
+
+System
+Notification 
+Audit Log 
+Setting 
+
+Summary of Part 1
+Chapter
+Status
+Cover Page
+✅
+Document Control
+✅
+Revision History
+✅
+Table of Contents
+✅
+Introduction
+✅
+Database Overview
+✅
+Database Standards
+✅
+Naming Conventions
+✅
+Database Architecture
+✅
+Core Entities
+✅
+
+
+
+Chapter 11 – Entity Relationships
+Purpose
+This chapter defines how the database tables relate to each other. Proper relationships ensure data integrity, reduce redundancy, and support efficient queries.
+
+Authentication Relationships
+Users ↔ Roles
+One user can have one or more roles. 
+One role can be assigned to many users. 
+Relationship: Many-to-Many
+Junction Table:
+user_roles 
+
+Roles ↔ Permissions
+One role contains multiple permissions. 
+One permission can belong to multiple roles. 
+Relationship: Many-to-Many
+Junction Table:
+role_permissions 
+
+Employee Relationships
+Employee → User
+One employee may have one system user account. 
+A user account belongs to one employee. 
+Relationship: One-to-One
+
+Product Relationships
+Brand → Product Model
+One brand has multiple models. 
+One model belongs to one brand. 
+Relationship: One-to-Many
+Example:
+Samsung
+Galaxy S24 
+Galaxy S25 
+Galaxy A56 
+
+Category → Product
+One category contains many products. 
+One product belongs to one category. 
+Relationship: One-to-Many
+Example:
+Accessories
+Charger 
+Earbuds 
+Power Bank 
+
+Product Model → Product
+One model can have multiple product variants. 
+Example:
+iPhone 17 Pro
+256GB Black 
+512GB Black 
+256GB White 
+Relationship: One-to-Many
+
+Product → Product Images
+One product can have multiple images. 
+Relationship: One-to-Many
+
+Product → IMEI Numbers
+One phone product can contain many IMEI records. 
+Each IMEI belongs to only one product. 
+Relationship: One-to-Many
+
+Product → Barcode
+Each product has one barcode. 
+Relationship: One-to-One
+
+Inventory Relationships
+Product → Inventory
+Each product has one inventory record. 
+Relationship: One-to-One
+
+Inventory → Inventory Transactions
+One inventory record has many stock movements. 
+Relationship: One-to-Many
+
+Inventory → Stock Adjustments
+Inventory may have multiple manual adjustments. 
+Relationship: One-to-Many
+
+Purchase Relationships
+Supplier → Purchase
+One supplier provides many purchases. 
+Relationship: One-to-Many
+
+Purchase → Purchase Items
+One purchase contains multiple products. 
+Relationship: One-to-Many
+
+Purchase Item → Product
+Purchase item references one product. 
+Relationship: Many-to-One
+
+Purchase Item → IMEI Numbers
+Purchased phones register one or more IMEI numbers. 
+Relationship: One-to-Many
+
+Sales Relationships
+Customer → Sale
+One customer can have many sales. 
+Relationship: One-to-Many
+
+Sale → Sale Items
+One sale contains multiple products. 
+Relationship: One-to-Many
+
+Sale Item → Product
+Each sale item references one product. 
+Relationship: Many-to-One
+
+Sale Item → IMEI Number
+Each mobile phone sale references the sold IMEI. 
+Relationship: One-to-One
+
+Sales Return Relationships
+Sale → Sales Return
+One sale may have multiple return records. 
+Relationship: One-to-Many
+
+Customer Relationships
+Customer → Repairs
+One customer can submit multiple repair jobs. 
+Relationship: One-to-Many
+
+Customer → Warranty
+One customer can own multiple warranties. 
+Relationship: One-to-Many
+
+Repair Relationships
+Repair → Technician
+One technician can handle many repairs. 
+Relationship: One-to-Many
+
+Repair → Repair Items
+One repair may require multiple spare parts. 
+Relationship: One-to-Many
+
+Repair → Warranty
+Repair may reference a warranty claim. 
+Relationship: Optional One-to-One
+
+Financial Relationships
+Sale → Payment
+One sale may have multiple payments (partial or split payments). 
+Relationship: One-to-Many
+
+Purchase → Payment
+One purchase may have multiple supplier payments. 
+Relationship: One-to-Many
+
+Expense → Employee
+One employee records many expenses. 
+Relationship: One-to-Many
+
+Audit Relationships
+User → Audit Log
+One user performs many system actions. 
+Relationship: One-to-Many
+
+User → Notification
+One user receives many notifications. 
+Relationship: One-to-Many
+
+Chapter 12 – Primary Keys
+Every table shall have a unique primary key.
+Table
+Primary Key
+users
+user_id
+roles
+role_id
+permissions
+permission_id
+employees
+employee_id
+customers
+customer_id
+suppliers
+supplier_id
+brands
+brand_id
+categories
+category_id
+product_models
+product_model_id
+products
+product_id
+product_images
+product_image_id
+imei_numbers
+imei_id
+inventory
+inventory_id
+inventory_transactions
+inventory_transaction_id
+purchases
+purchase_id
+purchase_items
+purchase_item_id
+sales
+sale_id
+sale_items
+sale_item_id
+repairs
+repair_id
+warranties
+warranty_id
+payments
+payment_id
+expenses
+expense_id
+notifications
+notification_id
+audit_logs
+audit_log_id
+settings
+setting_id
+
+Chapter 13 – Foreign Keys
+Child Table
+Foreign Key
+Parent Table
+users
+role_id
+roles
+products
+brand_id
+brands
+products
+category_id
+categories
+products
+product_model_id
+product_models
+inventory
+product_id
+products
+purchase_items
+purchase_id
+purchases
+purchase_items
+product_id
+products
+purchases
+supplier_id
+suppliers
+sales
+customer_id
+customers
+sale_items
+sale_id
+sales
+sale_items
+product_id
+products
+repairs
+customer_id
+customers
+repairs
+employee_id
+employees
+warranties
+sale_id
+sales
+payments
+sale_id
+sales
+payments
+purchase_id
+purchases
+expenses
+employee_id
+employees
+notifications
+user_id
+users
+audit_logs
+user_id
+users
+
+Chapter 14 – Database Constraints
+The database shall enforce the following constraints.
+Primary Key Constraint
+Every table must have one primary key. 
+
+Foreign Key Constraint
+Related records must exist before insertion. 
+Example:
+A product cannot reference a category that does not exist.
+
+Unique Constraint
+Unique values shall be enforced for:
+Username 
+Email 
+SKU 
+Barcode 
+IMEI Number 
+Invoice Number 
+Purchase Number 
+Repair Ticket Number 
+
+Not Null Constraint
+The following fields are mandatory where applicable:
+Product Name 
+Customer Name 
+Supplier Name 
+Purchase Date 
+Sale Date 
+Purchase Price 
+Selling Price 
+Quantity 
+
+Check Constraints
+Examples:
+Quantity ≥ 0 
+Selling Price ≥ 0 
+Purchase Price ≥ 0 
+Discount ≥ 0 
+Tax ≥ 0 
+
+Default Values
+Examples:
+is_active = true 
+created_at = current_timestamp 
+updated_at = current_timestamp 
+stock_quantity = 0 
+
+Chapter 15 – Normalization Strategy
+The database should be normalized to improve consistency and reduce duplication.
+First Normal Form (1NF)
+Store atomic values. 
+Eliminate repeating groups. 
+
+Second Normal Form (2NF)
+Remove partial dependencies. 
+Separate related information into dedicated tables. 
+
+Third Normal Form (3NF)
+Remove transitive dependencies. 
+Store lookup values such as brands and categories separately. 
+
+Chapter 16 – Relationship Cardinality
+Relationship
+Type
+Brand → Product Model
+One-to-Many
+Category → Product
+One-to-Many
+Product → Inventory
+One-to-One
+Product → Images
+One-to-Many
+Product → IMEI
+One-to-Many
+Supplier → Purchase
+One-to-Many
+Purchase → Purchase Items
+One-to-Many
+Customer → Sales
+One-to-Many
+Sale → Sale Items
+One-to-Many
+Sale Item → IMEI
+One-to-One
+Customer → Repairs
+One-to-Many
+Repair → Repair Items
+One-to-Many
+User → Notifications
+One-to-Many
+User → Audit Logs
+One-to-Many
+User ↔ Role
+Many-to-Many
+Role ↔ Permission
+Many-to-Many
+
+Summary of Part 2
+Chapter
+Status
+Entity Relationships
+✅
+Primary Keys
+✅
+Foreign Keys
+✅
+Database Constraints
+✅
+Normalization Strategy
+✅
+Relationship Cardinality
+✅
+
+
+
+
+Chapter 17 – Authentication Tables
+
+Table 1 – Users
+Purpose
+Stores all system user accounts.
+Field
+Data Type
+Constraints
+Description
+user_id
+UUID
+PK
+Unique user identifier
+employee_id
+UUID
+FK, Nullable
+Linked employee
+username
+VARCHAR(100)
+Unique, Not Null
+Login username
+email
+VARCHAR(255)
+Unique
+Email address
+password
+VARCHAR(255)
+Not Null
+Encrypted password
+phone
+VARCHAR(20)
+Nullable
+Mobile number
+profile_image
+TEXT
+Nullable
+Cloudinary image URL
+is_active
+BOOLEAN
+Default True
+User status
+last_login
+TIMESTAMP
+Nullable
+Last login time
+created_at
+TIMESTAMP
+Default Now
+Record creation
+updated_at
+TIMESTAMP
+Default Now
+Last update
+
+Table 2 – Roles
+Purpose
+Stores user roles.
+Field
+Data Type
+Constraints
+role_id
+UUID
+PK
+role_name
+VARCHAR(100)
+Unique
+description
+TEXT
+Nullable
+is_active
+BOOLEAN
+Default True
+created_at
+TIMESTAMP
+Default Now
+
+Table 3 – Permissions
+Purpose
+Stores system permissions.
+Field
+Data Type
+Constraints
+permission_id
+UUID
+PK
+permission_name
+VARCHAR(150)
+Unique
+module
+VARCHAR(100)
+Not Null
+description
+TEXT
+Nullable
+
+Table 4 – User Roles
+Purpose
+Maps users to roles.
+Field
+Data Type
+user_role_id
+UUID
+user_id
+UUID
+role_id
+UUID
+
+Table 5 – Role Permissions
+Purpose
+Maps permissions to roles.
+Field
+Data Type
+role_permission_id
+UUID
+role_id
+UUID
+permission_id
+UUID
+
+Chapter 18 – Employee Table
+Table 6 – Employees
+Purpose
+Stores employee information.
+Field
+Data Type
+Constraints
+employee_id
+UUID
+PK
+employee_code
+VARCHAR(30)
+Unique
+first_name
+VARCHAR(100)
+Not Null
+last_name
+VARCHAR(100)
+Nullable
+phone
+VARCHAR(20)
+Unique
+email
+VARCHAR(255)
+Nullable
+address
+TEXT
+Nullable
+designation
+VARCHAR(100)
+Nullable
+salary
+DECIMAL(12,2)
+Nullable
+joining_date
+DATE
+Not Null
+status
+VARCHAR(30)
+Active/Inactive
+created_at
+TIMESTAMP
+Default Now
+
+Chapter 19 – Product Master Tables
+
+Table 7 – Brands
+Purpose
+Stores product brands.
+Field
+Data Type
+brand_id
+UUID
+brand_name
+VARCHAR(100)
+description
+TEXT
+logo_url
+TEXT
+is_active
+BOOLEAN
+created_at
+TIMESTAMP
+
+Table 8 – Categories
+Purpose
+Stores product categories.
+Field
+Data Type
+category_id
+UUID
+category_name
+VARCHAR(100)
+description
+TEXT
+is_active
+BOOLEAN
+created_at
+TIMESTAMP
+
+Table 9 – Product Models
+Purpose
+Stores mobile phone models.
+Field
+Data Type
+product_model_id
+UUID
+brand_id
+UUID
+model_name
+VARCHAR(150)
+release_year
+INTEGER
+description
+TEXT
+created_at
+TIMESTAMP
+
+Table 10 – Products
+Purpose
+Stores all products sold by the shop.
+Field
+Data Type
+Constraints
+product_id
+UUID
+PK
+sku
+VARCHAR(50)
+Unique
+product_name
+VARCHAR(200)
+Not Null
+brand_id
+UUID
+FK
+category_id
+UUID
+FK
+product_model_id
+UUID
+FK
+purchase_price
+DECIMAL(12,2)
+Not Null
+selling_price
+DECIMAL(12,2)
+Not Null
+wholesale_price
+DECIMAL(12,2)
+Nullable
+tax_percentage
+DECIMAL(5,2)
+Default 0
+warranty_months
+INTEGER
+Nullable
+barcode
+VARCHAR(100)
+Unique
+description
+TEXT
+Nullable
+is_active
+BOOLEAN
+Default True
+created_at
+TIMESTAMP
+Default Now
+updated_at
+TIMESTAMP
+Default Now
+
+Table 11 – Product Images
+Purpose
+Stores Cloudinary image URLs.
+Field
+Data Type
+product_image_id
+UUID
+product_id
+UUID
+image_url
+TEXT
+public_id
+VARCHAR(255)
+is_primary
+BOOLEAN
+created_at
+TIMESTAMP
+
+Table 12 – IMEI Numbers
+Purpose
+Stores every mobile phone IMEI.
+Field
+Data Type
+imei_id
+UUID
+product_id
+UUID
+imei_number
+VARCHAR(50)
+serial_number
+VARCHAR(100)
+purchase_id
+UUID
+sale_id
+UUID
+warranty_start
+DATE
+warranty_end
+DATE
+status
+VARCHAR(50)
+created_at
+TIMESTAMP
+IMEI Status Values
+Available 
+Reserved 
+Sold 
+Returned 
+Under Repair 
+Replaced 
+
+Chapter 20 – Inventory Tables
+
+Table 13 – Inventory
+Purpose
+Maintains current stock levels.
+Field
+Data Type
+inventory_id
+UUID
+product_id
+UUID
+quantity
+INTEGER
+reserved_quantity
+INTEGER
+available_quantity
+INTEGER
+reorder_level
+INTEGER
+location
+VARCHAR(100)
+updated_at
+TIMESTAMP
+
+Table 14 – Inventory Transactions
+Purpose
+Stores stock movement history.
+Field
+Data Type
+inventory_transaction_id
+UUID
+inventory_id
+UUID
+product_id
+UUID
+transaction_type
+VARCHAR(50)
+quantity
+INTEGER
+reference_number
+VARCHAR(100)
+remarks
+TEXT
+created_by
+UUID
+created_at
+TIMESTAMP
+Transaction Types
+Purchase 
+Sale 
+Sales Return 
+Purchase Return 
+Adjustment 
+Damage 
+Transfer 
+Repair 
+
+Table 15 – Stock Adjustments
+Purpose
+Stores manual inventory adjustments.
+Field
+Data Type
+adjustment_id
+UUID
+inventory_id
+UUID
+product_id
+UUID
+previous_quantity
+INTEGER
+new_quantity
+INTEGER
+adjustment_reason
+TEXT
+adjusted_by
+UUID
+adjusted_at
+TIMESTAMP
+
+Recommended Indexes
+Table
+Indexed Columns
+users
+username, email
+employees
+employee_code
+brands
+brand_name
+categories
+category_name
+products
+sku, barcode, product_name
+imei_numbers
+imei_number
+inventory
+product_id
+inventory_transactions
+transaction_type, created_at
+
+Summary of Part 3
+Table
+Status
+Users
+✅
+Roles
+✅
+Permissions
+✅
+User Roles
+✅
+Role Permissions
+✅
+Employees
+✅
+Brands
+✅
+Categories
+✅
+Product Models
+✅
+Products
+✅
+Product Images
+✅
+IMEI Numbers
+✅
+Inventory
+✅
+Inventory Transactions
+✅
+Stock Adjustments
+✅
+
+
+
+
+Chapter 21 – Customer Management Tables
+
+Table 16 – Customers
+Purpose
+Stores customer information for sales, warranties, repairs, and payment tracking.
+Field
+Data Type
+Constraints
+customer_id
+UUID
+PK
+customer_code
+VARCHAR(30)
+Unique
+first_name
+VARCHAR(100)
+Not Null
+last_name
+VARCHAR(100)
+Nullable
+phone
+VARCHAR(20)
+Unique
+email
+VARCHAR(255)
+Nullable
+address
+TEXT
+Nullable
+city
+VARCHAR(100)
+Nullable
+customer_type
+VARCHAR(30)
+Default "Regular"
+credit_limit
+DECIMAL(12,2)
+Default 0
+outstanding_balance
+DECIMAL(12,2)
+Default 0
+notes
+TEXT
+Nullable
+is_active
+BOOLEAN
+Default TRUE
+created_at
+TIMESTAMP
+Default Now
+updated_at
+TIMESTAMP
+Default Now
+Customer Types
+Regular 
+Wholesale 
+VIP 
+Corporate 
+
+Chapter 22 – Supplier Management Tables
+
+Table 17 – Suppliers
+Purpose
+Stores supplier information.
+Field
+Data Type
+supplier_id
+UUID
+supplier_code
+VARCHAR(30)
+supplier_name
+VARCHAR(200)
+contact_person
+VARCHAR(150)
+phone
+VARCHAR(20)
+email
+VARCHAR(255)
+address
+TEXT
+tax_number
+VARCHAR(100)
+payment_terms
+VARCHAR(100)
+outstanding_balance
+DECIMAL(12,2)
+is_active
+BOOLEAN
+created_at
+TIMESTAMP
+
+Chapter 23 – Purchase Tables
+
+Table 18 – Purchases
+Purpose
+Stores purchase invoices received from suppliers.
+Field
+Data Type
+purchase_id
+UUID
+purchase_number
+VARCHAR(50)
+supplier_id
+UUID
+purchase_date
+DATE
+subtotal
+DECIMAL(12,2)
+discount
+DECIMAL(12,2)
+tax
+DECIMAL(12,2)
+shipping_cost
+DECIMAL(12,2)
+total_amount
+DECIMAL(12,2)
+payment_status
+VARCHAR(30)
+remarks
+TEXT
+created_by
+UUID
+created_at
+TIMESTAMP
+Payment Status
+Pending 
+Partial 
+Paid 
+
+Table 19 – Purchase Items
+Purpose
+Stores products included in a purchase invoice.
+Field
+Data Type
+purchase_item_id
+UUID
+purchase_id
+UUID
+product_id
+UUID
+quantity
+INTEGER
+purchase_price
+DECIMAL(12,2)
+discount
+DECIMAL(12,2)
+tax
+DECIMAL(12,2)
+line_total
+DECIMAL(12,2)
+
+Table 20 – Purchase Returns
+Purpose
+Stores returned products sent back to suppliers.
+Field
+Data Type
+purchase_return_id
+UUID
+purchase_id
+UUID
+supplier_id
+UUID
+return_date
+DATE
+return_amount
+DECIMAL(12,2)
+reason
+TEXT
+created_by
+UUID
+created_at
+TIMESTAMP
+
+Chapter 24 – Sales Tables
+
+Table 21 – Sales
+Purpose
+Stores sales invoices.
+Field
+Data Type
+sale_id
+UUID
+invoice_number
+VARCHAR(50)
+customer_id
+UUID
+sale_date
+DATE
+subtotal
+DECIMAL(12,2)
+discount
+DECIMAL(12,2)
+tax
+DECIMAL(12,2)
+total_amount
+DECIMAL(12,2)
+paid_amount
+DECIMAL(12,2)
+due_amount
+DECIMAL(12,2)
+payment_status
+VARCHAR(30)
+cashier_id
+UUID
+remarks
+TEXT
+created_at
+TIMESTAMP
+Payment Status
+Paid 
+Partial 
+Unpaid 
+
+Table 22 – Sale Items
+Purpose
+Stores products sold in each invoice.
+Field
+Data Type
+sale_item_id
+UUID
+sale_id
+UUID
+product_id
+UUID
+imei_id
+UUID
+quantity
+INTEGER
+selling_price
+DECIMAL(12,2)
+discount
+DECIMAL(12,2)
+tax
+DECIMAL(12,2)
+line_total
+DECIMAL(12,2)
+Note: For IMEI-tracked products (e.g., mobile phones), quantity is normally 1 and imei_id is required. For non-IMEI products (e.g., accessories), imei_id is NULL and quantity may be greater than 1.
+
+Table 23 – Sales Returns
+Purpose
+Stores customer returns.
+Field
+Data Type
+sales_return_id
+UUID
+sale_id
+UUID
+customer_id
+UUID
+return_date
+DATE
+refund_amount
+DECIMAL(12,2)
+return_reason
+TEXT
+approved_by
+UUID
+created_at
+TIMESTAMP
+
+Chapter 25 – Payment Tables
+
+Table 24 – Payments
+Purpose
+Stores customer and supplier payment transactions.
+Field
+Data Type
+payment_id
+UUID
+payment_type
+VARCHAR(30)
+reference_id
+UUID
+payment_method
+VARCHAR(50)
+payment_date
+DATE
+amount
+DECIMAL(12,2)
+transaction_reference
+VARCHAR(100)
+notes
+TEXT
+received_by
+UUID
+created_at
+TIMESTAMP
+Payment Types
+Sale Payment 
+Purchase Payment 
+Refund 
+Supplier Refund 
+Payment Methods
+Cash 
+Debit Card 
+Credit Card 
+Bank Transfer 
+Mobile Wallet 
+Mixed Payment 
+
+Chapter 26 – Cash Drawer Tables
+
+Table 25 – Cash Drawers
+Purpose
+Tracks cashier sessions and cash movements.
+Field
+Data Type
+cash_drawer_id
+UUID
+cashier_id
+UUID
+opening_balance
+DECIMAL(12,2)
+closing_balance
+DECIMAL(12,2)
+expected_balance
+DECIMAL(12,2)
+difference
+DECIMAL(12,2)
+opened_at
+TIMESTAMP
+closed_at
+TIMESTAMP
+status
+VARCHAR(30)
+Status
+Open 
+Closed 
+
+Table 26 – Cash Drawer Transactions
+Purpose
+Stores all cash movements during a cashier session.
+Field
+Data Type
+transaction_id
+UUID
+cash_drawer_id
+UUID
+transaction_type
+VARCHAR(30)
+amount
+DECIMAL(12,2)
+reference_number
+VARCHAR(100)
+remarks
+TEXT
+created_at
+TIMESTAMP
+Transaction Types
+Opening Balance 
+Sale 
+Refund 
+Expense 
+Cash In 
+Cash Out 
+Closing Balance 
+
+Recommended Indexes
+Table
+Indexed Columns
+customers
+customer_code, phone
+suppliers
+supplier_code, supplier_name
+purchases
+purchase_number, purchase_date
+purchase_items
+purchase_id, product_id
+sales
+invoice_number, sale_date
+sale_items
+sale_id, product_id, imei_id
+payments
+payment_date, payment_method
+cash_drawers
+cashier_id, status
+
+Summary of Part 4
+Table
+Status
+Customers
+✅
+Suppliers
+✅
+Purchases
+✅
+Purchase Items
+✅
+Purchase Returns
+✅
+Sales
+✅
+Sale Items
+✅
+Sales Returns
+✅
+Payments
+✅
+Cash Drawers
+✅
+Cash Drawer Transactions
+✅
+
+
+
+
+
+
+Chapter 27 – Repair Management Tables
+
+Table 27 – Repairs
+Purpose
+Stores customer repair requests and tracks repair progress.
+Field
+Data Type
+Constraints
+repair_id
+UUID
+PK
+repair_ticket_number
+VARCHAR(50)
+Unique
+customer_id
+UUID
+FK
+product_id
+UUID
+FK, Nullable
+imei_id
+UUID
+FK, Nullable
+technician_id
+UUID
+FK (employees)
+problem_description
+TEXT
+Not Null
+diagnosis
+TEXT
+Nullable
+estimated_cost
+DECIMAL(12,2)
+Default 0
+actual_cost
+DECIMAL(12,2)
+Default 0
+repair_status
+VARCHAR(30)
+Not Null
+received_date
+TIMESTAMP
+Not Null
+expected_delivery_date
+DATE
+Nullable
+delivered_date
+TIMESTAMP
+Nullable
+remarks
+TEXT
+Nullable
+created_at
+TIMESTAMP
+Default Now
+updated_at
+TIMESTAMP
+Default Now
+Repair Status
+Received 
+Under Inspection 
+Waiting for Parts 
+In Progress 
+Ready for Delivery 
+Delivered 
+Cancelled 
+
+Table 28 – Repair Items
+Purpose
+Stores spare parts used during repairs.
+Field
+Data Type
+repair_item_id
+UUID
+repair_id
+UUID
+product_id
+UUID
+quantity
+INTEGER
+unit_price
+DECIMAL(12,2)
+total_price
+DECIMAL(12,2)
+
+Chapter 28 – Warranty Tables
+
+Table 29 – Warranties
+Purpose
+Stores warranty information for sold products.
+Field
+Data Type
+warranty_id
+UUID
+sale_id
+UUID
+sale_item_id
+UUID
+customer_id
+UUID
+product_id
+UUID
+imei_id
+UUID
+warranty_type
+VARCHAR(50)
+warranty_period_months
+INTEGER
+start_date
+DATE
+expiry_date
+DATE
+warranty_status
+VARCHAR(30)
+remarks
+TEXT
+created_at
+TIMESTAMP
+Warranty Status
+Active 
+Expired 
+Claimed 
+Cancelled 
+
+Chapter 29 – Expense Management Tables
+
+Table 30 – Expense Categories
+Purpose
+Stores configurable expense categories.
+Field
+Data Type
+expense_category_id
+UUID
+category_name
+VARCHAR(100)
+description
+TEXT
+is_active
+BOOLEAN
+created_at
+TIMESTAMP
+
+Table 31 – Expenses
+Purpose
+Stores business expenses.
+Field
+Data Type
+expense_id
+UUID
+expense_number
+VARCHAR(50)
+expense_category_id
+UUID
+amount
+DECIMAL(12,2)
+payment_method
+VARCHAR(50)
+expense_date
+DATE
+recorded_by
+UUID
+description
+TEXT
+attachment_url
+TEXT
+created_at
+TIMESTAMP
+
+Chapter 30 – Notification Tables
+
+Table 32 – Notifications
+Purpose
+Stores system notifications.
+Field
+Data Type
+notification_id
+UUID
+user_id
+UUID
+title
+VARCHAR(200)
+message
+TEXT
+notification_type
+VARCHAR(50)
+is_read
+BOOLEAN
+created_at
+TIMESTAMP
+Notification Types
+Low Stock 
+New Sale 
+Purchase 
+Repair 
+Warranty 
+Payment 
+System 
+
+Chapter 31 – Audit Log Tables
+
+Table 33 – Audit Logs
+Purpose
+Stores important system activities.
+Field
+Data Type
+audit_log_id
+UUID
+user_id
+UUID
+module
+VARCHAR(100)
+action
+VARCHAR(100)
+description
+TEXT
+ip_address
+VARCHAR(50)
+user_agent
+TEXT
+created_at
+TIMESTAMP
+
+Chapter 32 – Settings Tables
+
+Table 34 – Settings
+Purpose
+Stores system configuration.
+Field
+Data Type
+setting_id
+UUID
+setting_key
+VARCHAR(150)
+setting_value
+TEXT
+description
+TEXT
+updated_by
+UUID
+updated_at
+TIMESTAMP
+
+Chapter 33 – Data Dictionary
+The following standards should be used throughout the database.
+Item
+Standard
+Primary Key
+UUID
+Text
+VARCHAR or TEXT
+Currency
+DECIMAL(12,2)
+Date
+DATE
+Date & Time
+TIMESTAMP
+Boolean
+BOOLEAN
+Images
+Cloudinary URL
+Password
+Hashed Password
+IDs
+UUID
+Character Encoding
+UTF-8
+
+Chapter 34 – Indexing Strategy
+To improve performance, indexes should be created on frequently searched columns.
+Primary Indexes
+All Primary Keys 
+All Foreign Keys 
+
+Search Indexes
+username 
+email 
+phone 
+customer_code 
+supplier_code 
+sku 
+barcode 
+imei_number 
+invoice_number 
+purchase_number 
+repair_ticket_number 
+
+Reporting Indexes
+sale_date 
+purchase_date 
+expense_date 
+payment_date 
+created_at 
+
+Chapter 35 – Backup & Recovery
+Backup Strategy
+Daily automated database backup. 
+Weekly full backup. 
+Backup before system upgrades. 
+Secure off-site backup storage. 
+
+Recovery Strategy
+Restore from the latest verified backup. 
+Validate database consistency after recovery. 
+Log recovery operations for audit purposes. 
+
+Chapter 36 – Database Security
+Security Requirements
+Use SSL/TLS for database connections. 
+Restrict database access by user roles. 
+Store passwords using a secure hashing algorithm. 
+Encrypt sensitive configuration values. 
+Validate all database inputs. 
+Protect against SQL Injection by using Prisma ORM and parameterized queries. 
+Record database-related security events in audit logs. 
+
+Chapter 37 – Database Maintenance
+Maintenance Activities
+Monitor database performance. 
+Rebuild indexes when required. 
+Archive historical records. 
+Remove obsolete temporary data. 
+Monitor storage usage. 
+Review slow-running queries. 
+Apply PostgreSQL updates during maintenance windows. 
+
+Chapter 38 – Database Design Summary
+The Mobile Shop POS database is designed using a modular relational structure that supports:
+Authentication & Authorization 
+Product Management 
+IMEI Tracking 
+Inventory Management 
+Sales & Billing 
+Purchases 
+Customer Management 
+Supplier Management 
+Repair Management 
+Warranty Management 
+Expense Tracking 
+Notifications 
+Audit Logging 
+System Configuration 
+The design emphasizes:
+Data integrity through foreign key relationships. 
+Reduced redundancy through normalization. 
+Scalability for future Pharmacy POS, Mart POS, and Multi-Branch support. 
+Performance through appropriate indexing. 
+Security using role-based access, encrypted credentials, and audit logging. 
+Maintainability through consistent naming conventions and modular table organization. 
+
+Database Statistics
+Category
+Count
+Total Tables
+34
+Core Business Modules
+14
+Master Tables
+13
+Transaction Tables
+11
+Supporting Tables
+10
+Note: Some tables serve multiple modules (for example, payments, audit_logs, and settings), so module counts and table categories may overlap.
+
+
+📕 Volume 4 – System Architecture & Technical Design Document (SAD/TDD)
+Part 1 – Project Architecture Foundation
+
+Cover Page
+Document Name: System Architecture & Technical Design Document (SAD/TDD)
+Project Name: Mobile Shop Point of Sale (POS) System
+Version: 1.0
+Technology Stack
+Frontend: Next.js 
+Backend: Node.js (Express.js) 
+Database: PostgreSQL 
+ORM: Prisma ORM 
+Image Storage: Cloudinary 
+Prepared By: Solution Architect
+Document Status: Draft
+Date: August 2026
+
+Chapter 1 – Document Control
+Field
+Value
+Document Name
+System Architecture & Technical Design Document
+Project
+Mobile Shop POS System
+Version
+1.0
+Status
+Draft
+Architecture
+Three-Tier Architecture
+Frontend
+Next.js
+Backend
+Node.js + Express.js
+Database
+PostgreSQL
+ORM
+Prisma ORM
+
+Chapter 2 – Revision History
+Version
+Date
+Description
+0.1
+August 2026
+Initial Draft
+0.5
+August 2026
+Technical Review
+1.0
+August 2026
+Approved Version
+
+Chapter 3 – Table of Contents
+Introduction 
+System Architecture 
+Technology Stack 
+Application Layers 
+Project Structure 
+Coding Standards 
+Design Principles 
+Development Standards 
+High-Level Architecture 
+Deployment Overview 
+
+Chapter 4 – Introduction
+Purpose
+This document describes the technical architecture and implementation approach for the Mobile Shop POS System. It provides a blueprint for developers to build, maintain, and scale the application.
+
+Objectives
+Define the overall architecture. 
+Standardize the project structure. 
+Describe communication between system components. 
+Establish development standards. 
+Ensure scalability and maintainability. 
+Support future expansion for Pharmacy POS, Mart POS, and Multi-Branch operations. 
+
+Chapter 5 – System Architecture
+The application follows a Three-Tier Architecture.
+Presentation Layer
+Responsible for the user interface.
+Technology:
+Next.js 
+React 
+TypeScript 
+Tailwind CSS 
+Responsibilities:
+Display data 
+Handle user interactions 
+Form validation 
+API requests 
+Authentication UI 
+
+Application Layer
+Responsible for business logic.
+Technology:
+Node.js 
+Express.js 
+TypeScript 
+Responsibilities:
+Authentication 
+Authorization 
+Business rules 
+Validation 
+API processing 
+Database communication 
+File upload handling 
+
+Data Layer
+Responsible for persistent storage.
+Technology:
+PostgreSQL 
+Prisma ORM 
+Responsibilities:
+Store data 
+Retrieve data 
+Transactions 
+Data integrity 
+Relationships 
+Indexing 
+
+Chapter 6 – Technology Stack
+Layer
+Technology
+Frontend
+Next.js
+Language
+TypeScript
+Styling
+Tailwind CSS
+Backend
+Node.js
+Framework
+Express.js
+ORM
+Prisma ORM
+Database
+PostgreSQL
+Authentication
+JWT
+Password Hashing
+bcrypt
+Image Storage
+Cloudinary
+API
+REST
+Validation
+Zod or Joi
+Logging
+Winston or Pino
+File Upload
+Multer
+Package Manager
+npm
+
+Chapter 7 – Application Layers
+Frontend Layer
+Main responsibilities:
+User Interface 
+Routing 
+API Integration 
+State Management 
+Authentication 
+Dashboard 
+Forms 
+Reports 
+
+Backend Layer
+Main responsibilities:
+REST APIs 
+Business Logic 
+Database Operations 
+Authentication 
+Authorization 
+Validation 
+Logging 
+Error Handling 
+
+Database Layer
+Main responsibilities:
+Data Storage 
+Relationships 
+Transactions 
+Constraints 
+Indexes 
+Backup 
+
+Chapter 8 – Project Structure
+Frontend Structure (Next.js)
+frontend/
+│
+├── app/
+├── components/
+├── features/
+├── layouts/
+├── hooks/
+├── services/
+├── store/
+├── lib/
+├── utils/
+├── types/
+├── styles/
+├── public/
+└── middleware.ts
+Folder Description
+Folder
+Purpose
+app
+App Router pages
+components
+Reusable UI components
+features
+Feature-based modules
+layouts
+Shared layouts
+hooks
+Custom React hooks
+services
+API communication
+store
+Global state management
+lib
+Shared libraries
+utils
+Utility functions
+types
+TypeScript interfaces and types
+styles
+Global styling
+public
+Static assets
+
+Backend Structure (Node.js)
+backend/
+│
+├── src/
+│   ├── config/
+│   ├── modules/
+│   ├── middleware/
+│   ├── routes/
+│   ├── services/
+│   ├── repositories/
+│   ├── controllers/
+│   ├── validators/
+│   ├── prisma/
+│   ├── utils/
+│   ├── constants/
+│   ├── types/
+│   ├── jobs/
+│   └── server.ts
+│
+├── prisma/
+├── uploads/
+└── package.json
+Folder Description
+Folder
+Purpose
+config
+Environment and application configuration
+modules
+Feature-based modules
+middleware
+Authentication and request middleware
+routes
+API route definitions
+services
+Business logic
+repositories
+Database access layer
+controllers
+HTTP request handlers
+validators
+Request validation
+prisma
+Prisma schema and migrations
+utils
+Helper utilities
+constants
+Shared constants
+types
+TypeScript types
+jobs
+Scheduled background tasks
+
+Chapter 9 – Coding Standards
+Naming Conventions
+Files
+Use:
+camelCase 
+PascalCase (React components) 
+Examples:
+productController.ts
+saleService.ts
+customerRepository.ts
+DashboardCard.tsx
+
+Variables
+customerName
+productPrice
+totalAmount
+
+Functions
+createProduct()
+updateSale()
+deleteCustomer()
+generateInvoice()
+
+Classes
+ProductService
+CustomerRepository
+AuthController
+
+Constants
+MAX_UPLOAD_SIZE
+DEFAULT_TAX_RATE
+JWT_SECRET
+
+Chapter 10 – Design Principles
+The application should follow these software engineering principles:
+Separation of Concerns (SoC) 
+Single Responsibility Principle (SRP) 
+Don't Repeat Yourself (DRY) 
+Keep It Simple (KISS) 
+Open/Closed Principle (OCP) 
+Dependency Injection where appropriate 
+Modular Design 
+Reusable Components 
+
+Chapter 11 – Development Standards
+Source Control
+Git for version control. 
+Feature branches for new development. 
+Pull requests before merging. 
+Code reviews for all major changes. 
+
+Code Quality
+TypeScript strict mode. 
+ESLint for linting. 
+Prettier for formatting. 
+Consistent naming conventions. 
+Meaningful commit messages. 
+
+Error Handling
+Standard API response format. 
+Centralized error handling middleware. 
+Validation before business logic. 
+Proper HTTP status codes. 
+
+Chapter 12 – High-Level Architecture
+                Users
+                  │
+▼
+        Next.js Frontend
+                  │
+          REST API (HTTPS)
+                  │
+▼
+       Node.js + Express.js
+                  │
+        Business Services
+                  │
+         Prisma ORM Layer
+                  │
+▼
+           PostgreSQL Database
+                  │
+          Cloudinary (Images)
+
+Chapter 13 – Deployment Overview
+Production Components
+Web Browser 
+Next.js Frontend 
+Node.js API Server 
+PostgreSQL Database 
+Cloudinary 
+Reverse Proxy (Nginx) 
+SSL Certificate 
+
+Hosting Considerations
+The architecture should support deployment to:
+VPS 
+Dedicated Server 
+Docker Containers 
+Cloud Platforms (AWS, Azure, Google Cloud, DigitalOcean) 
+
+Summary of Part 1
+Chapter
+Status
+Cover Page
+✅
+Document Control
+✅
+Revision History
+✅
+Table of Contents
+✅
+Introduction
+✅
+System Architecture
+✅
+Technology Stack
+✅
+Application Layers
+✅
+Project Structure
+✅
+Coding Standards
+✅
+Design Principles
+✅
+Development Standards
+✅
+High-Level Architecture
+✅
+Deployment Overview
+✅
+
+
+
+
+
+
+
+Chapter 14 – Module-Based Architecture
+Purpose
+The backend should follow a feature-based modular architecture, where each business feature is developed as an independent module. This improves maintainability, scalability, and code organization.
+Each module should contain its own:
+Routes 
+Controllers 
+Services 
+Repositories 
+Validators 
+DTOs 
+Interfaces 
+Types 
+
+Proposed Modules
+Core Modules
+Authentication 
+Users 
+Roles 
+Permissions 
+Dashboard 
+
+Master Modules
+Brands 
+Categories 
+Product Models 
+Products 
+Inventory 
+Customers 
+Suppliers 
+Employees 
+
+Transaction Modules
+Purchases 
+Purchase Returns 
+Sales 
+Sales Returns 
+Payments 
+Cash Drawer 
+
+Service Modules
+Repairs 
+Warranties 
+
+Administration Modules
+Expenses 
+Notifications 
+Audit Logs 
+Reports 
+Settings 
+
+Chapter 15 – Feature Folder Structure
+Each module should follow a consistent folder structure.
+Example:
+modules/
+└── products/
+├── product.routes.ts
+├── product.controller.ts
+├── product.service.ts
+├── product.repository.ts
+├── product.validation.ts
+├── product.dto.ts
+├── product.types.ts
+├── product.constants.ts
+    └── index.ts
+
+Responsibilities
+File
+Responsibility
+Routes
+Define API endpoints
+Controller
+Handle HTTP requests and responses
+Service
+Implement business logic
+Repository
+Access the database using Prisma
+Validation
+Validate request data
+DTO
+Define request/response objects
+Types
+Shared TypeScript types
+Constants
+Module-specific constants
+
+Chapter 16 – Authentication Architecture
+Authentication Method
+The system shall use JWT (JSON Web Token) for authentication.
+
+Login Flow
+User Login
+     │
+▼
+Validate Credentials
+     │
+▼
+Generate JWT Access Token
+     │
+▼
+Return Token
+     │
+▼
+Client Stores Token
+     │
+▼
+Authenticated API Requests
+
+Authentication Process
+User submits username/email and password. 
+Backend validates credentials. 
+Password is verified using bcrypt. 
+JWT access token is generated. 
+Token is returned to the client. 
+Client includes the token in the Authorization header for subsequent requests. 
+Protected endpoints validate the token before processing requests. 
+
+JWT Payload
+The token should contain:
+User ID 
+Username 
+Employee ID 
+Role IDs 
+Issued Time 
+Expiration Time 
+
+Chapter 17 – Authorization (RBAC)
+Purpose
+The application shall use Role-Based Access Control (RBAC) to manage permissions.
+
+Default Roles
+Owner 
+Manager 
+Cashier 
+Inventory Staff 
+Technician 
+Accountant 
+
+Permission Types
+Each module may support:
+View 
+Create 
+Update 
+Delete 
+Export 
+Print 
+Approve 
+Cancel 
+
+Example Permission Matrix
+Module
+Owner
+Manager
+Cashier
+Inventory
+Products
+✓
+✓
+View
+✓
+Sales
+✓
+✓
+✓
+View
+Purchases
+✓
+✓
+View
+✓
+Reports
+✓
+✓
+Limited
+Limited
+Settings
+✓
+Limited
+✗
+✗
+
+Chapter 18 – Request Lifecycle
+Every API request should follow the same processing flow.
+Client Request
+      │
+▼
+Express Route
+      │
+▼
+Authentication Middleware
+      │
+▼
+Authorization Middleware
+      │
+▼
+Validation
+      │
+▼
+Controller
+      │
+▼
+Service
+      │
+▼
+Repository
+      │
+▼
+Prisma ORM
+      │
+▼
+PostgreSQL
+      │
+▼
+Response
+
+Request Processing Steps
+Request reaches Express route. 
+Authentication middleware verifies JWT. 
+Authorization middleware checks permissions. 
+Validation middleware validates request data. 
+Controller receives validated request. 
+Service executes business logic. 
+Repository performs database operations. 
+Response is returned to the client. 
+
+Chapter 19 – API Layer Design
+API Design Principles
+RESTful architecture 
+Resource-based endpoints 
+JSON request/response 
+Versioned APIs (e.g., /api/v1) 
+Stateless communication 
+
+Standard API Response
+Success Response
+{
+  "success": true,
+  "message": "Operation completed successfully.",
+  "data": {}
+}
+
+Error Response
+{
+  "success": false,
+  "message": "Validation failed.",
+  "errors": []
+}
+
+Chapter 20 – Controller–Service–Repository Pattern
+Purpose
+This pattern separates responsibilities into distinct layers.
+
+Controller
+Responsibilities:
+Receive HTTP requests 
+Validate incoming data (after middleware) 
+Call service methods 
+Return HTTP responses 
+
+Service
+Responsibilities:
+Execute business rules 
+Coordinate workflows 
+Handle transactions 
+Call repositories 
+
+Repository
+Responsibilities:
+Execute database queries 
+Use Prisma ORM 
+Map database operations 
+Return data to services 
+
+Architecture Flow
+Controller
+     │
+▼
+Service
+     │
+▼
+Repository
+     │
+▼
+Prisma ORM
+     │
+▼
+PostgreSQL
+
+Chapter 21 – Prisma ORM Integration
+Purpose
+Prisma ORM will be the primary interface for interacting with PostgreSQL.
+
+Responsibilities
+CRUD operations 
+Database transactions 
+Query optimization 
+Relationship management 
+Migrations 
+Schema generation 
+
+Prisma Components
+schema.prisma 
+Prisma Client 
+Migration files 
+Seed scripts 
+
+Best Practices
+Use Prisma Client as a singleton. 
+Avoid raw SQL unless necessary. 
+Use transactions for multi-step operations. 
+Keep database logic inside repositories. 
+
+Chapter 22 – Database Transaction Strategy
+Purpose
+Ensure that related database operations succeed or fail together.
+
+Transactions Required For
+Sales creation 
+Purchase creation 
+Sales returns 
+Purchase returns 
+Stock adjustments 
+Repair completion 
+Warranty creation 
+
+Example Workflow
+Creating a sale should:
+Create the sale record. 
+Create sale items. 
+Update inventory. 
+Update IMEI status (if applicable). 
+Create payment record (if payment received). 
+Create warranty record (if applicable). 
+Write an audit log. 
+If any step fails, the entire transaction should be rolled back.
+
+Chapter 23 – Exception Handling Architecture
+Error Categories
+Validation Errors
+Examples:
+Missing required fields 
+Invalid email 
+Invalid IMEI 
+
+Business Rule Errors
+Examples:
+Insufficient stock 
+Duplicate IMEI 
+Product inactive 
+Warranty expired 
+
+Authentication Errors
+Examples:
+Invalid credentials 
+Expired token 
+Missing token 
+
+Authorization Errors
+Examples:
+Permission denied 
+Role restriction 
+
+Database Errors
+Examples:
+Foreign key violation 
+Unique constraint violation 
+Connection failure 
+
+Internal Server Errors
+Examples:
+Unexpected exceptions 
+External service failures 
+Unhandled application errors 
+
+Error Handling Principles
+Use centralized error-handling middleware. 
+Return consistent error response formats. 
+Log server-side errors for troubleshooting. 
+Do not expose sensitive system details in API responses. 
+Map errors to appropriate HTTP status codes. 
+
+Summary of Part 2
+Chapter
+Status
+Module-Based Architecture
+✅
+Feature Folder Structure
+✅
+Authentication Architecture
+✅
+Authorization (RBAC)
+✅
+Request Lifecycle
+✅
+API Layer Design
+✅
+Controller–Service–Repository Pattern
+✅
+Prisma ORM Integration
+✅
+Database Transaction Strategy
+✅
+Exception Handling Architecture
+✅
+
+
+Chapter 24 – Next.js Application Architecture
+Purpose
+The frontend is responsible for providing a responsive, secure, and user-friendly interface for the Mobile Shop POS System.
+The application should be built using Next.js (App Router) with TypeScript and should communicate with the backend through REST APIs.
+
+Frontend Responsibilities
+User Authentication 
+Dashboard 
+Product Management 
+Sales Management 
+Purchase Management 
+Inventory Management 
+Customer Management 
+Supplier Management 
+Repair Management 
+Warranty Management 
+Reports 
+User Management 
+Settings 
+
+Architecture Overview
+User
+   │
+▼
+Next.js Pages
+   │
+▼
+Components
+   │
+▼
+Services (API Layer)
+   │
+▼
+REST API
+   │
+▼
+Node.js Backend
+
+Chapter 25 – Frontend Folder Structure
+Recommended Structure
+frontend/
+│
+├── app/
+├── components/
+│   ├── common/
+│   ├── layout/
+│   ├── forms/
+│   ├── tables/
+│   ├── modals/
+│   ├── cards/
+│   ├── charts/
+│   └── ui/
+│
+├── features/
+│   ├── auth/
+│   ├── dashboard/
+│   ├── products/
+│   ├── inventory/
+│   ├── sales/
+│   ├── purchases/
+│   ├── customers/
+│   ├── suppliers/
+│   ├── repairs/
+│   ├── reports/
+│   ├── settings/
+│   └── users/
+│
+├── services/
+├── hooks/
+├── store/
+├── lib/
+├── types/
+├── utils/
+├── constants/
+├── styles/
+├── public/
+└── middleware.ts
+
+Chapter 26 – UI Component Architecture
+Purpose
+The UI should be built using reusable components to maintain consistency across the application.
+
+Component Categories
+Layout Components
+Header 
+Sidebar 
+Footer 
+Breadcrumb 
+Page Container 
+
+Form Components
+Text Input 
+Number Input 
+Select 
+Checkbox 
+Radio Button 
+Date Picker 
+File Upload 
+Search Box 
+
+Data Components
+Table 
+Data Grid 
+Pagination 
+Filters 
+Search Bar 
+
+Feedback Components
+Alert 
+Toast Notification 
+Loading Spinner 
+Confirmation Dialog 
+Error Message 
+Empty State 
+
+Dashboard Components
+Statistic Cards 
+Sales Chart 
+Revenue Chart 
+Inventory Summary 
+Recent Sales 
+Low Stock List 
+Notifications Panel 
+
+Chapter 27 – State Management Strategy
+Purpose
+Manage shared application state efficiently.
+
+Local State
+Use for:
+Form values 
+Dialog visibility 
+Selected rows 
+Search text 
+Filters 
+
+Global State
+Use for:
+Logged-in User 
+Authentication 
+Permissions 
+Theme 
+Notifications 
+Shopping Cart / Current Sale 
+Application Settings 
+
+Recommended Store Structure
+store/
+│
+├── authStore
+├── userStore
+├── productStore
+├── inventoryStore
+├── salesStore
+├── purchaseStore
+├── customerStore
+├── reportStore
+└── settingsStore
+You can implement this using a state management library such as Zustand or Redux Toolkit, depending on project complexity.
+
+Chapter 28 – API Communication Layer
+Purpose
+All backend communication should pass through a centralized API service layer.
+
+Responsibilities
+Send HTTP requests 
+Attach authentication token 
+Handle responses 
+Handle errors 
+Refresh authentication (if implemented) 
+Upload files 
+
+API Structure
+services/
+│
+├── api.ts
+├── auth.service.ts
+├── product.service.ts
+├── sale.service.ts
+├── purchase.service.ts
+├── inventory.service.ts
+├── customer.service.ts
+├── report.service.ts
+└── upload.service.ts
+
+API Standards
+JSON request/response 
+Authorization header for protected routes 
+Centralized error handling 
+Configurable API base URL 
+
+Chapter 29 – Frontend Authentication Flow
+Login Flow
+Login Page
+      │
+▼
+Submit Credentials
+      │
+▼
+Authentication API
+      │
+▼
+Receive JWT Token
+      │
+▼
+Store Authentication Data
+      │
+▼
+Redirect to Dashboard
+
+Logout Flow
+Logout
+   │
+▼
+Clear Authentication Data
+   │
+▼
+Redirect to Login
+
+Authentication Features
+Login 
+Logout 
+Remember Session (optional) 
+Password Reset 
+Profile Update 
+Change Password 
+
+Chapter 30 – Route Protection
+Public Routes
+Login 
+Forgot Password 
+Reset Password 
+
+Protected Routes
+Dashboard 
+Products 
+Inventory 
+Sales 
+Purchases 
+Customers 
+Suppliers 
+Repairs 
+Reports 
+Settings 
+User Management 
+
+Authorization Checks
+Each protected route should verify:
+User authentication 
+User role 
+Required permissions 
+Unauthorized users should be redirected or shown an access denied page.
+
+Chapter 31 – Form Validation
+Purpose
+Ensure that user input is valid before sending data to the backend.
+
+Validation Rules
+Required fields 
+Email format 
+Phone number format 
+Numeric values 
+Positive quantities 
+Valid dates 
+IMEI format 
+Barcode format 
+
+Validation Locations
+Client-side validation for immediate feedback 
+Server-side validation for security and data integrity 
+
+Chapter 32 – Cloudinary Image Upload Flow
+Purpose
+Manage product and profile images using Cloudinary.
+
+Upload Process
+Select Image
+      │
+▼
+Validate File
+      │
+▼
+Upload Request
+      │
+▼
+Node.js Backend
+      │
+▼
+Cloudinary
+      │
+▼
+Image URL Returned
+      │
+▼
+Save URL in PostgreSQL
+
+Supported Image Types
+JPG 
+JPEG 
+PNG 
+WEBP 
+
+Image Validation
+Maximum file size (configurable) 
+Allowed file types 
+Image dimensions (optional) 
+Virus/malicious file checks if required 
+
+Chapter 33 – Dashboard Architecture
+Purpose
+Provide a centralized overview of business operations.
+
+Dashboard Widgets
+Business Summary
+Total Sales 
+Total Purchases 
+Total Revenue 
+Total Expenses 
+Profit 
+
+Inventory Summary
+Total Products 
+Current Stock 
+Low Stock 
+Out of Stock 
+
+Customer Summary
+Total Customers 
+New Customers 
+Outstanding Balances 
+
+Sales Summary
+Today's Sales 
+Weekly Sales 
+Monthly Sales 
+
+Repair Summary
+Pending Repairs 
+Completed Repairs 
+Ready for Delivery 
+
+Notifications
+Low Stock Alerts 
+Warranty Expiry 
+Pending Payments 
+Recent Activities 
+
+Dashboard Features
+Date range filters 
+Quick action buttons 
+Refresh data 
+Responsive layout 
+Role-based widget visibility 
+
+Summary of Part 3
+Chapter
+Status
+Next.js Application Architecture
+✅
+Frontend Folder Structure
+✅
+UI Component Architecture
+✅
+State Management Strategy
+✅
+API Communication Layer
+✅
+Frontend Authentication Flow
+✅
+Route Protection
+✅
+Form Validation
+✅
+Cloudinary Image Upload Flow
+✅
+Dashboard Architecture
+✅
+
+
+
+Chapter 34 – API Design Standards
+Purpose
+The backend APIs should follow consistent design standards to improve maintainability, readability, and integration.
+
+API Versioning
+All APIs should be versioned.
+Example:
+/api/v1/auth/login
+/api/v1/products
+/api/v1/sales
+
+HTTP Methods
+Method
+Purpose
+GET
+Retrieve data
+POST
+Create data
+PUT
+Replace a record
+PATCH
+Partially update a record
+DELETE
+Delete a record
+
+HTTP Status Codes
+Code
+Meaning
+200
+Success
+201
+Resource Created
+204
+No Content
+400
+Bad Request
+401
+Unauthorized
+403
+Forbidden
+404
+Resource Not Found
+409
+Conflict
+422
+Validation Error
+500
+Internal Server Error
+
+API Response Format
+Success
+{
+  "success": true,
+  "message": "Operation completed successfully.",
+  "data": {}
+}
+Error
+{
+  "success": false,
+  "message": "Validation failed.",
+  "errors": []
+}
+
+Chapter 35 – Logging Architecture
+Purpose
+Logging helps monitor application activity, troubleshoot issues, and maintain auditability.
+
+Log Categories
+Application Logs
+Server Start 
+Server Stop 
+Module Initialization 
+
+Request Logs
+API Endpoint 
+HTTP Method 
+Response Time 
+Status Code 
+User ID (if authenticated) 
+
+Database Logs
+Database Connection 
+Query Errors 
+Transaction Failures 
+
+Security Logs
+Login Attempts 
+Failed Authentication 
+Permission Denied 
+Password Changes 
+
+Business Logs
+Sales Created 
+Purchases Created 
+Stock Adjustments 
+Repair Updates 
+Warranty Claims 
+
+Log Levels
+INFO 
+WARN 
+ERROR 
+DEBUG (Development Only) 
+
+Chapter 36 – Monitoring & Health Checks
+Purpose
+Monitor application health and ensure availability.
+
+Health Check Endpoints
+GET /health
+GET /health/database
+GET /health/storage
+
+Health Checks
+API Server Status 
+Database Connectivity 
+Cloudinary Connectivity 
+Disk Space 
+Memory Usage 
+CPU Usage 
+
+Monitoring Metrics
+Active Users 
+API Response Time 
+Failed Requests 
+Database Latency 
+Error Rate 
+Storage Usage 
+
+Chapter 37 – Caching Strategy
+Purpose
+Improve performance by reducing repeated database queries.
+
+Data Suitable for Caching
+System Settings 
+User Permissions 
+Product Categories 
+Brands 
+Dashboard Summary (short duration) 
+Frequently Used Reports 
+
+Cache Invalidation
+Cache should be refreshed when:
+Settings change 
+Product categories are updated 
+Brands are modified 
+Permissions are updated 
+
+Future Enhancement
+For larger deployments, integrate Redis as a distributed cache.
+
+Chapter 38 – Background Jobs & Scheduled Tasks
+Purpose
+Handle tasks that do not need to execute during the user's request.
+
+Scheduled Jobs
+Daily Jobs
+Database Backup 
+Sales Summary 
+Inventory Summary 
+Audit Log Cleanup 
+
+Weekly Jobs
+Full Database Backup 
+Performance Reports 
+
+Monthly Jobs
+Financial Summary 
+Profit Reports 
+Data Archiving 
+
+Event-Based Jobs
+Send Notifications 
+Generate Reports 
+Warranty Expiry Alerts 
+Low Stock Alerts 
+Cleanup Temporary Files 
+
+Chapter 39 – File Storage Architecture
+Purpose
+Manage storage of images and downloadable files.
+
+File Types
+Product Images 
+Employee Photos 
+Customer Attachments 
+Repair Documents 
+Expense Receipts 
+Exported Reports 
+
+Storage Flow
+User Upload
+      │
+▼
+Next.js Frontend
+      │
+▼
+Node.js Backend
+      │
+▼
+Cloudinary
+      │
+▼
+Image URL
+      │
+▼
+PostgreSQL Database
+
+Storage Rules
+Store only file URLs in PostgreSQL. 
+Validate file type and size before upload. 
+Remove orphaned files when appropriate. 
+Organize Cloudinary folders by module (e.g., products/, employees/, repairs/). 
+
+Chapter 40 – Security Architecture
+Authentication Security
+JWT Authentication 
+Password Hashing (bcrypt) 
+Token Expiration 
+Secure Password Reset 
+
+Authorization Security
+Role-Based Access Control (RBAC) 
+Module-Level Permissions 
+Action-Level Permissions 
+Route Protection 
+
+API Security
+HTTPS Only 
+Input Validation 
+Rate Limiting 
+CORS Configuration 
+Secure HTTP Headers 
+
+Database Security
+Restricted Database Users 
+Parameterized Queries (via Prisma) 
+Backup Encryption 
+Regular Security Updates 
+
+File Upload Security
+Validate MIME types 
+Limit file sizes 
+Reject unsupported formats 
+Sanitize file metadata where applicable 
+
+Chapter 41 – Deployment Architecture
+Production Components
+Users
+   │
+▼
+Internet
+   │
+▼
+Nginx Reverse Proxy
+   │
+├──────────────┐
+▼▼
+Next.js      Node.js API
+Frontend      Backend
+                  │
+▼
+             PostgreSQL
+                  │
+▼
+             Cloudinary
+
+Deployment Flow
+User accesses the application. 
+Nginx receives the request. 
+Static/frontend requests are served by Next.js. 
+API requests are forwarded to the Node.js backend. 
+Backend interacts with PostgreSQL and Cloudinary as required. 
+Response is returned through Nginx. 
+
+Chapter 42 – Docker & Containerization
+Purpose
+Use Docker to standardize development and deployment environments.
+
+Recommended Containers
+Next.js Frontend 
+Node.js Backend 
+PostgreSQL 
+Nginx 
+
+Development Environment
+Docker Compose
+│
+├── frontend
+├── backend
+├── postgres
+└── nginx
+
+Benefits
+Consistent environments 
+Easy onboarding 
+Simplified deployment 
+Better scalability 
+
+Chapter 43 – Reverse Proxy (Nginx)
+Purpose
+Nginx acts as the entry point for incoming requests.
+
+Responsibilities
+Reverse Proxy 
+HTTPS Termination 
+Load Balancing (future) 
+Compression (Gzip/Brotli) 
+Static Asset Caching 
+Security Headers 
+
+Request Flow
+Browser
+   │
+▼
+Nginx
+   │
+├──────────────┐
+▼▼
+Next.js      Node.js API
+
+Chapter 44 – Environment Configuration
+Environment Files
+Separate environment configurations should be maintained for:
+Development 
+Testing 
+Staging 
+Production 
+
+Typical Environment Variables
+Frontend
+Application URL 
+API Base URL 
+Backend
+Server Port 
+JWT Secret 
+Database URL 
+Cloudinary Credentials 
+CORS Origins 
+Logging Level 
+
+Configuration Principles
+Do not commit secrets to version control. 
+Use environment variables for all sensitive values. 
+Validate required configuration during application startup. 
+
+Summary of Part 4
+Chapter
+Status
+API Design Standards
+✅
+Logging Architecture
+✅
+Monitoring & Health Checks
+✅
+Caching Strategy
+✅
+Background Jobs
+✅
+File Storage Architecture
+✅
+Security Architecture
+✅
+Deployment Architecture
+✅
+Docker & Containerization
+✅
+Reverse Proxy (Nginx)
+✅
+Environment Configuration
+✅
+
+Chapter 45 – Sequence Diagrams (Textual)
+Purpose
+This chapter describes the sequence of operations for major business processes.
+
+45.1 User Login
+User
+   │
+▼
+Login Page
+   │
+▼
+Authentication API
+   │
+▼
+Validate User
+   │
+▼
+Generate JWT
+   │
+▼
+Return Token
+   │
+▼
+Dashboard
+
+45.2 Product Creation
+User
+   │
+▼
+Product Form
+   │
+▼
+Validation
+   │
+▼
+Upload Image (Cloudinary)
+   │
+▼
+Save Product
+   │
+▼
+PostgreSQL
+   │
+▼
+Success Response
+
+45.3 Purchase Process
+User
+   │
+▼
+Create Purchase
+   │
+▼
+Validate Supplier
+   │
+▼
+Save Purchase
+   │
+▼
+Save Purchase Items
+   │
+▼
+Update Inventory
+   │
+▼
+Register IMEI Numbers
+   │
+▼
+Success
+
+45.4 Sales Process
+Cashier
+   │
+▼
+Select Customer
+   │
+▼
+Select Products
+   │
+▼
+Validate Stock
+   │
+▼
+Generate Invoice
+   │
+▼
+Save Sale
+   │
+▼
+Update Inventory
+   │
+▼
+Update IMEI Status
+   │
+▼
+Create Warranty
+   │
+▼
+Receive Payment
+   │
+▼
+Print Receipt
+
+45.5 Repair Process
+Customer
+   │
+▼
+Register Repair
+   │
+▼
+Assign Technician
+   │
+▼
+Repair Device
+   │
+▼
+Update Status
+   │
+▼
+Complete Repair
+   │
+▼
+Deliver Device
+
+Chapter 46 – Component Architecture
+The system is divided into independent components.
+
+Frontend Components
+Authentication 
+Dashboard 
+Product Management 
+Inventory 
+Sales 
+Purchases 
+Customers 
+Suppliers 
+Repairs 
+Reports 
+Settings 
+
+Backend Components
+API Gateway (Express Routes) 
+Controllers 
+Services 
+Repositories 
+Validation Layer 
+Authentication Middleware 
+Authorization Middleware 
+Logging Service 
+File Upload Service 
+Notification Service 
+
+Database Components
+PostgreSQL 
+Prisma ORM 
+Migration Engine 
+Seed Data 
+
+External Components
+Cloudinary 
+Email Service (Future) 
+SMS Service (Future) 
+
+Chapter 47 – Integration Architecture
+Internal Integration
+Next.js
+     │
+ REST API
+     │
+Node.js
+     │
+ Prisma ORM
+     │
+PostgreSQL
+
+External Integration
+Node.js
+   │
+├── Cloudinary
+├── Email Service (Future)
+├── SMS Gateway (Future)
+├── Payment Gateway (Future)
+   └── WhatsApp API (Future)
+
+Chapter 48 – External Services
+Cloudinary
+Purpose:
+Product Images 
+Employee Photos 
+Repair Images 
+Expense Attachments 
+
+Email Service (Future)
+Purpose:
+Password Reset 
+Invoice Email 
+Purchase Notifications 
+Reports 
+
+SMS Service (Future)
+Purpose:
+OTP Verification 
+Order Notifications 
+Warranty Expiry Alerts 
+
+Payment Gateway (Future)
+Purpose:
+Online Payments 
+Customer Deposits 
+Refund Processing 
+
+Chapter 49 – Scalability Strategy
+The architecture is designed to support future growth without major redesign.
+
+Phase 1
+Single Shop 
+Single Database 
+Single Server 
+
+Phase 2
+Multi-User 
+Improved Reporting 
+Enhanced Security 
+Background Jobs 
+
+Phase 3
+Multi-Branch Support 
+Branch Inventory 
+Branch Transfers 
+Centralized Reporting 
+
+Phase 4
+Additional POS Solutions
+Pharmacy POS 
+Mart POS 
+Electronics POS 
+
+Phase 5
+Enterprise Features
+Mobile App 
+Customer Portal 
+Supplier Portal 
+E-Commerce 
+AI Analytics 
+Business Intelligence Dashboard 
+
+Chapter 50 – Performance Optimization
+Frontend
+Code Splitting 
+Lazy Loading 
+Image Optimization 
+Route Caching 
+Component Memoization 
+
+Backend
+Database Indexing 
+Pagination 
+Optimized Queries 
+Connection Pooling 
+Background Processing 
+
+Database
+Proper Indexes 
+Query Optimization 
+Transactions 
+Archiving Historical Data 
+
+Infrastructure
+Nginx Compression 
+Browser Caching 
+CDN (Future) 
+Redis Cache (Future) 
+
+Chapter 51 – Disaster Recovery Strategy
+Objectives
+Protect business data. 
+Minimize downtime. 
+Restore services quickly. 
+
+Backup Plan
+Daily Incremental Backup 
+Weekly Full Backup 
+Monthly Archive Backup 
+
+Recovery Steps
+Restore the latest verified backup. 
+Validate database integrity. 
+Start backend services. 
+Start frontend services. 
+Verify application functionality. 
+Resume business operations. 
+
+Chapter 52 – Coding Best Practices
+General
+Use TypeScript throughout the application. 
+Follow consistent naming conventions. 
+Keep functions focused on a single responsibility. 
+Avoid duplicate logic. 
+Write meaningful comments where necessary. 
+
+Backend
+Keep controllers thin. 
+Place business logic in services. 
+Access the database only through repositories. 
+Validate all input before processing. 
+
+Frontend
+Build reusable UI components. 
+Keep pages lightweight. 
+Centralize API calls. 
+Manage shared state appropriately. 
+
+Database
+Use Prisma migrations. 
+Maintain referential integrity. 
+Use transactions for critical operations. 
+Regularly review indexes and query performance. 
+
+Chapter 53 – Technical Recommendations
+Recommended Development Practices
+Use Git with feature branches. 
+Enforce code reviews through pull requests. 
+Configure ESLint and Prettier. 
+Maintain separate environments (development, staging, production). 
+Document APIs with OpenAPI/Swagger. 
+Write automated tests for critical modules. 
+Use CI/CD pipelines for deployment. 
+Monitor application logs and health checks. 
+
+Recommended Future Enhancements
+Redis for caching. 
+Queue system (BullMQ or similar) for background jobs. 
+WebSocket support for real-time notifications. 
+Multi-language support. 
+Barcode scanner integration. 
+Receipt printer integration. 
+Advanced analytics dashboards. 
+Offline mode with synchronization. 
+
+Chapter 54 – Architecture Summary
+The Mobile Shop POS System is designed using a modular, scalable, and maintainable architecture.
+Core Characteristics
+Three-Tier Architecture 
+Modular Feature-Based Design 
+RESTful API 
+JWT Authentication 
+Role-Based Access Control (RBAC) 
+PostgreSQL with Prisma ORM 
+Cloudinary for Image Storage 
+Responsive Next.js Frontend 
+Express.js Backend 
+Docker-Ready Deployment 
+Key Design Goals
+Scalability 
+Security 
+Performance 
+Reliability 
+Maintainability 
+Extensibility 
+The architecture supports future expansion to:
+Multi-Branch POS 
+Pharmacy POS 
+Mart POS 
+E-Commerce Integration 
+Mobile Applications 
+Enterprise Reporting 
+
+✅ Volume 4 Completed
+Contents
+Section
+Status
+High-Level Architecture
+✅
+Technology Stack
+✅
+Project Structure
+✅
+Backend Architecture
+✅
+Frontend Architecture
+✅
+Authentication & Authorization
+✅
+API Design
+✅
+Database Integration
+✅
+Infrastructure & Deployment
+✅
+Security
+✅
+Performance
+✅
+Scalability
+✅
+Disaster Recovery
+✅
+Technical Recommendations
+✅
+Architecture Summary
+✅
+
+📘 Volume 5 – UI/UX Design Specification
+Part 1 – Design System & User Experience Foundation
+
+Cover Page
+Document Name: UI/UX Design Specification
+Project Name: Mobile Shop Point of Sale (POS) System
+Version: 1.0
+Frontend Framework: Next.js
+Design System: Tailwind CSS
+Prepared By: UI/UX Architect
+Status: Draft
+Date: August 2026
+
+Chapter 1 – Document Control
+Field
+Value
+Document Name
+UI/UX Design Specification
+Project
+Mobile Shop POS
+Version
+1.0
+Status
+Draft
+Frontend
+Next.js
+UI Framework
+Tailwind CSS
+
+Chapter 2 – Revision History
+Version
+Date
+Description
+0.1
+August 2026
+Initial Draft
+0.5
+August 2026
+UI Review
+1.0
+August 2026
+Approved Version
+
+Chapter 3 – Table of Contents
+UI Design Principles 
+Design System 
+Color Palette 
+Typography 
+Spacing System 
+Icons 
+Buttons 
+Form Components 
+Cards 
+Tables 
+Responsive Design 
+Accessibility Standards 
+
+Chapter 4 – UI Design Principles
+The interface should be designed with the following principles:
+Simple and clean layout 
+Easy to learn for shop staff 
+Fast navigation 
+Minimal clicks for daily tasks 
+Consistent user experience 
+Responsive on different screen sizes 
+Professional business appearance 
+
+UI Goals
+Reduce user errors 
+Improve cashier speed 
+Easy inventory management 
+Quick product search 
+Clear reports 
+Smooth workflow 
+
+Chapter 5 – Design System
+The application should use a reusable design system to maintain consistency.
+
+Design Components
+Buttons 
+Cards 
+Tables 
+Forms 
+Inputs 
+Dropdowns 
+Modals 
+Alerts 
+Toast Messages 
+Navigation 
+Charts 
+Badges 
+
+Component Rules
+Same spacing 
+Same typography 
+Same colors 
+Same border radius 
+Same shadows 
+Same animations 
+
+Chapter 6 – Color Palette
+Primary Colors
+Purpose
+Color
+Primary
+Blue
+Secondary
+Slate
+Success
+Green
+Warning
+Orange
+Danger
+Red
+Information
+Sky Blue
+
+Neutral Colors
+Purpose
+Color
+Background
+White
+Sidebar
+Dark Gray
+Card
+White
+Border
+Light Gray
+Text
+Dark Gray
+Disabled
+Gray
+
+Status Colors
+Status
+Color
+Active
+Green
+Inactive
+Gray
+Paid
+Green
+Partial
+Orange
+Unpaid
+Red
+Low Stock
+Orange
+Out of Stock
+Red
+Repair Complete
+Green
+
+Chapter 7 – Typography
+Font Family
+Recommended:
+Inter 
+Poppins 
+
+Font Sizes
+Element
+Size
+Page Title
+30px
+Section Title
+24px
+Card Title
+20px
+Table Header
+16px
+Body Text
+14px
+Caption
+12px
+
+Font Weight
+Usage
+Weight
+Heading
+Bold
+Sub Heading
+Semi Bold
+Normal Text
+Regular
+Labels
+Medium
+
+Chapter 8 – Spacing System
+Maintain consistent spacing throughout the application.
+
+Margin
+Extra Small 
+Small 
+Medium 
+Large 
+Extra Large 
+
+Padding
+Small 
+Medium 
+Large 
+
+Border Radius
+Small 
+Medium 
+Large 
+
+Shadows
+Card Shadow 
+Modal Shadow 
+Dropdown Shadow 
+
+Chapter 9 – Icon System
+Use a consistent icon library across the application.
+Recommended:
+Lucide React 
+Heroicons 
+
+Common Icons
+Feature
+Icon
+Dashboard
+Home
+Products
+Box
+Sales
+Shopping Cart
+Purchases
+Truck
+Customers
+User
+Suppliers
+Building
+Inventory
+Package
+Reports
+Bar Chart
+Repair
+Wrench
+Warranty
+Shield
+Settings
+Gear
+Logout
+Log Out
+
+Chapter 10 – Button Design
+Button Types
+Primary Button
+Used for:
+Save 
+Submit 
+Login 
+Create 
+
+Secondary Button
+Used for:
+Cancel 
+Close 
+Reset 
+
+Success Button
+Used for:
+Complete 
+Approve 
+
+Danger Button
+Used for:
+Delete 
+Remove 
+
+Outline Button
+Used for:
+View 
+Details 
+
+Icon Button
+Used for:
+Edit 
+Delete 
+Print 
+Download 
+
+Chapter 11 – Form Components
+Input Fields
+Text Box 
+Number Box 
+Password 
+Search 
+Email 
+Phone 
+
+Selection Controls
+Dropdown 
+Multi Select 
+Radio Button 
+Checkbox 
+
+Date Controls
+Date Picker 
+Date Range Picker 
+
+File Controls
+Image Upload 
+Document Upload 
+
+Validation
+Each field should display:
+Required message 
+Invalid format 
+Success state 
+Error state 
+
+Chapter 12 – Card Design
+Cards should be used for dashboards and summaries.
+
+Dashboard Cards
+Examples:
+Today's Sales 
+Total Products 
+Total Customers 
+Profit 
+Expenses 
+Purchases 
+
+Card Elements
+Icon 
+Title 
+Value 
+Trend (optional) 
+Action Button (optional) 
+
+Chapter 13 – Table Design
+The majority of business data will be displayed in tables.
+
+Table Features
+Search 
+Sorting 
+Pagination 
+Filters 
+Export 
+Column Selection 
+Responsive Layout 
+
+Standard Columns
+ID 
+Name 
+Status 
+Created Date 
+Updated Date 
+Actions 
+
+Row Actions
+View 
+Edit 
+Delete 
+Print 
+Download 
+
+Chapter 14 – Responsive Design
+The application should adapt to different screen sizes.
+
+Desktop
+Primary operating environment.
+Supported Resolution:
+1366×768 
+1600×900 
+1920×1080 
+
+Tablet
+Optimized layout for medium screens.
+
+Mobile
+Limited functionality for future use.
+Priority Features:
+Dashboard 
+Sales 
+Inventory Lookup 
+Reports 
+
+Chapter 15 – Accessibility Standards
+The UI should follow accessibility best practices.
+
+Requirements
+Keyboard navigation 
+Visible focus indicators 
+Readable font sizes 
+Sufficient color contrast 
+Descriptive labels 
+Error messages linked to form fields 
+Accessible icons with labels or tooltips 
+
+Accessibility Goals
+Easy to use for all staff 
+Reduced input errors 
+Improved readability 
+Consistent interaction patterns 
+
+Summary of Part 1
+Chapter
+Status
+Cover Page
+✅
+Document Control
+✅
+Revision History
+✅
+Table of Contents
+✅
+UI Design Principles
+✅
+Design System
+✅
+Color Palette
+✅
+Typography
+✅
+Spacing System
+✅
+Icon System
+✅
+Button Design
+✅
+Form Components
+✅
+Card Design
+✅
+Table Design
+✅
+Responsive Design
+✅
+Accessibility Standards
+✅
+
+
+
+Chapter 16 – Overall Application Layout
+Purpose
+The Mobile Shop POS should use a consistent layout across all modules so users can quickly navigate the system.
+
+Standard Layout Structure
++--------------------------------------------------------------+
+| Header                                                       |
++------------+-------------------------------------------------+
+|            |                                                 |
+|            |                                                 |
+| Sidebar    |              Main Content                       |
+| Navigation |                                                 |
+|            |                                                 |
+|            |                                                 |
++------------+-------------------------------------------------+
+| Footer                                                  |
++--------------------------------------------------------------+
+
+Layout Sections
+Header 
+Sidebar 
+Main Content Area 
+Footer 
+
+Chapter 17 – Login Screen
+Purpose
+Allow authorized users to securely access the POS system.
+
+Screen Components
+Left Section
+Company Logo 
+Company Name 
+Welcome Message 
+Background Illustration (Optional) 
+
+Right Section
+Username / Email 
+Password 
+Show / Hide Password 
+Remember Me (Optional) 
+Login Button 
+Forgot Password Link 
+
+Login Screen Layout
+-----------------------------------------------------
+
+           Company Logo
+
+      Welcome to Mobile Shop POS
+
+
+ Username / Email
+
+ ___________________________
+
+ Password
+
+ ___________________________
+
+ [ ] Remember Me
+
+ [ Login ]
+
+ Forgot Password?
+
+-----------------------------------------------------
+
+User Actions
+Login 
+Reset Password 
+Show Password 
+
+Chapter 18 – Dashboard Screen
+Purpose
+Provide a quick overview of the business.
+
+Dashboard Layout
+-------------------------------------------------
+
+Header
+
+-------------------------------------------------
+
+Sidebar
+
+-------------------------------------------------
+
+Statistic Cards
+
+Sales Chart
+
+Purchase Chart
+
+Inventory Summary
+
+Recent Sales
+
+Low Stock Products
+
+Repair Summary
+
+Notifications
+
+-------------------------------------------------
+
+Dashboard Widgets
+Business Summary
+Today's Sales 
+Today's Purchases 
+Total Revenue 
+Profit 
+Expenses 
+
+Inventory
+Total Products 
+Low Stock 
+Out of Stock 
+
+Customer Information
+Total Customers 
+New Customers 
+
+Repair Status
+Pending Repairs 
+Completed Repairs 
+Ready for Delivery 
+
+Recent Activity
+Recent Sales 
+Latest Purchases 
+Notifications 
+
+Chapter 19 – Sidebar Navigation
+Purpose
+Provide easy access to all system modules.
+
+Sidebar Structure
+Dashboard
+
+Masters
+    Products
+    Categories
+    Brands
+    Models
+    Customers
+    Suppliers
+
+Inventory
+
+Purchases
+    Purchase List
+    Purchase Return
+
+Sales
+    New Sale
+    Sales List
+    Sales Return
+
+Repairs
+
+Warranty
+
+Reports
+
+Users
+
+Settings
+
+Logout
+
+Sidebar Features
+Expand / Collapse 
+Active Menu Highlight 
+Icons 
+Nested Menus 
+Search Menu 
+Role-Based Visibility 
+
+Chapter 20 – Header Design
+Header Components
+Left Side
+Menu Toggle Button 
+Page Title 
+Breadcrumb 
+
+Right Side
+Search Box 
+Notifications 
+User Profile 
+Settings Shortcut 
+
+Header Layout
+--------------------------------------------------
+
+☰ Dashboard
+
+Search Box
+
+🔔 Notifications
+
+👤 User
+
+--------------------------------------------------
+
+Chapter 21 – User Profile Menu
+Profile Information
+Display:
+User Photo 
+Name 
+Role 
+Branch (Future) 
+
+Menu Items
+My Profile 
+Change Password 
+Preferences 
+Logout 
+
+Chapter 22 – Notification Panel
+Purpose
+Show important business notifications.
+
+Notification Types
+Low Stock 
+Out of Stock 
+Warranty Expiry 
+New Purchase 
+New Sale 
+Repair Completed 
+Pending Payments 
+System Messages 
+
+Features
+Mark as Read 
+Mark All Read 
+Delete Notification 
+Notification Counter 
+
+Chapter 23 – Global Search
+Purpose
+Allow users to quickly find information.
+
+Search Scope
+Products 
+Customers 
+Suppliers 
+Sales 
+Purchases 
+Repairs 
+IMEI Numbers 
+Invoices 
+
+Search Features
+Auto Suggest 
+Recent Searches 
+Keyboard Navigation 
+Clear Search 
+
+Chapter 24 – Breadcrumb Navigation
+Purpose
+Help users understand their current location in the application.
+
+Example
+Dashboard
+
+Dashboard > Products
+
+Dashboard > Products > Add Product
+
+Dashboard > Sales > New Sale
+
+Dashboard > Reports > Sales Report
+
+Benefits
+Easy navigation 
+Better user orientation 
+Faster movement between modules 
+
+Chapter 25 – Footer Design
+Footer Information
+Display:
+Company Name 
+Software Version 
+Copyright 
+Current Year 
+
+Example
+-------------------------------------------------
+
+© 2026 Mobile Shop POS
+
+Version 1.0
+
+-------------------------------------------------
+
+Chapter 26 – Theme Settings
+Supported Themes
+Light Theme (Default)
+Suitable for daytime use with a bright interface.
+
+Dark Theme
+Suitable for low-light environments and prolonged usage.
+
+Theme Features
+User-selectable preference 
+Persist preference across sessions 
+Consistent colors across all modules 
+
+Chapter 27 – Navigation Guidelines
+Navigation Rules
+Maximum of three menu levels 
+Highlight the active page 
+Use consistent icons 
+Keep labels short and descriptive 
+Display only authorized modules based on user permissions 
+
+Keyboard Shortcuts (Optional)
+Shortcut
+Action
+Ctrl + K
+Global Search
+Ctrl + N
+New Sale
+Ctrl + P
+New Purchase
+Ctrl + S
+Save Form
+Esc
+Close Dialog
+F1
+Help
+F11
+Full Screen
+
+Chapter 28 – User Experience (UX) Guidelines
+Design Goals
+Minimize clicks for common tasks 
+Keep important actions visible 
+Use clear confirmation messages 
+Prevent accidental data loss 
+Display loading indicators for long-running operations 
+Provide informative empty states and error messages 
+
+Common UX Patterns
+Confirm before delete 
+Autosave drafts where applicable 
+Remember table filters during a session 
+Show success/error toast notifications 
+Keep action buttons in consistent locations 
+
+Summary of Part 2
+Chapter
+Status
+Overall Application Layout
+✅
+Login Screen
+✅
+Dashboard Screen
+✅
+Sidebar Navigation
+✅
+Header Design
+✅
+User Profile Menu
+✅
+Notification Panel
+✅
+Global Search
+✅
+Breadcrumb Navigation
+✅
+Footer Design
+✅
+Theme Settings
+✅
+Navigation Guidelines
+✅
+UX Guidelines
+✅
+
+Chapter 29 – Dashboard UI
+Purpose
+The Dashboard provides a quick overview of business performance and important activities.
+
+Dashboard Layout
+--------------------------------------------------------------
+
+Header
+
+--------------------------------------------------------------
+
+Sidebar
+
+--------------------------------------------------------------
+
+Business Summary Cards
+
+Sales Analytics
+
+Purchase Analytics
+
+Inventory Summary
+
+Recent Sales
+
+Repair Status
+
+Notifications
+
+Low Stock Products
+
+--------------------------------------------------------------
+
+Dashboard Components
+Summary Cards
+Today's Sales 
+Today's Purchases 
+Total Revenue 
+Profit 
+Expenses 
+Customers 
+
+Charts
+Daily Sales 
+Monthly Sales 
+Purchase Trend 
+Revenue Trend 
+
+Lists
+Recent Sales 
+Low Stock Items 
+Pending Repairs 
+Latest Notifications 
+
+Available Actions
+Refresh Dashboard 
+Change Date Range 
+Export Dashboard 
+View Detailed Reports 
+
+Chapter 30 – Product Management Screen
+Purpose
+Manage all products available in the shop.
+
+Product List Screen
+Search & Filters
+Product Name 
+SKU 
+Barcode 
+IMEI 
+Brand 
+Category 
+Model 
+Supplier 
+Status 
+
+Product Table
+Column
+Image
+Product Name
+SKU
+Brand
+Category
+Model
+Selling Price
+Stock
+Status
+Actions
+
+Actions
+View 
+Add 
+Edit 
+Delete 
+Print Barcode 
+Import 
+Export 
+
+Add/Edit Product Screen
+Product Information
+Product Name 
+SKU 
+Barcode 
+Brand 
+Category 
+Model 
+Description 
+
+Pricing
+Purchase Price 
+Selling Price 
+Discount 
+Tax 
+
+Inventory
+Initial Stock 
+Reorder Level 
+Track IMEI (Yes/No) 
+
+Images
+Upload Product Image 
+Preview Image 
+Remove Image 
+
+Buttons
+Save 
+Save & Add New 
+Cancel 
+Reset 
+
+Chapter 31 – Brand Management
+Brand List
+Table Columns
+Brand Name 
+Description 
+Status 
+Created Date 
+Actions 
+
+Actions
+Add Brand 
+Edit Brand 
+Delete Brand 
+Search 
+Export 
+
+Brand Form
+Fields
+Brand Name 
+Description 
+Status 
+
+Chapter 32 – Category Management
+Category List
+Table Columns
+Category Name 
+Parent Category 
+Description 
+Status 
+Actions 
+
+Category Form
+Fields
+Category Name 
+Parent Category 
+Description 
+Status 
+
+Chapter 33 – Product Model Management
+Model List
+Columns
+Model Name 
+Brand 
+Category 
+Status 
+Actions 
+
+Model Form
+Fields
+Model Name 
+Brand 
+Category 
+Description 
+
+Chapter 34 – Inventory Management
+Inventory Dashboard
+Display
+Total Products 
+Available Stock 
+Reserved Stock 
+Low Stock 
+Out of Stock 
+
+Inventory Table
+Column
+Product
+SKU
+Stock
+Reserved
+Reorder Level
+Status
+Actions
+
+Filters
+Brand 
+Category 
+Supplier 
+Stock Status 
+
+Actions
+Stock Adjustment 
+View History 
+Export 
+Print 
+
+Chapter 35 – Customer Management
+Customer List
+Search
+Customer Name 
+Phone 
+Customer Code 
+
+Table
+Column
+Customer Code
+Name
+Phone
+Email
+Outstanding Balance
+Status
+Actions
+
+Actions
+Add Customer 
+Edit Customer 
+Delete Customer 
+View Purchase History 
+View Repair History 
+
+Customer Form
+Personal Information
+Customer Name 
+Phone 
+Email 
+Address 
+City 
+
+Financial Information
+Credit Limit 
+Outstanding Balance 
+
+Chapter 36 – Supplier Management
+Supplier List
+Search
+Supplier Name 
+Contact Person 
+Phone 
+
+Table
+Column
+Supplier Code
+Supplier Name
+Contact Person
+Phone
+Balance
+Status
+Actions
+
+Actions
+Add Supplier 
+Edit Supplier 
+Delete Supplier 
+Purchase History 
+
+Supplier Form
+Fields
+Supplier Name 
+Contact Person 
+Phone 
+Email 
+Address 
+Tax Number 
+Payment Terms 
+
+Chapter 37 – Employee Management
+Employee List
+Table
+Column
+Employee ID
+Name
+Designation
+Phone
+Status
+Actions
+
+Employee Form
+Personal Information
+Full Name 
+CNIC/ID Number 
+Date of Birth 
+Gender 
+
+Contact Information
+Phone 
+Email 
+Address 
+
+Employment Information
+Employee ID 
+Designation 
+Joining Date 
+Salary 
+Status 
+
+Photo
+Upload Photo 
+
+Chapter 38 – User Management
+User List
+Table
+Column
+Username
+Employee
+Role
+Status
+Last Login
+Actions
+
+Actions
+Create User 
+Reset Password 
+Lock User 
+Unlock User 
+Assign Role 
+
+User Form
+Fields
+Username 
+Password 
+Confirm Password 
+Employee 
+Role 
+Status 
+
+Chapter 39 – Role Management
+Role List
+Table
+Column
+Role Name
+Description
+Users
+Status
+Actions
+
+Role Form
+Fields
+Role Name 
+Description 
+Status 
+
+Permission Matrix
+Each role can be assigned permissions for:
+Dashboard 
+Products 
+Inventory 
+Purchases 
+Sales 
+Customers 
+Suppliers 
+Repairs 
+Warranty 
+Reports 
+Users 
+Settings 
+Permission Types:
+View 
+Create 
+Update 
+Delete 
+Print 
+Export 
+Approve 
+
+Chapter 40 – Common Screen Features
+The following features should be available on most management screens:
+Search
+Instant Search 
+Advanced Filters 
+Clear Filters 
+
+Table Features
+Sorting 
+Pagination 
+Column Selection 
+Row Selection 
+Bulk Actions 
+
+Export Options
+PDF 
+Excel 
+CSV 
+Print 
+
+Confirmation Dialogs
+Required for:
+Delete 
+Cancel 
+Reset 
+Bulk Delete 
+
+Notifications
+Display toast messages for:
+Success 
+Error 
+Warning 
+Information 
+
+Loading States
+Use:
+Skeleton Loaders 
+Progress Indicators 
+Disabled Buttons During Submission 
+
+Summary of Part 3
+Chapter
+Status
+Dashboard UI
+✅
+Product Management
+✅
+Brand Management
+✅
+Category Management
+✅
+Product Model Management
+✅
+Inventory Management
+✅
+Customer Management
+✅
+Supplier Management
+✅
+Employee Management
+✅
+User Management
+✅
+Role Management
+✅
+Common Screen Features
+✅
+
+
+Chapter 41 – Purchase Management
+Purpose
+The Purchase module allows users to record purchases from suppliers and update inventory.
+
+Purchase List Screen
+Search & Filters
+Purchase Invoice No. 
+Supplier 
+Purchase Date 
+Payment Status 
+Employee 
+Date Range 
+
+Table Columns
+Column
+Invoice No.
+Supplier
+Purchase Date
+Total Amount
+Paid Amount
+Due Amount
+Payment Status
+Actions
+
+Available Actions
+View Purchase 
+Create Purchase 
+Edit Purchase 
+Delete Purchase 
+Print Invoice 
+Export 
+
+New Purchase Screen
+Supplier Information
+Supplier 
+Invoice Number 
+Purchase Date 
+Payment Method 
+
+Product Entry Section
+Search Product 
+Select Product 
+Quantity 
+Purchase Price 
+Discount 
+Tax 
+
+IMEI Entry (For Mobile Phones)
+Add IMEI Numbers 
+Bulk IMEI Entry 
+Validate Duplicate IMEIs 
+
+Summary Section
+Total Quantity 
+Sub Total 
+Discount 
+Tax 
+Grand Total 
+
+Buttons
+Save Purchase 
+Save & Print 
+Cancel 
+
+Chapter 42 – Purchase Return
+Purchase Return List
+Table Columns
+Return Number 
+Original Invoice 
+Supplier 
+Return Date 
+Total Amount 
+Status 
+Actions 
+
+Purchase Return Screen
+Fields
+Select Purchase 
+Select Products 
+Return Quantity 
+Return Reason 
+Refund Amount 
+
+Buttons
+Save Return 
+Print 
+Cancel 
+
+Chapter 43 – Sales (POS Billing Screen)
+Purpose
+This is the primary screen used by the cashier for daily sales.
+
+POS Layout
+------------------------------------------------------------
+
+Product Search / Barcode / IMEI
+
+------------------------------------------------------------
+
+Product List
+
+------------------------------------------------------------
+
+Shopping Cart
+
+------------------------------------------------------------
+
+Customer Information
+
+------------------------------------------------------------
+
+Payment Summary
+
+------------------------------------------------------------
+
+Payment Buttons
+
+------------------------------------------------------------
+
+Product Search
+Users can search by:
+Product Name 
+SKU 
+Barcode 
+IMEI 
+
+Shopping Cart Columns
+Column
+Product
+Quantity
+Price
+Discount
+Tax
+Total
+Actions
+
+Customer Section
+Walk-in Customer 
+Existing Customer 
+Add New Customer 
+
+Payment Section
+Display:
+Subtotal 
+Discount 
+Tax 
+Grand Total 
+Paid Amount 
+Change 
+
+Payment Methods
+Cash 
+Card 
+Bank Transfer 
+Mobile Wallet 
+Split Payment (Future) 
+
+Action Buttons
+Hold Sale 
+Resume Sale 
+Complete Sale 
+Print Receipt 
+Cancel Sale 
+
+Chapter 44 – Sales Return
+Sales Return List
+Table Columns
+Return Number 
+Invoice Number 
+Customer 
+Return Date 
+Refund Amount 
+Status 
+
+Sales Return Screen
+Fields
+Select Invoice 
+Select Product 
+Return Quantity 
+Return Reason 
+Refund Method 
+
+Buttons
+Save Return 
+Print Return Receipt 
+Cancel 
+
+Chapter 45 – Payment Management
+Payment List
+Search Filters
+Customer 
+Supplier 
+Payment Type 
+Payment Method 
+Date Range 
+
+Table Columns
+Column
+Payment ID
+Reference
+Type
+Amount
+Method
+Date
+Status
+Actions
+
+Payment Form
+Fields
+Payment Type 
+Customer/Supplier 
+Amount 
+Payment Method 
+Reference Number 
+Notes 
+
+Chapter 46 – Cash Drawer
+Dashboard
+Display
+Opening Balance 
+Cash Sales 
+Cash Received 
+Cash Paid 
+Closing Balance 
+
+Cash Drawer Screen
+Fields
+Opening Cash 
+Closing Cash 
+Cash Difference 
+Notes 
+
+Buttons
+Open Drawer 
+Close Drawer 
+Print Summary 
+
+Chapter 47 – Repair Management
+Repair List
+Search
+Repair Number 
+Customer 
+IMEI 
+Technician 
+Status 
+
+Table Columns
+Column
+Repair ID
+Customer
+Device
+IMEI
+Technician
+Status
+Expected Delivery
+Actions
+
+Repair Registration
+Customer Information
+Customer 
+Phone 
+
+Device Information
+Brand 
+Model 
+IMEI 
+Color 
+Accessories Received 
+
+Repair Information
+Problem Description 
+Estimated Cost 
+Technician 
+Priority 
+Expected Delivery Date 
+
+Status
+Pending 
+Diagnosing 
+In Progress 
+Waiting for Parts 
+Ready 
+Delivered 
+
+Buttons
+Save 
+Print Receipt 
+Update Status 
+
+Chapter 48 – Warranty Management
+Warranty List
+Table Columns
+Column
+Warranty No.
+Invoice
+Customer
+Product
+Start Date
+End Date
+Status
+Actions
+
+Warranty Details
+Display
+Product Information 
+Customer Information 
+Warranty Period 
+Warranty Terms 
+Claim History 
+
+Actions
+View 
+Print 
+Create Claim 
+Close Warranty 
+
+Chapter 49 – Expense Management
+Expense List
+Search
+Expense Category 
+Employee 
+Date Range 
+
+Table Columns
+Column
+Expense ID
+Category
+Amount
+Date
+Employee
+Status
+Actions
+
+Expense Form
+Fields
+Category 
+Amount 
+Payment Method 
+Receipt Upload 
+Description 
+
+Buttons
+Save 
+Save & New 
+Cancel 
+
+Chapter 50 – Reports Dashboard
+Purpose
+Provide access to all business reports.
+
+Report Categories
+Sales Reports
+Daily Sales 
+Monthly Sales 
+Product Sales 
+Employee Sales 
+
+Purchase Reports
+Purchase Summary 
+Supplier Purchases 
+
+Inventory Reports
+Stock Report 
+Low Stock 
+IMEI Report 
+Stock Movement 
+
+Financial Reports
+Profit & Loss 
+Expenses 
+Cash Flow 
+Outstanding Payments 
+
+Customer Reports
+Customer Purchases 
+Customer Balance 
+
+Repair Reports
+Repair Summary 
+Technician Performance 
+
+Report Screen Components
+Filters
+Date Range 
+Branch (Future) 
+Employee 
+Supplier 
+Customer 
+Product 
+Category 
+Brand 
+
+Actions
+Generate Report 
+Export PDF 
+Export Excel 
+Print 
+Email Report (Future) 
+
+Chapter 51 – Transaction Screen Standards
+The following standards apply to all transaction screens:
+Common Buttons
+Save 
+Save & Print 
+Cancel 
+Reset 
+Back 
+
+Validation
+Required fields 
+Quantity validation 
+Price validation 
+IMEI uniqueness 
+Payment validation 
+
+Notifications
+Success 
+Error 
+Warning 
+Information 
+
+Confirmations
+Display confirmation before:
+Delete 
+Cancel Transaction 
+Void Sale 
+Close Cash Drawer 
+
+Loading Indicators
+Table loading 
+Form submission loading 
+Report generation loading 
+
+Summary of Part 4
+Chapter
+Status
+Purchase Management
+✅
+Purchase Return
+✅
+Sales (POS Screen)
+✅
+Sales Return
+✅
+Payment Management
+✅
+Cash Drawer
+✅
+Repair Management
+✅
+Warranty Management
+✅
+Expense Management
+✅
+Reports Dashboard
+✅
+Transaction Standards
+✅
+
+Chapter 52 – Settings Module UI Design
+Purpose
+The Settings module allows administrators to configure system behavior, business information, and application preferences.
+
+52.1 Settings Layout
+-------------------------------------------------
+
+Settings
+
+-------------------------------------------------
+
+General Settings
+
+Business Settings
+
+User Settings
+
+Security Settings
+
+Notification Settings
+
+Backup Settings
+
+System Settings
+
+-------------------------------------------------
+
+52.2 Business Information Settings
+Fields
+Shop Name 
+Logo Upload 
+Address 
+Phone Number 
+Email 
+Website 
+Tax Number 
+Currency 
+Invoice Prefix 
+
+Actions
+Update Information 
+Upload Logo 
+Reset Changes 
+
+52.3 Invoice & Receipt Settings
+Configuration Options
+Invoice Header 
+Invoice Footer 
+Receipt Format 
+Show Logo 
+Show Tax Details 
+Show Customer Information 
+Print Automatically After Sale 
+
+Receipt Preview
+Display:
+Shop Logo 
+Shop Name 
+Customer Details 
+Product Details 
+Payment Summary 
+Warranty Information 
+
+52.4 Tax Settings
+Fields
+Tax Enable/Disable 
+Tax Percentage 
+Tax Type 
+Tax Number 
+
+Tax Types
+Inclusive Tax 
+Exclusive Tax 
+
+52.5 Notification Settings
+Notification Preferences
+Enable/Disable:
+Low Stock Alerts 
+Warranty Expiry Alerts 
+Payment Due Alerts 
+New Sale Notifications 
+Purchase Notifications 
+
+Notification Channels
+Future Support:
+Email 
+SMS 
+WhatsApp 
+
+Chapter 53 – Profile & Account Screens
+User Profile Screen
+Display Information
+Profile Picture 
+Full Name 
+Username 
+Role 
+Email 
+Phone Number 
+
+Actions
+Edit Profile 
+Change Password 
+Upload Picture 
+
+Change Password Screen
+Fields
+Current Password 
+New Password 
+Confirm Password 
+
+Validation
+Minimum Password Length 
+Password Match 
+Password Strength 
+
+Chapter 54 – Security Settings UI
+Security Options
+Session Management
+Display:
+Active Sessions 
+Login Time 
+Device Information 
+
+Account Security
+Options:
+Change Password 
+Logout From All Devices 
+Enable Two-Factor Authentication (Future) 
+
+Chapter 55 – Error Pages Design
+401 Unauthorized
+Purpose
+User is not authenticated.
+
+UI Elements
+Lock Icon 
+Message 
+Login Button 
+
+Example:
+You need to login to access this page.
+
+[Login]
+
+55.2 403 Forbidden
+Purpose
+User does not have permission.
+
+UI Elements
+Warning Icon 
+Access Denied Message 
+Back Button 
+
+Example:
+You don't have permission to access this page.
+
+[Go Back]
+
+55.3 404 Not Found
+Purpose
+Page does not exist.
+
+UI Elements
+Illustration 
+Error Message 
+Return Dashboard Button 
+
+Example:
+Page Not Found
+
+The page you are looking for does not exist.
+
+[Dashboard]
+
+55.4 500 Server Error
+Purpose
+Unexpected system failure.
+
+UI Elements
+Error Icon 
+Retry Button 
+Contact Support Message 
+
+Chapter 56 – Empty State Designs
+Purpose
+Show meaningful information when no data exists.
+
+Examples
+No Products
+Display:
+Product Icon 
+"No Products Found" 
+Add Product Button 
+
+No Sales
+Display:
+Sales Icon 
+"No Sales Records Available" 
+
+No Customers
+Display:
+Customer Icon 
+Add Customer Button 
+
+Empty State Components
+Include:
+Illustration/Icon 
+Short Message 
+Main Action Button 
+
+Chapter 57 – Loading & Skeleton Screens
+Purpose
+Improve user experience while data is loading.
+
+Loading Types
+Page Loading
+Display:
+Full Page Loader 
+Progress Indicator 
+
+Table Loading
+Display:
+Skeleton Rows 
+Placeholder Columns 
+
+Card Loading
+Display:
+Card Skeleton Layout 
+
+Button Loading
+Example:
+Saving...
+Disable button during processing.
+
+Chapter 58 – Toast Notification Standards
+Purpose
+Provide instant feedback after user actions.
+
+Success Notification
+Examples:
+Product created successfully 
+Sale completed successfully 
+Purchase saved successfully 
+
+Error Notification
+Examples:
+Unable to save data 
+Invalid information 
+Server error 
+
+Warning Notification
+Examples:
+Low stock 
+Unsaved changes 
+Duplicate IMEI 
+
+Information Notification
+Examples:
+New update available 
+Backup completed 
+
+Notification Position
+Recommended:
+Top-right corner
+
+Chapter 59 – Modal & Dialog Standards
+Purpose
+Provide confirmations and additional forms without leaving the page.
+
+Modal Types
+Confirmation Modal
+Used for:
+Delete 
+Cancel transaction 
+Logout 
+
+Form Modal
+Used for:
+Quick Add Customer 
+Quick Add Supplier 
+Add Category 
+
+Information Modal
+Used for:
+Details 
+History 
+Preview 
+
+Modal Components
+Title 
+Content 
+Action Buttons 
+Close Button 
+
+Chapter 60 – Print Layout Design
+The POS system requires professional printing layouts.
+
+60.1 Sales Invoice Design
+Header
+Shop Logo 
+Shop Name 
+Address 
+Contact 
+
+Customer Section
+Customer Name 
+Phone 
+Address 
+
+Product Table
+Columns:
+Product 
+Quantity 
+Price 
+Discount 
+Total 
+
+Payment Summary
+Subtotal 
+Tax 
+Discount 
+Paid Amount 
+Balance 
+
+Footer
+Thank You Message 
+Warranty Information 
+Return Policy 
+
+60.2 Receipt Design
+For thermal printers:
+Size:
+58mm 
+80mm 
+
+Contains:
+Shop Information 
+Invoice Number 
+Products 
+Payment 
+Date 
+Cashier 
+
+60.3 Barcode Label Design
+Information:
+Product Name 
+SKU 
+Barcode 
+Price 
+
+60.4 Warranty Card Design
+Information:
+Customer Name 
+Product 
+IMEI 
+Purchase Date 
+Warranty Period 
+Terms & Conditions 
+
+Chapter 61 – UI Style Guide Summary
+Design Principles
+The Mobile Shop POS interface should be:
+Simple 
+Fast 
+Professional 
+Consistent 
+Responsive 
+Easy for non-technical users 
+
+Component Standards
+All screens should use:
+Same buttons 
+Same forms 
+Same tables 
+Same colors 
+Same spacing 
+Same interaction patterns 
+
+Development Guidelines
+Frontend developers should:
+Create reusable components 
+Follow design tokens 
+Avoid duplicate UI code 
+Maintain responsive behavior 
+Follow accessibility standards 
+
+Chapter 62 – Final UI/UX Architecture Summary
+The UI/UX system provides a complete design foundation for the Mobile Shop POS application.
+It defines:
+✅ Application Layout✅ Navigation Structure✅ Dashboard Design✅ Master Module Screens✅ Transaction Screens✅ POS Billing Interface✅ Reports Interface✅ Settings Interface✅ Error Handling UI✅ Printing Templates✅ Component Standards
+
+✅ Volume 5 Completed
+Volume
+Document
+Status
+📘 Volume 1
+Business Requirements Document
+✅
+📗 Volume 2
+Software Requirements Specification
+✅
+📙 Volume 3
+Database Design Document
+✅
+📕 Volume 4
+System Architecture & Technical Design
+✅
+📒 Volume 5
+UI/UX Design Specification
+✅
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+📔 Volume 6 – API Specification Document (API Design & Integration Guide)
+Part 1 – API Foundation & Standards
+
+Cover Page
+Document Name: API Specification Document
+Project Name: Mobile Shop Point of Sale (POS) System
+Version: 1.0
+Backend Technology:
+Node.js 
+Express.js 
+TypeScript 
+Prisma ORM 
+PostgreSQL 
+API Style:
+RESTful API 
+JSON Based Communication 
+Prepared For: Development Team
+Status: Draft
+Date: August 2026
+
+Chapter 1 – Document Purpose
+Purpose
+This document defines the complete API structure required to develop the Mobile Shop POS System backend.
+It provides:
+API endpoints 
+Request formats 
+Response formats 
+Authentication requirements 
+Validation rules 
+Error handling standards 
+
+Chapter 2 – API Architecture
+The system follows REST API architecture.
+Communication Flow
+Next.js Frontend
+
+        |
+
+        |
+
+ REST API Request
+
+        |
+
+▼
+
+Node.js Express Backend
+
+        |
+
+        |
+
+ Prisma ORM
+
+        |
+
+▼
+
+PostgreSQL Database
+
+Chapter 3 – API Design Principles
+The API should follow:
+REST standards 
+Clear endpoint naming 
+JSON responses 
+Proper HTTP status codes 
+Secure authentication 
+Input validation 
+Consistent error handling 
+
+Chapter 4 – Base API URL Structure
+Development
+Example:
+http://localhost:4000/api/v1
+
+Production
+Example:
+https://api.mobilepos.com/api/v1
+
+Chapter 5 – API Versioning
+All APIs should include version numbers.
+Format:
+/api/v1/{resource}
+Example:
+/api/v1/products
+
+/api/v1/sales
+
+/api/v1/customers
+
+Chapter 6 – HTTP Methods
+Method
+Usage
+GET
+Retrieve data
+POST
+Create new record
+PUT
+Full update
+PATCH
+Partial update
+DELETE
+Remove record
+
+Chapter 7 – Standard API Response Structure
+All APIs should return a consistent format.
+
+Success Response
+{
+  "success": true,
+  "message": "Product created successfully",
+  "data": {
+
+  }
+}
+
+Error Response
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+
+  ]
+}
+
+Chapter 8 – HTTP Status Codes
+Code
+Description
+200
+Successful Request
+201
+Resource Created
+204
+No Content
+400
+Bad Request
+401
+Unauthorized
+403
+Forbidden
+404
+Not Found
+409
+Conflict
+422
+Validation Error
+500
+Server Error
+
+Chapter 9 – Authentication API Architecture
+Authentication Method
+The system uses:
+JWT Authentication 
+Access Token 
+Refresh Token (Future Enhancement) 
+
+Authentication Header
+Protected APIs require:
+Authorization: Bearer {token}
+
+Chapter 10 – Authentication APIs Overview
+API
+Method
+Purpose
+Login
+POST
+User Login
+Logout
+POST
+Logout User
+Register User
+POST
+Create User
+Current User
+GET
+Get Profile
+Change Password
+PATCH
+Update Password
+Forgot Password
+POST
+Request Reset
+Reset Password
+POST
+Reset Password
+
+Chapter 11 – Login API
+Endpoint
+POST /api/v1/auth/login
+
+Purpose
+Authenticate user and generate JWT token.
+
+Request Body
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+Validation Rules
+Username:
+Required 
+Minimum length validation 
+Password:
+Required 
+
+Success Response
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": "1",
+      "name": "Admin",
+      "role": "Owner"
+    },
+    "token": "jwt_token_here"
+  }
+}
+
+Chapter 12 – Logout API
+Endpoint
+POST /api/v1/auth/logout
+
+Purpose
+Invalidate user session.
+
+Request
+Requires authentication token.
+
+Response
+{
+  "success": true,
+  "message": "Logout successful"
+}
+
+Chapter 13 – Current User API
+Endpoint
+GET /api/v1/auth/me
+
+Purpose
+Retrieve currently logged-in user information.
+
+Response
+{
+ "success":true,
+ "data":{
+    "id":"1",
+    "name":"Admin",
+    "role":"Owner",
+    "permissions":[]
+ }
+}
+
+Chapter 14 – Change Password API
+Endpoint
+PATCH /api/v1/auth/change-password
+
+Request Body
+{
+ "currentPassword":"oldpassword",
+ "newPassword":"newpassword"
+}
+
+Validation
+Current password must match 
+New password strength validation 
+Confirm password match 
+
+Chapter 15 – Forgot Password API
+Endpoint
+POST /api/v1/auth/forgot-password
+
+Request
+{
+ "email":"user@example.com"
+}
+
+Process
+Verify email. 
+Generate reset token. 
+Send reset link. 
+Allow password update. 
+
+Chapter 16 – API Security Requirements
+All APIs must implement:
+Authentication
+JWT verification 
+Token expiration 
+Secure secret keys 
+
+Authorization
+Role checking 
+Permission checking 
+
+Input Protection
+Request validation 
+SQL injection protection 
+XSS prevention 
+Rate limiting 
+
+Data Protection
+Password hashing 
+Sensitive data encryption 
+Secure environment variables 
+
+Chapter 17 – API Error Handling Standard
+Errors should be handled centrally.
+
+Error Object
+{
+ "success":false,
+ "message":"Product not found",
+ "code":"PRODUCT_NOT_FOUND"
+}
+
+Common Error Codes
+Code
+Meaning
+AUTH_FAILED
+Invalid login
+TOKEN_EXPIRED
+JWT expired
+ACCESS_DENIED
+Permission missing
+RECORD_NOT_FOUND
+Data unavailable
+DUPLICATE_RECORD
+Already exists
+VALIDATION_ERROR
+Invalid input
+SERVER_ERROR
+Internal error
+
+Chapter 18 – API Pagination Standard
+Large data lists should support pagination.
+
+Request
+Example:
+GET /api/v1/products?page=1&limit=20
+
+Response
+{
+ "data":[],
+ "pagination":{
+   "page":1,
+   "limit":20,
+   "total":500,
+   "totalPages":25
+ }
+}
+
+Chapter 19 – API Filtering & Searching
+Supported features:
+Search 
+Filters 
+Sorting 
+Date Range 
+
+Example:
+GET /api/v1/products?
+search=iphone&
+category=mobile&
+status=active
+
+Chapter 20 – API Documentation Standard
+The backend should maintain:
+Swagger/OpenAPI Documentation 
+Endpoint Description 
+Request Schema 
+Response Schema 
+Authentication Requirement 
+Error Responses 
+
+Summary of Part 1
+Chapter
+Status
+Document Purpose
+✅
+API Architecture
+✅
+API Principles
+✅
+Base URL Structure
+✅
+Versioning
+✅
+HTTP Methods
+✅
+Response Standards
+✅
+Status Codes
+✅
+Authentication Architecture
+✅
+Authentication APIs Overview
+✅
+Security Requirements
+✅
+Error Handling
+✅
+Pagination
+✅
+Filtering
+✅
+Documentation Standard
+✅
+
+
+
+
+
+Chapter 21 – User Management APIs
+Purpose
+Manage system users who can access the POS application.
+
+21.1 Get All Users
+Endpoint
+GET /api/v1/users
+
+Purpose
+Retrieve all system users.
+
+Query Parameters
+?page=1
+&limit=20
+&search=admin
+&role=manager
+&status=active
+
+Response
+{
+ "success":true,
+ "data":[
+   {
+    "id":"1",
+    "username":"admin",
+    "name":"Admin User",
+    "role":"Owner",
+    "status":"active"
+   }
+ ]
+}
+
+21.2 Get User By ID
+Endpoint
+GET /api/v1/users/{id}
+
+Purpose
+Retrieve specific user information.
+
+21.3 Create User
+Endpoint
+POST /api/v1/users
+
+Request Body
+{
+ "name":"Ali Khan",
+ "username":"ali",
+ "email":"ali@example.com",
+ "password":"password123",
+ "roleId":"2"
+}
+
+Validation
+Username required 
+Email unique 
+Password required 
+Role required 
+
+21.4 Update User
+Endpoint
+PATCH /api/v1/users/{id}
+
+Update Fields
+Name 
+Email 
+Role 
+Status 
+Profile Image 
+
+21.5 Delete User
+Endpoint
+DELETE /api/v1/users/{id}
+
+Rules
+Cannot delete main administrator 
+Keep audit history 
+
+Chapter 22 – Role Management APIs
+Purpose
+Manage user roles and permissions.
+
+22.1 Get Roles
+Endpoint
+GET /api/v1/roles
+
+Response
+{
+ "success":true,
+ "data":[
+  {
+   "id":"1",
+   "name":"Manager",
+   "permissions":[]
+  }
+ ]
+}
+
+22.2 Create Role
+Endpoint
+POST /api/v1/roles
+
+Request
+{
+"name":"Cashier",
+"description":"Handles sales transactions"
+}
+
+22.3 Assign Permissions
+Endpoint
+POST /api/v1/roles/{id}/permissions
+
+Request
+{
+ "permissions":[
+   "SALE_CREATE",
+   "SALE_VIEW",
+   "CUSTOMER_VIEW"
+ ]
+}
+
+22.4 Update Role
+Endpoint
+PATCH /api/v1/roles/{id}
+
+22.5 Delete Role
+Endpoint
+DELETE /api/v1/roles/{id}
+
+Chapter 23 – Brand APIs
+Purpose
+Manage mobile phone brands.
+Examples:
+Apple 
+Samsung 
+Xiaomi 
+Oppo 
+Vivo 
+
+23.1 Get All Brands
+Endpoint
+GET /api/v1/brands
+
+Filters
+search
+status
+
+23.2 Create Brand
+Endpoint
+POST /api/v1/brands
+
+Request
+{
+"name":"Samsung",
+"description":"Mobile manufacturer",
+"status":"active"
+}
+
+23.3 Update Brand
+Endpoint
+PATCH /api/v1/brands/{id}
+
+23.4 Delete Brand
+Endpoint
+DELETE /api/v1/brands/{id}
+
+Business Rules
+Cannot delete brand linked with products. 
+Deactivate instead. 
+
+Chapter 24 – Category APIs
+Purpose
+Manage product categories.
+Examples:
+Smartphones 
+Accessories 
+Chargers 
+Covers 
+Earphones 
+
+24.1 Get Categories
+Endpoint
+GET /api/v1/categories
+
+24.2 Create Category
+Endpoint
+POST /api/v1/categories
+
+Request
+{
+"name":"Smartphones",
+"description":"Mobile devices"
+}
+
+24.3 Update Category
+Endpoint
+PATCH /api/v1/categories/{id}
+
+24.4 Delete Category
+Endpoint
+DELETE /api/v1/categories/{id}
+
+Chapter 25 – Product Model APIs
+Purpose
+Manage phone models.
+Examples:
+iPhone 15 Pro 
+Samsung S24 Ultra 
+Oppo Reno 12 
+
+25.1 Get Models
+Endpoint
+GET /api/v1/models
+
+Filters
+Brand 
+Category 
+Status 
+
+25.2 Create Model
+Endpoint
+POST /api/v1/models
+
+Request
+{
+"name":"iPhone 15 Pro",
+"brandId":"1",
+"categoryId":"1"
+}
+
+25.3 Update Model
+Endpoint
+PATCH /api/v1/models/{id}
+
+25.4 Delete Model
+Endpoint
+DELETE /api/v1/models/{id}
+
+Chapter 26 – Product APIs
+Purpose
+Manage mobile products and accessories.
+
+26.1 Get Products
+Endpoint
+GET /api/v1/products
+
+Filters
+Category 
+Brand 
+Model 
+Stock Status 
+Price Range 
+IMEI 
+
+Response
+{
+"id":"1",
+"name":"iPhone 15",
+"brand":"Apple",
+"price":150000,
+"stock":5
+}
+
+26.2 Get Product Details
+Endpoint
+GET /api/v1/products/{id}
+
+Includes
+Product Information 
+Stock 
+IMEI Numbers 
+Purchase History 
+Sales History 
+
+26.3 Create Product
+Endpoint
+POST /api/v1/products
+
+Request
+{
+"name":"iPhone 15",
+"categoryId":"1",
+"brandId":"1",
+"modelId":"1",
+"purchasePrice":120000,
+"sellingPrice":150000,
+"stock":10
+}
+
+26.4 Upload Product Image
+Endpoint
+POST /api/v1/products/{id}/image
+
+Process
+Frontend
+   |
+Backend
+   |
+Cloudinary
+   |
+Save URL
+   |
+Database
+
+26.5 Update Product
+Endpoint
+PATCH /api/v1/products/{id}
+
+26.6 Delete Product
+Endpoint
+DELETE /api/v1/products/{id}
+
+Rules
+Cannot delete product with sales history. 
+Use inactive status. 
+
+Chapter 27 – Customer APIs
+Purpose
+Manage customers and their transaction history.
+
+27.1 Get Customers
+Endpoint
+GET /api/v1/customers
+
+Search
+Name 
+Phone 
+Customer Code 
+
+27.2 Create Customer
+Endpoint
+POST /api/v1/customers
+
+Request
+{
+"name":"Ahmed Ali",
+"phone":"03001234567",
+"address":"Islamabad"
+}
+
+27.3 Update Customer
+Endpoint
+PATCH /api/v1/customers/{id}
+
+27.4 Customer History
+Endpoint
+GET /api/v1/customers/{id}/history
+
+Returns
+Sales 
+Payments 
+Repairs 
+Warranty Claims 
+
+Chapter 28 – Supplier APIs
+Purpose
+Manage suppliers and purchase relationships.
+
+28.1 Get Suppliers
+Endpoint
+GET /api/v1/suppliers
+
+28.2 Create Supplier
+Endpoint
+POST /api/v1/suppliers
+
+Request
+{
+"name":"Mobile Distributor",
+"phone":"03123456789",
+"address":"Lahore"
+}
+
+28.3 Update Supplier
+Endpoint
+PATCH /api/v1/suppliers/{id}
+
+28.4 Supplier History
+Endpoint
+GET /api/v1/suppliers/{id}/history
+
+Includes
+Purchases 
+Payments 
+Outstanding Balance 
+
+Chapter 29 – Employee APIs
+Purpose
+Manage shop employees.
+
+29.1 Get Employees
+Endpoint
+GET /api/v1/employees
+
+29.2 Create Employee
+Endpoint
+POST /api/v1/employees
+
+Request
+{
+"name":"Bilal Ahmed",
+"phone":"03001112222",
+"designation":"Salesman"
+}
+
+29.3 Update Employee
+Endpoint
+PATCH /api/v1/employees/{id}
+
+Chapter 30 – Settings APIs
+Purpose
+Manage application configuration.
+
+30.1 Get Settings
+Endpoint
+GET /api/v1/settings
+
+30.2 Update Settings
+Endpoint
+PATCH /api/v1/settings
+
+Settings Data
+Includes:
+Shop Information 
+Logo 
+Invoice Settings 
+Tax Settings 
+Notification Preferences 
+
+Summary of Part 2
+Module
+Status
+User APIs
+✅
+Role APIs
+✅
+Permission APIs
+✅
+Brand APIs
+✅
+Category APIs
+✅
+Product Model APIs
+✅
+Product APIs
+✅
+Customer APIs
+✅
+Supplier APIs
+✅
+Employee APIs
+✅
+Settings APIs
+✅
+
+Chapter 31 – Purchase APIs
+Purpose
+Manage supplier purchases, stock increases, purchase invoices, and purchase history.
+
+31.1 Get All Purchases
+Endpoint
+GET /api/v1/purchases
+
+Query Parameters
+?page=1
+&limit=20
+&supplierId=1
+&status=completed
+&startDate=
+&endDate=
+
+Response
+{
+ "success":true,
+ "data":[
+   {
+    "id":"1",
+    "invoiceNo":"PUR-001",
+    "supplier":"Mobile Distributor",
+    "totalAmount":500000,
+    "status":"completed"
+   }
+ ]
+}
+
+31.2 Get Purchase Details
+Endpoint
+GET /api/v1/purchases/{id}
+
+Response Includes
+Purchase Information 
+Supplier Details 
+Purchased Products 
+IMEI Numbers 
+Payment Details 
+
+31.3 Create Purchase
+Endpoint
+POST /api/v1/purchases
+
+Request Body
+{
+ "supplierId":"1",
+ "invoiceNo":"SUP-1001",
+ "purchaseDate":"2026-08-05",
+ "items":[
+   {
+    "productId":"1",
+    "quantity":5,
+    "purchasePrice":100000,
+    "imeis":[
+       "123456789",
+       "987654321"
+    ]
+   }
+ ],
+ "payment":{
+    "method":"cash",
+    "amount":500000
+ }
+}
+
+Process Flow
+Create Purchase
+        |
+▼
+Validate Supplier
+        |
+▼
+Save Purchase
+        |
+▼
+Save Purchase Items
+        |
+▼
+Increase Inventory
+        |
+▼
+Register IMEI Numbers
+        |
+▼
+Create Payment Record
+
+31.4 Update Purchase
+Endpoint
+PATCH /api/v1/purchases/{id}
+
+Allowed Updates
+Supplier 
+Purchase Date 
+Notes 
+Payment Information 
+
+31.5 Delete Purchase
+Endpoint
+DELETE /api/v1/purchases/{id}
+
+Rules
+Cannot delete completed purchase without reversing stock. 
+Maintain audit logs. 
+
+Chapter 32 – Purchase Item APIs
+Purpose
+Manage individual products inside a purchase.
+
+32.1 Get Purchase Items
+Endpoint
+GET /api/v1/purchases/{id}/items
+
+32.2 Add Purchase Item
+Endpoint
+POST /api/v1/purchases/{id}/items
+
+Request
+{
+ "productId":"10",
+ "quantity":20,
+ "price":5000
+}
+
+32.3 Remove Purchase Item
+Endpoint
+DELETE /api/v1/purchases/{purchaseId}/items/{itemId}
+
+Chapter 33 – Purchase Return APIs
+Purpose
+Handle returning damaged or incorrect products back to suppliers.
+
+33.1 Get Purchase Returns
+Endpoint
+GET /api/v1/purchase-returns
+
+33.2 Create Purchase Return
+Endpoint
+POST /api/v1/purchase-returns
+
+Request
+{
+ "purchaseId":"10",
+ "supplierId":"2",
+ "items":[
+   {
+    "productId":"5",
+    "quantity":2,
+    "reason":"Damaged"
+   }
+ ],
+ "refundAmount":20000
+}
+
+Process
+Purchase Return
+       |
+▼
+Reduce Stock
+       |
+▼
+Update Supplier Balance
+       |
+▼
+Create Return Record
+
+Chapter 34 – Sales / POS APIs
+Purpose
+Handle customer sales transactions.
+
+34.1 Get Sales
+Endpoint
+GET /api/v1/sales
+
+Filters
+Customer 
+Date Range 
+Employee 
+Payment Status 
+Invoice Number 
+
+34.2 Get Sale Details
+Endpoint
+GET /api/v1/sales/{id}
+
+Response Includes
+Invoice Details 
+Customer 
+Products 
+IMEI 
+Payment 
+Warranty 
+
+34.3 Create Sale
+Endpoint
+POST /api/v1/sales
+
+Request
+{
+ "customerId":"5",
+ "items":[
+   {
+    "productId":"1",
+    "quantity":1,
+    "price":150000,
+    "imei":"123456789"
+   }
+ ],
+ "discount":5000,
+ "payment":{
+    "method":"cash",
+    "paidAmount":145000
+ }
+}
+
+Sale Processing Flow
+Create Sale
+     |
+▼
+Validate Stock
+     |
+▼
+Validate IMEI
+     |
+▼
+Create Invoice
+     |
+▼
+Decrease Stock
+     |
+▼
+Update IMEI Status
+     |
+▼
+Create Warranty
+     |
+▼
+Receive Payment
+
+34.4 Cancel Sale
+Endpoint
+PATCH /api/v1/sales/{id}/cancel
+
+Rules
+Restore inventory 
+Reverse payment 
+Maintain cancellation history 
+
+Chapter 35 – Sales Return APIs
+Purpose
+Manage customer product returns.
+
+35.1 Get Sales Returns
+Endpoint
+GET /api/v1/sales-returns
+
+35.2 Create Sales Return
+Endpoint
+POST /api/v1/sales-returns
+
+Request
+{
+ "saleId":"100",
+ "items":[
+   {
+    "productId":"1",
+    "quantity":1,
+    "reason":"Faulty Device"
+   }
+ ],
+ "refundMethod":"cash"
+}
+
+Process
+Return Request
+       |
+▼
+Verify Invoice
+       |
+▼
+Receive Product
+       |
+▼
+Increase Stock
+       |
+▼
+Process Refund
+
+Chapter 36 – Payment APIs
+Purpose
+Manage customer and supplier payments.
+
+36.1 Get Payments
+Endpoint
+GET /api/v1/payments
+
+36.2 Create Payment
+Endpoint
+POST /api/v1/payments
+
+Request
+{
+ "type":"customer",
+ "referenceId":"100",
+ "amount":50000,
+ "method":"cash",
+ "notes":"Partial payment"
+}
+
+36.3 Payment History
+Endpoint
+GET /api/v1/payments/history/{id}
+
+Returns
+Previous payments 
+Remaining balance 
+Payment dates 
+
+Chapter 37 – Cash Drawer APIs
+Purpose
+Manage daily cash operations.
+
+37.1 Open Cash Drawer
+Endpoint
+POST /api/v1/cash-drawer/open
+
+Request
+{
+ "openingBalance":10000
+}
+
+37.2 Close Cash Drawer
+Endpoint
+POST /api/v1/cash-drawer/close
+
+Request
+{
+ "closingBalance":75000,
+ "notes":"End of day closing"
+}
+
+37.3 Cash Drawer Summary
+Endpoint
+GET /api/v1/cash-drawer/summary
+
+Returns
+Opening Cash 
+Sales Cash 
+Expenses 
+Closing Cash 
+Difference 
+
+Chapter 38 – Inventory APIs
+Purpose
+Manage stock levels and movement.
+
+38.1 Get Inventory
+Endpoint
+GET /api/v1/inventory
+
+Filters
+Product 
+Category 
+Brand 
+Stock Status 
+
+38.2 Stock Movement History
+Endpoint
+GET /api/v1/inventory/{productId}/history
+
+Shows
+Purchase Increase 
+Sale Decrease 
+Return Increase 
+Adjustment 
+
+Chapter 39 – Stock Adjustment APIs
+Purpose
+Manually correct inventory.
+
+39.1 Create Adjustment
+Endpoint
+POST /api/v1/inventory/adjustment
+
+Request
+{
+ "productId":"1",
+ "type":"increase",
+ "quantity":5,
+ "reason":"Stock Count Correction"
+}
+
+Chapter 40 – IMEI Tracking APIs
+Purpose
+Track individual mobile devices.
+
+40.1 Search IMEI
+Endpoint
+GET /api/v1/imei/{number}
+
+Returns
+Product 
+Purchase Details 
+Sale Status 
+Warranty Status 
+
+40.2 IMEI History
+Endpoint
+GET /api/v1/imei/{number}/history
+
+Chapter 41 – Repair APIs
+Purpose
+Manage mobile repair operations.
+
+41.1 Create Repair
+Endpoint
+POST /api/v1/repairs
+
+Request
+{
+ "customerId":"10",
+ "device":"iPhone 13",
+ "imei":"123456789",
+ "problem":"Screen Broken",
+ "technicianId":"2"
+}
+
+41.2 Update Repair Status
+Endpoint
+PATCH /api/v1/repairs/{id}/status
+
+Status Values
+Pending 
+Diagnosing 
+Repairing 
+Waiting Parts 
+Ready 
+Delivered 
+
+Chapter 42 – Warranty APIs
+Purpose
+Manage product warranties.
+
+42.1 Get Warranty
+Endpoint
+GET /api/v1/warranties
+
+42.2 Create Warranty Claim
+Endpoint
+POST /api/v1/warranties/claim
+
+Request
+{
+ "warrantyId":"10",
+ "issue":"Battery Problem"
+}
+
+Chapter 43 – Expense APIs
+Purpose
+Manage shop expenses.
+
+43.1 Get Expenses
+Endpoint
+GET /api/v1/expenses
+
+43.2 Create Expense
+Endpoint
+POST /api/v1/expenses
+
+Request
+{
+ "category":"Electricity",
+ "amount":5000,
+ "description":"Monthly bill"
+}
+
+Summary of Part 3
+Module
+Status
+Purchase APIs
+✅
+Purchase Items APIs
+✅
+Purchase Return APIs
+✅
+Sales/POS APIs
+✅
+Sales Return APIs
+✅
+Payment APIs
+✅
+Cash Drawer APIs
+✅
+Inventory APIs
+✅
+Stock Adjustment APIs
+✅
+IMEI APIs
+✅
+Repair APIs
+✅
+Warranty APIs
+✅
+Expense APIs
+✅
+
+
+
+Chapter 44 – Dashboard APIs
+Purpose
+Provide summarized business information for the POS dashboard.
+
+44.1 Dashboard Summary API
+Endpoint
+GET /api/v1/dashboard/summary
+
+Purpose
+Retrieve important business statistics.
+
+Response
+{
+ "success":true,
+ "data":{
+   "todaySales":250000,
+   "todayPurchases":100000,
+   "totalProducts":500,
+   "lowStockProducts":15,
+   "totalCustomers":250,
+   "pendingRepairs":8
+ }
+}
+
+Dashboard Data
+Includes:
+Today's Sales 
+Today's Purchases 
+Total Revenue 
+Total Expenses 
+Total Profit 
+Total Products 
+Low Stock Products 
+Out of Stock Products 
+Total Customers 
+Pending Payments 
+Pending Repairs 
+
+Chapter 45 – Sales Reports APIs
+Purpose
+Generate sales-related business reports.
+
+45.1 Sales Summary Report
+Endpoint
+GET /api/v1/reports/sales/summary
+
+Filters
+startDate
+endDate
+employeeId
+customerId
+paymentStatus
+
+Response
+{
+ "totalSales":500000,
+ "totalInvoices":120,
+ "averageSale":4166
+}
+
+45.2 Daily Sales Report
+Endpoint
+GET /api/v1/reports/sales/daily
+
+Returns
+Date 
+Number of invoices 
+Total sales 
+Cash sales 
+Credit sales 
+
+45.3 Product Sales Report
+Endpoint
+GET /api/v1/reports/sales/products
+
+Returns
+Product Name 
+Quantity Sold 
+Revenue 
+Profit 
+
+45.4 Employee Sales Report
+Endpoint
+GET /api/v1/reports/sales/employees
+
+Returns
+Employee Name 
+Total Sales 
+Number of Transactions 
+Commission (Future) 
+
+Chapter 46 – Purchase Reports APIs
+Purpose
+Analyze supplier purchases.
+
+46.1 Purchase Summary Report
+Endpoint
+GET /api/v1/reports/purchases/summary
+
+Returns
+Total Purchases 
+Total Amount 
+Supplier Count 
+Pending Payments 
+
+46.2 Supplier Purchase Report
+Endpoint
+GET /api/v1/reports/purchases/suppliers
+
+Returns
+Supplier Name 
+Purchase Count 
+Total Amount 
+Outstanding Balance 
+
+Chapter 47 – Inventory Reports APIs
+Purpose
+Provide stock analysis.
+
+47.1 Stock Report
+Endpoint
+GET /api/v1/reports/inventory/stock
+
+Returns
+Product 
+Available Quantity 
+Purchase Price 
+Stock Value 
+
+47.2 Low Stock Report
+Endpoint
+GET /api/v1/reports/inventory/low-stock
+
+Returns
+Products where:
+Current Stock <= Minimum Stock Level
+
+47.3 Stock Movement Report
+Endpoint
+GET /api/v1/reports/inventory/movement
+
+Shows
+Stock Added 
+Stock Sold 
+Stock Returned 
+Stock Adjusted 
+
+47.4 IMEI Report
+Endpoint
+GET /api/v1/reports/inventory/imei
+
+Returns
+IMEI Number 
+Product 
+Purchase Date 
+Sale Status 
+Warranty Status 
+
+Chapter 48 – Financial Reports APIs
+Purpose
+Provide financial analysis.
+
+48.1 Profit & Loss Report
+Endpoint
+GET /api/v1/reports/financial/profit-loss
+
+Calculation
+Profit =
+Sales Revenue
+-
+(Product Cost + Expenses)
+
+Returns
+Total Sales 
+Cost of Goods Sold 
+Expenses 
+Net Profit 
+
+48.2 Expense Report
+Endpoint
+GET /api/v1/reports/financial/expenses
+
+Returns
+Expense Category 
+Amount 
+Date 
+Employee 
+
+48.3 Cash Flow Report
+Endpoint
+GET /api/v1/reports/financial/cash-flow
+
+Returns
+Cash In 
+Cash Out 
+Current Balance 
+
+Chapter 49 – Customer Reports APIs
+
+49.1 Customer Purchase Report
+Endpoint
+GET /api/v1/reports/customers/purchases
+
+Returns
+Customer Name 
+Total Purchases 
+Last Purchase Date 
+Total Amount 
+
+49.2 Customer Balance Report
+Endpoint
+GET /api/v1/reports/customers/balance
+
+Returns
+Customer 
+Credit Amount 
+Paid Amount 
+Remaining Balance 
+
+Chapter 50 – Supplier Reports APIs
+
+50.1 Supplier Balance Report
+Endpoint
+GET /api/v1/reports/suppliers/balance
+
+Returns
+Supplier 
+Total Purchases 
+Paid Amount 
+Remaining Amount 
+
+50.2 Supplier Payment History
+Endpoint
+GET /api/v1/reports/suppliers/payments
+
+Chapter 51 – Export APIs
+Purpose
+Export reports and business data.
+
+51.1 Export Report
+Endpoint
+POST /api/v1/export/report
+
+Request
+{
+ "reportType":"sales",
+ "format":"pdf",
+ "filters":{
+   "startDate":"2026-08-01",
+   "endDate":"2026-08-05"
+ }
+}
+
+Supported Formats
+PDF 
+Excel 
+CSV 
+
+Chapter 52 – Cloudinary Integration APIs
+Purpose
+Manage image uploads.
+
+52.1 Upload Image
+Endpoint
+POST /api/v1/uploads/image
+
+Upload Types
+Product Image 
+Employee Photo 
+Customer Attachment 
+Repair Image 
+Shop Logo 
+
+Upload Flow
+User
+ |
+▼
+Frontend Upload
+ |
+▼
+Backend Validation
+ |
+▼
+Cloudinary Upload
+ |
+▼
+Save URL
+ |
+▼
+Database
+
+52.2 Delete Image
+Endpoint
+DELETE /api/v1/uploads/image/{id}
+
+Rules
+Remove Cloudinary file 
+Remove database reference 
+
+Chapter 53 – Notification APIs
+Purpose
+Manage system notifications.
+
+53.1 Get Notifications
+Endpoint
+GET /api/v1/notifications
+
+Returns
+Notification ID 
+Type 
+Message 
+Read Status 
+Created Date 
+
+53.2 Mark Notification Read
+Endpoint
+PATCH /api/v1/notifications/{id}/read
+
+53.3 Create Notification
+Endpoint
+POST /api/v1/notifications
+
+Notification Types
+Low Stock 
+Warranty Expiry 
+Payment Due 
+System Alert 
+
+Chapter 54 – Backup APIs
+Purpose
+Manage database backup operations.
+
+54.1 Create Backup
+Endpoint
+POST /api/v1/backups
+
+Process
+Request Backup
+
+      |
+
+Generate Database Dump
+
+      |
+
+Compress File
+
+      |
+
+Store Backup
+
+      |
+
+Return Backup Information
+
+54.2 Get Backup List
+Endpoint
+GET /api/v1/backups
+
+Returns
+Backup Name 
+Size 
+Date 
+Status 
+
+Chapter 55 – Audit Log APIs
+Purpose
+Track important system activities.
+
+55.1 Get Audit Logs
+Endpoint
+GET /api/v1/audit-logs
+
+Filters
+User 
+Module 
+Action 
+Date Range 
+
+Response
+{
+"user":"Admin",
+"action":"Created Product",
+"module":"Product",
+"time":"2026-08-05"
+}
+
+55.2 Audit Events
+Track:
+Login 
+Logout 
+Product Creation 
+Product Update 
+Sale Creation 
+Purchase Creation 
+Payment Changes 
+Permission Changes 
+Settings Changes 
+
+Chapter 56 – API Performance Requirements
+Response Time Target
+API Type
+Expected Time
+Normal Request
+< 500ms
+Search Request
+< 1s
+Report Generation
+< 5s
+Export Generation
+Depends on Data Size
+
+Optimization Rules
+Use database indexing 
+Use pagination 
+Avoid unnecessary queries 
+Use caching where required 
+Optimize report queries 
+
+Summary of Part 4
+Module
+Status
+Dashboard APIs
+✅
+Sales Reports APIs
+✅
+Purchase Reports APIs
+✅
+Inventory Reports APIs
+✅
+Financial Reports APIs
+✅
+Customer Reports APIs
+✅
+Supplier Reports APIs
+✅
+Export APIs
+✅
+Cloudinary APIs
+✅
+Notification APIs
+✅
+Backup APIs
+✅
+Audit Log APIs
+✅
+Performance Requirements
+✅
+
+
+Chapter 57 – API Security Requirements
+Purpose
+Define security standards required to protect the POS system data and APIs.
+
+57.1 Authentication Security
+The system must implement:
+JWT-based authentication 
+Secure token generation 
+Token expiration 
+Protected API routes 
+Logout handling 
+
+Authentication Flow
+User Login
+
+     |
+
+Validate Credentials
+
+     |
+
+Generate JWT Token
+
+     |
+
+Return Token
+
+     |
+
+Frontend Stores Token
+
+     |
+
+Token Sent With API Requests
+
+     |
+
+Backend Validates Token
+
+     |
+
+Allow/Deny Access
+
+57.2 Password Security
+Requirements:
+Passwords must never be stored as plain text. 
+Use password hashing. 
+Use secure hashing algorithms. 
+Recommended:
+bcrypt 
+Argon2 
+
+Password Rules
+Minimum:
+8 Characters 
+Uppercase Letter 
+Lowercase Letter 
+Number 
+Special Character 
+
+Chapter 58 – Authorization & Permission System
+Purpose
+Control what each user can access.
+
+58.1 Role-Based Access Control (RBAC)
+The system uses:
+User
+
+ |
+
+Role
+
+ |
+
+Permissions
+
+ |
+
+Allowed Actions
+
+Default Roles
+Owner
+Full system access.
+
+Manager
+Access:
+Sales 
+Purchases 
+Inventory 
+Reports 
+
+Cashier
+Access:
+POS Billing 
+Customers 
+Payments 
+
+Technician
+Access:
+Repairs 
+Warranty 
+
+58.2 Permission Structure
+Permission Format:
+MODULE_ACTION
+Examples:
+PRODUCT_CREATE
+
+PRODUCT_UPDATE
+
+SALE_CREATE
+
+SALE_VIEW
+
+REPORT_EXPORT
+
+58.3 Permission Middleware
+Every protected API should check:
+Example:
+POST /api/v1/products
+Required Permission:
+PRODUCT_CREATE
+
+Chapter 59 – Backend Middleware Requirements
+Purpose
+Define common middleware used in Node.js backend.
+
+59.1 Authentication Middleware
+Responsibilities:
+Verify JWT token 
+Identify user 
+Attach user information to request 
+
+Example:
+Request
+
+   |
+
+JWT Middleware
+
+   |
+
+User Verification
+
+   |
+
+Controller
+
+59.2 Authorization Middleware
+Responsibilities:
+Check user role 
+Check permissions 
+Allow or deny request 
+
+59.3 Validation Middleware
+Responsibilities:
+Validate request body 
+Validate query parameters 
+Validate route parameters 
+Recommended:
+Zod 
+Joi 
+Express Validator 
+
+59.4 Error Handling Middleware
+Responsibilities:
+Catch application errors 
+Format responses 
+Hide sensitive errors 
+
+Chapter 60 – API Rate Limiting
+Purpose
+Prevent API abuse and attacks.
+
+Rules
+Limit:
+Login attempts 
+Password reset requests 
+Public APIs 
+
+Example:
+Maximum:
+
+5 Login Attempts
+
+per
+
+15 Minutes
+
+Chapter 61 – Data Validation Requirements
+All APIs must validate:
+
+Product Validation
+Required:
+Product Name 
+Category 
+Brand 
+Selling Price 
+
+Sale Validation
+Required:
+Product Available 
+Quantity Valid 
+Payment Valid 
+
+Purchase Validation
+Required:
+Supplier 
+Product 
+Purchase Price 
+
+User Validation
+Required:
+Username 
+Email 
+Password 
+Role 
+
+Chapter 62 – API Testing Requirements
+Purpose
+Ensure API reliability before deployment.
+
+62.1 Unit Testing
+Test:
+Controllers 
+Services 
+Utility Functions 
+Recommended:
+Jest 
+
+62.2 Integration Testing
+Test:
+API Routes 
+Database Communication 
+Authentication Flow 
+
+62.3 API Testing Tools
+Recommended:
+Postman 
+Insomnia 
+Swagger UI 
+
+Chapter 63 – Swagger API Documentation
+Purpose
+Provide interactive API documentation.
+
+Swagger Should Include
+Each endpoint:
+API URL 
+HTTP Method 
+Description 
+Authentication Requirement 
+Request Body 
+Response Format 
+Error Responses 
+
+Example:
+POST /api/v1/products
+
+Create New Product
+
+Authorization:
+Bearer Token Required
+
+Chapter 64 – Environment Configuration
+Purpose
+Manage application configuration securely.
+
+Required Environment Variables
+Example:
+PORT=4000
+
+DATABASE_URL=
+
+JWT_SECRET=
+
+JWT_EXPIRE=
+
+CLOUDINARY_CLOUD_NAME=
+
+CLOUDINARY_API_KEY=
+
+CLOUDINARY_API_SECRET=
+
+NODE_ENV=
+
+Chapter 65 – Deployment Requirements
+Production Architecture
+                     Users
+
+                       |
+
+                 Next.js Frontend
+
+                       |
+
+                    API Server
+
+                       |
+
+                 Node.js Backend
+
+                       |
+
+                 PostgreSQL Database
+
+                       |
+
+                  Cloudinary Storage
+
+Chapter 66 – Deployment Checklist
+Backend Deployment
+Required:
+Production environment variables 
+Database migration 
+Build process 
+Error logging 
+Security configuration 
+
+Frontend Deployment
+Required:
+Production API URL 
+Environment variables 
+Build optimization 
+
+Database Deployment
+Required:
+PostgreSQL server 
+Backup system 
+Database indexes 
+Migration management 
+
+Chapter 67 – Logging Requirements
+Purpose
+Track system activities and errors.
+
+Log Types
+Application Logs
+Track:
+Server start 
+API requests 
+Errors 
+
+Security Logs
+Track:
+Failed login 
+Unauthorized access 
+Permission failures 
+
+Business Logs
+Track:
+Sales 
+Purchases 
+Stock changes 
+
+Chapter 68 – API Monitoring Requirements
+Monitor:
+Server health 
+API response time 
+Database performance 
+Error rate 
+Failed requests 
+
+Chapter 69 – Development Workflow
+Recommended Workflow
+Requirement
+
+     |
+
+Database Design
+
+     |
+
+API Development
+
+     |
+
+Testing
+
+     |
+
+Frontend Integration
+
+     |
+
+Code Review
+
+     |
+
+Deployment
+
+Chapter 70 – API Development Standards
+Developers must follow:
+Code Quality
+Clean architecture 
+Reusable services 
+Proper naming conventions 
+Error handling 
+
+Git Workflow
+Branches:
+main
+
+development
+
+feature/product-api
+
+feature/sales-api
+
+feature/payment-api
+
+Commit Standards
+Example:
+feat: add product creation API
+
+fix: resolve stock update issue
+
+docs: update API documentation
+
+Chapter 71 – Final API Checklist
+Before completing development:
+Authentication
+✅ Login API✅ JWT Security✅ Password Management
+
+Master Data
+✅ Users✅ Roles✅ Products✅ Customers✅ Suppliers
+
+Transactions
+✅ Purchases✅ Sales✅ Returns✅ Payments
+
+Inventory
+✅ Stock Management✅ IMEI Tracking✅ Adjustments
+
+Business Operations
+✅ Repairs✅ Warranty✅ Expenses
+
+Reports
+✅ Dashboard✅ Sales Reports✅ Financial Reports✅ Inventory Reports
+
+Integration
+✅ Cloudinary✅ Notifications✅ Backup✅ Audit Logs
+
+✅ Volume 6 Completed
+Volume
+Document
+Status
+📘 Volume 1
+Business Requirements Document
+✅
+📗 Volume 2
+Software Requirements Specification
+✅
+📙 Volume 3
+Database Design Document
+✅
+📕 Volume 4
+System Architecture & Technical Design
+✅
+📒 Volume 5
+UI/UX Design Specification
+✅
+📔 Volume 6
+API Specification Document
+✅
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
