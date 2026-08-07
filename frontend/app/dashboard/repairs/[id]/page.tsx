@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUploadField } from "@/components/image-upload-field";
 import { fetchEmployees } from "@/lib/api/employees";
 import { fetchRepair, updateRepair, updateRepairStatus, type RepairStatus } from "@/lib/api/repairs";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -120,6 +121,14 @@ export default function RepairDetailPage(props: PageProps<"/dashboard/repairs/[i
               <span className="text-sm text-muted-foreground">Problem</span>
               <p className="text-sm">{repair.problemDescription}</p>
             </div>
+
+            <ImageUploadField
+              type="repair"
+              entityId={id}
+              imageUrl={repair.imageUrl}
+              label="Device Photo"
+              invalidateQueryKeys={[["repairs", id]]}
+            />
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="repair-diagnosis" className="text-sm font-medium">

@@ -19,6 +19,7 @@ const customerSelect = {
   outstandingBalance: true,
   notes: true,
   isActive: true,
+  attachmentUrl: true,
   createdAt: true,
 } satisfies Prisma.CustomerSelect;
 
@@ -37,6 +38,7 @@ function toCustomerDto(customer: CustomerRow) {
     creditLimit: customer.creditLimit,
     outstandingBalance: customer.outstandingBalance,
     notes: customer.notes,
+    attachmentUrl: customer.attachmentUrl,
     status: customer.isActive ? "active" : ("inactive" as const),
     createdAt: customer.createdAt,
   };

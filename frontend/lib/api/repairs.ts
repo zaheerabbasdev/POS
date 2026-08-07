@@ -19,6 +19,7 @@ export interface RepairListItem {
   imei: string | null;
   technician: string | null;
   problemDescription: string;
+  imageUrl: string | null;
   estimatedCost: string;
   actualCost: string;
   status: RepairStatus;

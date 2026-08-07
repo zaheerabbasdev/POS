@@ -12,6 +12,7 @@ export interface Customer {
   creditLimit: string;
   outstandingBalance: string;
   notes: string | null;
+  attachmentUrl: string | null;
   status: "active" | "inactive";
   createdAt: string;
 }
@@ -44,6 +45,12 @@ interface Paginated<T> {
 export async function fetchCustomers(params: CustomerListParams = {}): Promise<Paginated<Customer>> {
   const { data } = await apiClient.get<Paginated<Customer>>("/customers", { params });
   return data;
+}
+
+// GET /api/v1/customers/{id}.
+export async function fetchCustomer(id: string): Promise<Customer> {
+  const { data } = await apiClient.get<{ data: Customer }>(`/customers/${id}`);
+  return data.data;
 }
 
 // POST /api/v1/customers (API Spec Chapter 27.2).

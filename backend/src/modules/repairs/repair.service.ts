@@ -26,6 +26,7 @@ function toRepairListItem(repair: RepairListRow) {
       ? [repair.technician.firstName, repair.technician.lastName].filter(Boolean).join(" ")
       : null,
     problemDescription: repair.problemDescription,
+    imageUrl: repair.imageUrl,
     estimatedCost: repair.estimatedCost,
     actualCost: repair.actualCost,
     status: repair.repairStatus,

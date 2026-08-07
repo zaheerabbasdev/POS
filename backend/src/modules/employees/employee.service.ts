@@ -17,6 +17,7 @@ const employeeSelect = {
   salary: true,
   joiningDate: true,
   status: true,
+  profileImage: true,
   createdAt: true,
 } satisfies Prisma.EmployeeSelect;
 
@@ -34,6 +35,7 @@ function toEmployeeDto(employee: EmployeeRow) {
     salary: employee.salary,
     joiningDate: employee.joiningDate,
     status: employee.status,
+    profileImage: employee.profileImage,
     createdAt: employee.createdAt,
   };
 }

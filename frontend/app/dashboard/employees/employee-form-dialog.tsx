@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createEmployee, updateEmployee, type Employee } from "@/lib/api/employees";
+import { ImageUploadField } from "@/components/image-upload-field";
+import { createEmployee, fetchEmployee, updateEmployee, type Employee } from "@/lib/api/employees";
 import { getApiErrorMessage } from "@/lib/api-client";
 
 const EMPLOYEE_STATUS_ITEMS = { ACTIVE: "Active", INACTIVE: "Inactive" };
@@ -63,6 +64,16 @@ function EmployeeFormDialogBody({
 }) {
   const isEditing = Boolean(employee);
   const queryClient = useQueryClient();
+
+  // Sourced live (not just the snapshot the list row passed in) so the
+  // photo control reflects an upload/remove immediately instead of only
+  // after the dialog is closed and reopened.
+  const { data: liveEmployee } = useQuery({
+    queryKey: ["employees", employee?.id],
+    queryFn: () => fetchEmployee(employee!.id),
+    enabled: isEditing,
+    initialData: employee,
+  });
 
   const {
     register,
@@ -114,6 +125,16 @@ function EmployeeFormDialogBody({
       </DialogHeader>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        {isEditing ? (
+          <ImageUploadField
+            type="employee"
+            entityId={employee!.id}
+            imageUrl={liveEmployee?.profileImage ?? null}
+            label="Photo"
+            invalidateQueryKeys={[["employees"], ["employees", employee!.id]]}
+          />
+        ) : null}
+
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="employee-name" className="text-sm font-medium">

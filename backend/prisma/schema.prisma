@@ -245,6 +245,10 @@ model Employee {
   salary       Decimal?       @db.Decimal(12, 2)
   joiningDate  DateTime       @map("joining_date") @db.Date
   status       EmployeeStatus @default(ACTIVE)
+  // Not in DDD Table 18 — API Spec Chapter 52's "Employee Photo" upload type
+  // needs somewhere to land; User already has profileImage, but a technician
+  // or other employee doesn't necessarily have a login, so it lives here too.
+  profileImage String?        @map("profile_image")
   createdAt    DateTime       @default(now()) @map("created_at")
 
   user             User?
@@ -458,6 +462,9 @@ model Customer {
   outstandingBalance Decimal      @default(0) @map("outstanding_balance") @db.Decimal(12, 2)
   notes              String?
   isActive           Boolean      @default(true) @map("is_active")
+  // Not in DDD Table 16 — API Spec Chapter 52's "Customer Attachment" upload
+  // type (e.g. a scanned ID) needs a field to hold the resulting URL.
+  attachmentUrl      String?      @map("attachment_url")
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
@@ -753,6 +760,9 @@ model Repair {
   expectedDeliveryDate DateTime?    @map("expected_delivery_date") @db.Date
   deliveredDate        DateTime?    @map("delivered_date")
   remarks              String?
+  // Not in DDD Table 27 — API Spec Chapter 52's "Repair Image" upload type
+  // (e.g. device condition at intake) needs a field to hold the URL.
+  imageUrl             String?      @map("image_url")
   createdAt            DateTime     @default(now()) @map("created_at")
   updatedAt            DateTime     @updatedAt @map("updated_at")
 

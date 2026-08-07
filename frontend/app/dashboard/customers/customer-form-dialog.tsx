@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createCustomer, updateCustomer, type Customer } from "@/lib/api/customers";
+import { ImageUploadField } from "@/components/image-upload-field";
+import { createCustomer, fetchCustomer, updateCustomer, type Customer } from "@/lib/api/customers";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { CUSTOMER_TYPE_ITEMS, STATUS_ITEMS } from "@/lib/select-items";
 
@@ -45,6 +46,15 @@ interface CustomerFormDialogProps {
 export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFormDialogProps) {
   const isEditing = Boolean(customer);
   const queryClient = useQueryClient();
+
+  // Sourced live so the attachment control reflects an upload/remove
+  // immediately instead of only after the dialog is closed and reopened.
+  const { data: liveCustomer } = useQuery({
+    queryKey: ["customers", customer?.id],
+    queryFn: () => fetchCustomer(customer!.id),
+    enabled: isEditing,
+    initialData: customer,
+  });
 
   const {
     register,
@@ -108,6 +118,16 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
         </DialogHeader>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+          {isEditing ? (
+            <ImageUploadField
+              type="customer"
+              entityId={customer!.id}
+              imageUrl={liveCustomer?.attachmentUrl ?? null}
+              label="Attachment"
+              invalidateQueryKeys={[["customers"], ["customers", customer!.id]]}
+            />
+          ) : null}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="customer-name" className="text-sm font-medium">

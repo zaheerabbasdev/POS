@@ -11,6 +11,7 @@ export interface Employee {
   salary: string | null;
   joiningDate: string;
   status: "ACTIVE" | "INACTIVE";
+  profileImage: string | null;
   createdAt: string;
 }
 
@@ -39,6 +40,12 @@ interface Paginated<T> {
 export async function fetchEmployees(params: EmployeeListParams = {}): Promise<Paginated<Employee>> {
   const { data } = await apiClient.get<Paginated<Employee>>("/employees", { params });
   return data;
+}
+
+// GET /api/v1/employees/{id}.
+export async function fetchEmployee(id: string): Promise<Employee> {
+  const { data } = await apiClient.get<{ data: Employee }>(`/employees/${id}`);
+  return data.data;
 }
 
 // POST /api/v1/employees (API Spec Chapter 29.2).
