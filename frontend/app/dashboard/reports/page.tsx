@@ -14,12 +14,15 @@ import {
   fetchCustomerPurchases,
   fetchDailySales,
   fetchEmployeeSales,
+  fetchFinancialExpenses,
+  fetchImeiReport,
   fetchLowStockReport,
   fetchProductSales,
   fetchProfitLoss,
   fetchPurchaseSummary,
   fetchCashFlow,
   fetchSalesSummary,
+  fetchStockMovement,
   fetchStockReport,
   fetchSupplierBalance,
   fetchSupplierPurchases,
@@ -78,7 +81,7 @@ export default function ReportsPage() {
 
       {category === "sales" ? <SalesReports range={range} /> : null}
       {category === "purchases" ? <PurchaseReports range={range} /> : null}
-      {category === "inventory" ? <InventoryReports /> : null}
+      {category === "inventory" ? <InventoryReports range={range} /> : null}
       {category === "financial" ? <FinancialReports range={range} /> : null}
       {category === "customers" ? <CustomerReports range={range} /> : null}
       {category === "suppliers" ? <SupplierReports /> : null}
@@ -298,11 +301,19 @@ function PurchaseReports({ range }: { range: Range }) {
   );
 }
 
-function InventoryReports() {
+function InventoryReports({ range }: { range: Range }) {
   const { data: stock, isLoading: stockLoading } = useQuery({ queryKey: ["reports", "inventory-stock"], queryFn: fetchStockReport });
   const { data: lowStock, isLoading: lowStockLoading } = useQuery({
     queryKey: ["reports", "inventory-low-stock"],
     queryFn: fetchLowStockReport,
+  });
+  const { data: movement, isLoading: movementLoading } = useQuery({
+    queryKey: ["reports", "inventory-movement", range],
+    queryFn: () => fetchStockMovement(range),
+  });
+  const { data: imeis, isLoading: imeisLoading } = useQuery({
+    queryKey: ["reports", "inventory-imei"],
+    queryFn: () => fetchImeiReport(),
   });
 
   const totalStockValue = stock?.reduce((sum, row) => sum + row.stockValue, 0) ?? 0;
@@ -395,6 +406,86 @@ function InventoryReports() {
           </Table>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Stock Movement</CardTitle>
+          <ExportMenu reportType="inventory/movement" filters={range} />
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead>Reference</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {movement && movement.length > 0 ? (
+                movement.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{row.sku}</TableCell>
+                    <TableCell className="font-medium">{row.productName}</TableCell>
+                    <TableCell>{row.type}</TableCell>
+                    <TableCell className="text-right">{row.quantity}</TableCell>
+                    <TableCell className="font-mono text-xs">{row.referenceNumber ?? "—"}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
+                    {movementLoading ? "Loading..." : "No stock movement in range."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>IMEI Register</CardTitle>
+          <ExportMenu reportType="inventory/imei" />
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>IMEI</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Warranty</TableHead>
+                <TableHead>Purchased</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {imeis && imeis.length > 0 ? (
+                imeis.map((row) => (
+                  <TableRow key={row.imei}>
+                    <TableCell className="font-mono text-xs">{row.imei}</TableCell>
+                    <TableCell className="font-medium">{row.productName}</TableCell>
+                    <TableCell>{row.saleStatus}</TableCell>
+                    <TableCell>{row.warrantyStatus ?? "—"}</TableCell>
+                    <TableCell>{row.purchaseDate ? new Date(row.purchaseDate).toLocaleDateString() : "—"}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
+                    {imeisLoading ? "Loading..." : "No IMEIs recorded."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -402,6 +493,10 @@ function InventoryReports() {
 function FinancialReports({ range }: { range: Range }) {
   const { data: pnl } = useQuery({ queryKey: ["reports", "profit-loss", range], queryFn: () => fetchProfitLoss(range) });
   const { data: cashFlow } = useQuery({ queryKey: ["reports", "cash-flow", range], queryFn: () => fetchCashFlow(range) });
+  const { data: expenses, isLoading: expensesLoading } = useQuery({
+    queryKey: ["reports", "financial-expenses", range],
+    queryFn: () => fetchFinancialExpenses(range),
+  });
 
   return (
     <div className="flex flex-col gap-4">
@@ -436,6 +531,43 @@ function FinancialReports({ range }: { range: Range }) {
             <StatTile label="Cash Out" value={cashFlow?.cashOut ?? 0} icon={TrendingDown} />
             <StatTile label="Net Position" value={cashFlow?.currentBalance ?? 0} icon={Wallet} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Expenses</CardTitle>
+          <ExportMenu reportType="financial/expenses" filters={range} />
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Recorded By</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {expenses && expenses.length > 0 ? (
+                expenses.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-medium">{row.category}</TableCell>
+                    <TableCell>{row.employee ?? "—"}</TableCell>
+                    <TableCell className="text-right">{row.amount}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                    {expensesLoading ? "Loading..." : "No expenses in range."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

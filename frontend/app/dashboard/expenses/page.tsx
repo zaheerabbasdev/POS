@@ -9,19 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchExpenses, deleteExpense, type Expense } from "@/lib/api/expenses";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ExpenseFormDialog } from "./expense-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function ExpensesPage() {
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined);
   const [deletingExpense, setDeletingExpense] = useState<Expense | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["expenses"],
-    queryFn: () => fetchExpenses({ limit: 50 }),
+    queryKey: ["expenses", { page }],
+    queryFn: () => fetchExpenses({ page, limit: PAGE_SIZE }),
   });
 
   const deleteMutation = useMutation({
@@ -118,6 +122,16 @@ export default function ExpensesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <ExpenseFormDialog open={formOpen} onOpenChange={setFormOpen} expense={editingExpense} />
 

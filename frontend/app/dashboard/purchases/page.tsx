@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchPurchases } from "@/lib/api/purchases";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
@@ -17,12 +18,15 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = 
   PENDING: "destructive",
 };
 
+const PAGE_SIZE = 50;
+
 export default function PurchasesPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["purchases"],
-    queryFn: () => fetchPurchases({ limit: 50 }),
+    queryKey: ["purchases", { page }],
+    queryFn: () => fetchPurchases({ page, limit: PAGE_SIZE }),
   });
 
   const filtered = search
@@ -99,6 +103,16 @@ export default function PurchasesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "../../common/middleware/asyncHandler.js";
 import { sendPaginated, sendSuccess } from "../../common/utils/apiResponse.js";
 import { HttpStatus } from "../../common/constants/httpStatus.js";
+import { logAuditFromRequest } from "../../common/utils/auditLog.js";
 import * as expenseService from "./expense.service.js";
 import type { ListExpensesInput } from "./expense.service.js";
 
@@ -27,5 +28,6 @@ export const updateExpense = asyncHandler(async (req: Request, res: Response) =>
 
 export const deleteExpense = asyncHandler(async (req: Request, res: Response) => {
   await expenseService.deleteExpense(req.params.id as string);
+  void logAuditFromRequest(req, "Expense", "DELETE", `Deleted expense ${req.params.id as string}.`);
   sendSuccess(res, null, "Expense deleted successfully.");
 });

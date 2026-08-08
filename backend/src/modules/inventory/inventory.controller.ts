@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "../../common/middleware/asyncHandler.js";
 import { sendPaginated, sendSuccess } from "../../common/utils/apiResponse.js";
 import { UnauthorizedError } from "../../common/errors/AppError.js";
+import { logAuditFromRequest } from "../../common/utils/auditLog.js";
 import * as inventoryService from "./inventory.service.js";
 import type { ListInventoryInput } from "./inventory.service.js";
 
@@ -20,5 +21,12 @@ export const getStockHistory = asyncHandler(async (req: Request, res: Response) 
 export const createAdjustment = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new UnauthorizedError();
   const inventory = await inventoryService.createAdjustment(req.body, req.user.id);
+  const body = req.body as { productId: string; type: "increase" | "decrease"; quantity: number; reason: string };
+  void logAuditFromRequest(
+    req,
+    "Inventory",
+    "ADJUSTMENT",
+    `${body.type === "increase" ? "Increased" : "Decreased"} stock for product ${body.productId} by ${body.quantity} — ${body.reason}.`,
+  );
   sendSuccess(res, inventory, "Stock adjustment recorded successfully.");
 });

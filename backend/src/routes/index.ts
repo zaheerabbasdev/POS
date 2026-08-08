@@ -24,6 +24,8 @@ import { expenseRouter } from "../modules/expenses/index.js";
 import { reportRouter } from "../modules/reports/index.js";
 import { exportRouter } from "../modules/export/index.js";
 import { uploadRouter } from "../modules/uploads/index.js";
+import { settingRouter } from "../modules/settings/index.js";
+import { auditRouter } from "../modules/audit/index.js";
 
 // Root API router — mounted at /api/v1 in app.ts. Each feature module keeps
 // its own router (e.g. modules/products/product.routes.ts per SAD Chapter
@@ -59,4 +61,6 @@ apiRouter.use("/expenses", expenseRouter);
 apiRouter.use("/reports", reportRouter);
 apiRouter.use("/export", exportRouter);
 apiRouter.use("/uploads", uploadRouter);
+apiRouter.use("/settings", settingRouter);
+apiRouter.use("/audit-logs", auditRouter);
 // ...

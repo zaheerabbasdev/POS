@@ -3,6 +3,8 @@
 import { use, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +76,9 @@ export default function SaleDetailPage(props: PageProps<"/dashboard/sales/[id]">
         <div className="flex items-center gap-2">
           <Badge variant={STATUS_VARIANT[sale.status] ?? "outline"}>{sale.status}</Badge>
           {sale.isCancelled ? <Badge variant="destructive">Cancelled</Badge> : null}
+          <Button variant="outline" nativeButton={false} render={<Link href={`/print/sales/${sale.id}`} target="_blank" />}>
+            <Printer /> Print Invoice
+          </Button>
           {!sale.isCancelled ? (
             <Button variant="outline" onClick={() => setReturnOpen(true)}>
               Return Items

@@ -11,8 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatTile } from "@/components/stat-tile";
-import { fetchCurrentDrawer, fetchDrawerSummary, openDrawer, closeDrawer, cashIn, cashOut } from "@/lib/api/cash-drawer";
+import { PaginationControls } from "@/components/pagination-controls";
+import { fetchCurrentDrawer, fetchDrawerSummary, fetchDrawerHistory, openDrawer, closeDrawer, cashIn, cashOut } from "@/lib/api/cash-drawer";
 import { getApiErrorMessage } from "@/lib/api-client";
+
+const HISTORY_PAGE_SIZE = 20;
 
 export default function CashDrawerPage() {
   const queryClient = useQueryClient();
@@ -119,6 +122,8 @@ export default function CashDrawerPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <DrawerHistorySection />
       </div>
     );
   }
@@ -278,6 +283,87 @@ export default function CashDrawerPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <DrawerHistorySection />
     </div>
+  );
+}
+
+/** "Session history (for managers)" — API Spec 37.3's summary is per-session; this is every past session, paginated. */
+function DrawerHistorySection() {
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["cash-drawer", "history", { page }],
+    queryFn: () => fetchDrawerHistory({ page, limit: HISTORY_PAGE_SIZE }),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Session History</CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cashier</TableHead>
+              <TableHead>Opened</TableHead>
+              <TableHead>Closed</TableHead>
+              <TableHead className="text-right">Opening</TableHead>
+              <TableHead className="text-right">Closing</TableHead>
+              <TableHead className="text-right">Difference</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : data && data.data.length > 0 ? (
+              data.data.map((session) => (
+                <TableRow key={session.id}>
+                  <TableCell className="font-medium">{session.cashier}</TableCell>
+                  <TableCell>{new Date(session.openedAt).toLocaleString()}</TableCell>
+                  <TableCell>{session.closedAt ? new Date(session.closedAt).toLocaleString() : "—"}</TableCell>
+                  <TableCell className="text-right">{session.openingBalance}</TableCell>
+                  <TableCell className="text-right">{session.closingBalance ?? "—"}</TableCell>
+                  <TableCell className="text-right">
+                    {session.difference !== null && Number(session.difference) !== 0 ? (
+                      <span className={Number(session.difference) < 0 ? "text-destructive" : "text-amber-600 dark:text-amber-500"}>
+                        {session.difference}
+                      </span>
+                    ) : (
+                      (session.difference ?? "—")
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={session.status === "OPEN" ? "default" : "outline"}>{session.status}</Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
+                  No past sessions yet.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={HISTORY_PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
+    </Card>
   );
 }

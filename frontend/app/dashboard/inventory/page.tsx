@@ -7,10 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchInventory, type InventoryItem } from "@/lib/api/inventory";
 import { STOCK_STATUS_ITEMS } from "@/lib/select-items";
 import { AdjustmentDialog } from "./adjustment-dialog";
 import { HistoryDialog } from "./history-dialog";
+
+const PAGE_SIZE = 50;
 
 const STOCK_STATUS_LABEL: Record<InventoryItem["stockStatus"], { label: string; variant: "default" | "secondary" | "destructive" }> = {
   in_stock: { label: "In stock", variant: "default" },
@@ -20,12 +23,13 @@ const STOCK_STATUS_LABEL: Record<InventoryItem["stockStatus"], { label: string; 
 
 export default function InventoryPage() {
   const [stockStatus, setStockStatus] = useState<InventoryItem["stockStatus"] | "">("");
+  const [page, setPage] = useState(1);
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | undefined>(undefined);
   const [historyItem, setHistoryItem] = useState<InventoryItem | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["inventory", { stockStatus }],
-    queryFn: () => fetchInventory({ stockStatus: stockStatus || undefined, limit: 50 }),
+    queryKey: ["inventory", { stockStatus, page }],
+    queryFn: () => fetchInventory({ stockStatus: stockStatus || undefined, page, limit: PAGE_SIZE }),
   });
 
   return (
@@ -38,7 +42,10 @@ export default function InventoryPage() {
       <Select
         items={STOCK_STATUS_ITEMS}
         value={stockStatus || "all"}
-        onValueChange={(v) => setStockStatus(!v || v === "all" ? "" : (v as InventoryItem["stockStatus"]))}
+        onValueChange={(v) => {
+          setStockStatus(!v || v === "all" ? "" : (v as InventoryItem["stockStatus"]));
+          setPage(1);
+        }}
       >
         <SelectTrigger className="w-48">
           <SelectValue placeholder="All stock levels" />
@@ -108,6 +115,16 @@ export default function InventoryPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <AdjustmentDialog open={Boolean(adjustingItem)} onOpenChange={(open) => !open && setAdjustingItem(undefined)} item={adjustingItem} />
       <HistoryDialog open={Boolean(historyItem)} onOpenChange={(open) => !open && setHistoryItem(undefined)} item={historyItem} />

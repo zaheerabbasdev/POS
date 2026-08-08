@@ -3,6 +3,7 @@ import { asyncHandler } from "../../common/middleware/asyncHandler.js";
 import { sendPaginated, sendSuccess } from "../../common/utils/apiResponse.js";
 import { HttpStatus } from "../../common/constants/httpStatus.js";
 import { UnauthorizedError } from "../../common/errors/AppError.js";
+import { logAuditFromRequest } from "../../common/utils/auditLog.js";
 import * as saleService from "./sale.service.js";
 import type { ListSalesInput } from "./sale.service.js";
 
@@ -26,5 +27,6 @@ export const cancelSale = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) throw new UnauthorizedError();
   const body = req.body as { reason?: string } | undefined;
   const sale = await saleService.cancelSale(req.params.id as string, body?.reason, req.user.id);
+  void logAuditFromRequest(req, "Sale", "CANCEL", `Cancelled sale ${sale.invoiceNumber}${body?.reason ? ` — ${body.reason}` : ""}.`);
   sendSuccess(res, sale, "Sale cancelled successfully.");
 });

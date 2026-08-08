@@ -9,17 +9,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchCustomers, type Customer } from "@/lib/api/customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function CustomersPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", { search }],
-    queryFn: () => fetchCustomers({ search: search || undefined, limit: 50 }),
+    queryKey: ["customers", { search, page }],
+    queryFn: () => fetchCustomers({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const openCreate = () => {
@@ -50,7 +54,10 @@ export default function CustomersPage() {
           placeholder="Search by name, phone, or code..."
           className="pl-8"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -112,6 +119,16 @@ export default function CustomersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} customer={editingCustomer} />
     </div>

@@ -9,7 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchSales } from "@/lib/api/sales";
+
+const PAGE_SIZE = 50;
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   PAID: "default",
@@ -19,10 +22,11 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = 
 
 export default function SalesPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["sales"],
-    queryFn: () => fetchSales({ limit: 50 }),
+    queryKey: ["sales", { page }],
+    queryFn: () => fetchSales({ page, limit: PAGE_SIZE }),
   });
 
   const filtered = search
@@ -48,7 +52,7 @@ export default function SalesPage() {
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search by invoice # or customer..."
+          placeholder="Search this page by invoice # or customer..."
           className="pl-8"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -104,6 +108,16 @@ export default function SalesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
     </div>
   );
 }

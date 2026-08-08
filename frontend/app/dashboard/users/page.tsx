@@ -11,20 +11,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchUsers, deleteUser, type UserListItem, type UserDetail } from "@/lib/api/users";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { UserFormDialog } from "./user-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function UsersPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserDetail | undefined>(undefined);
   const [deactivatingUser, setDeactivatingUser] = useState<UserListItem | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["users", { search }],
-    queryFn: () => fetchUsers({ search: search || undefined, limit: 50 }),
+    queryKey: ["users", { search, page }],
+    queryFn: () => fetchUsers({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const deleteMutation = useMutation({
@@ -67,7 +71,10 @@ export default function UsersPage() {
           placeholder="Search by name, username, or email..."
           className="pl-8"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -131,6 +138,16 @@ export default function UsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <UserFormDialog open={formOpen} onOpenChange={setFormOpen} user={editingUser} />
 

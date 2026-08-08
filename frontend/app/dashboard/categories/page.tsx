@@ -10,20 +10,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchCategories, deleteCategory, type Category } from "@/lib/api/categories";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { CategoryFormDialog } from "./category-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function CategoriesPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | undefined>(undefined);
   const [deletingCategory, setDeletingCategory] = useState<Category | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["categories", { search }],
-    queryFn: () => fetchCategories({ search: search || undefined, limit: 50 }),
+    queryKey: ["categories", { search, page }],
+    queryFn: () => fetchCategories({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const deleteMutation = useMutation({
@@ -64,7 +68,10 @@ export default function CategoriesPage() {
           placeholder="Search categories..."
           className="pl-8"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -120,6 +127,16 @@ export default function CategoriesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <CategoryFormDialog open={formOpen} onOpenChange={setFormOpen} category={editingCategory} />
 

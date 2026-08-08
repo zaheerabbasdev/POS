@@ -86,3 +86,17 @@ export async function createPurchase(input: CreatePurchaseInput): Promise<Purcha
   const { data } = await apiClient.post<{ data: PurchaseDetail }>("/purchases", input);
   return data.data;
 }
+
+export interface UpdatePurchaseInput {
+  supplierId?: string;
+  purchaseDate?: string;
+  remarks?: string;
+}
+
+// PATCH /api/v1/purchases/{id} (API Spec Chapter 31.4). Only supplier,
+// purchase date, and remarks are editable — line items and payments are
+// immutable once posted (payments go through the Payments module instead).
+export async function updatePurchase(id: string, input: UpdatePurchaseInput): Promise<PurchaseDetail> {
+  const { data } = await apiClient.patch<{ data: PurchaseDetail }>(`/purchases/${id}`, input);
+  return data.data;
+}

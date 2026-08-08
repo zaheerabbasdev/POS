@@ -10,7 +10,8 @@ import { getApiErrorMessage } from "@/lib/api-client";
 
 interface ImageUploadFieldProps {
   type: UploadType;
-  entityId: string;
+  /** Omit for "logo" — the shop logo isn't tied to a specific record, backend treats it as a singleton. */
+  entityId?: string;
   imageUrl: string | null;
   label: string;
   /** Query keys to invalidate after a successful upload/remove (e.g. the entity's list + detail queries). */
@@ -20,13 +21,14 @@ interface ImageUploadFieldProps {
 /**
  * A small photo/attachment control — API Spec Chapter 52's "Frontend
  * Upload → Backend Validation → Cloudinary Upload → Save URL → Database"
- * flow, reused across Employees, Customers, and Repairs. Only usable once
- * the entity already exists (needs a real entityId), same constraint the
- * Products image upload already has.
+ * flow, reused across Products, Employees, Customers, Repairs, and the shop
+ * Logo. Only usable once the entity already exists (needs a real
+ * entityId) — the one exception is "logo", which has no entityId at all.
  */
 export function ImageUploadField({ type, entityId, imageUrl, label, invalidateQueryKeys }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const deleteId = type === "logo" ? "logo:shop" : `${type}:${entityId}`;
 
   function invalidateAll() {
     for (const key of invalidateQueryKeys) void queryClient.invalidateQueries({ queryKey: key });
@@ -42,7 +44,7 @@ export function ImageUploadField({ type, entityId, imageUrl, label, invalidateQu
   });
 
   const removeMutation = useMutation({
-    mutationFn: () => deleteImage(`${type}:${entityId}`),
+    mutationFn: () => deleteImage(deleteId),
     onSuccess: () => {
       invalidateAll();
       toast.success(`${label} removed.`);

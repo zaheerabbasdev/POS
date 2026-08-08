@@ -10,20 +10,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchBrands, deleteBrand, type Brand } from "@/lib/api/brands";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { BrandFormDialog } from "./brand-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function BrandsPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | undefined>(undefined);
   const [deletingBrand, setDeletingBrand] = useState<Brand | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["brands", { search }],
-    queryFn: () => fetchBrands({ search: search || undefined, limit: 50 }),
+    queryKey: ["brands", { search, page }],
+    queryFn: () => fetchBrands({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const deleteMutation = useMutation({
@@ -60,7 +64,15 @@ export default function BrandsPage() {
 
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search brands..." className="pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input
+          placeholder="Search brands..."
+          className="pl-8"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
       </div>
 
       <Card>
@@ -110,6 +122,16 @@ export default function BrandsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <BrandFormDialog open={formOpen} onOpenChange={setFormOpen} brand={editingBrand} />
 

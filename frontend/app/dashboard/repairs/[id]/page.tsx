@@ -3,6 +3,8 @@
 import { use, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Link from "next/link";
+import { Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,7 +99,12 @@ export default function RepairDetailPage(props: PageProps<"/dashboard/repairs/[i
             {new Date(repair.receivedDate).toLocaleDateString()}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANT[repair.status]}>{REPAIR_STATUS_ITEMS[repair.status]}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={STATUS_VARIANT[repair.status]}>{REPAIR_STATUS_ITEMS[repair.status]}</Badge>
+          <Button variant="outline" nativeButton={false} render={<Link href={`/print/repairs/${repair.id}`} target="_blank" />}>
+            <Printer /> Print Receipt
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

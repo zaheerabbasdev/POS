@@ -12,22 +12,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchProducts, fetchProduct, deleteProduct, type ProductListItem } from "@/lib/api/products";
 import { fetchCategories } from "@/lib/api/categories";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ProductFormDialog } from "./product-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | undefined>(undefined);
   const [deletingProduct, setDeletingProduct] = useState<ProductListItem | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["products", { search, categoryId }],
-    queryFn: () => fetchProducts({ search: search || undefined, categoryId: categoryId || undefined, limit: 50 }),
+    queryKey: ["products", { search, categoryId, page }],
+    queryFn: () => fetchProducts({ search: search || undefined, categoryId: categoryId || undefined, page, limit: PAGE_SIZE }),
   });
 
   const { data: categories } = useQuery({
@@ -85,13 +89,19 @@ export default function ProductsPage() {
             placeholder="Search by name, SKU, or barcode..."
             className="pl-8"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <Select
           items={categoryFilterItems}
           value={categoryId || "all"}
-          onValueChange={(v) => setCategoryId(!v || v === "all" ? "" : v)}
+          onValueChange={(v) => {
+            setCategoryId(!v || v === "all" ? "" : v);
+            setPage(1);
+          }}
         >
           <SelectTrigger className="w-48">
             <SelectValue placeholder="All categories" />
@@ -169,6 +179,16 @@ export default function ProductsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <ProductFormDialog open={formOpen} onOpenChange={setFormOpen} product={editingProductId ? editingProduct : undefined} />
 

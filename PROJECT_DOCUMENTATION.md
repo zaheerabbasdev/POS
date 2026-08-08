@@ -511,18 +511,141 @@ npm run dev               # http://localhost:3000
 
 ---
 
-## 11. What's Not Built
+## 11. What's Not Built / Known Gaps
 
-Two chapters of the original API Specification volume were never implemented:
+An earlier pass through this section (verified directly against the code, not
+recalled from memory) found nine real gaps, listed below with what was actually
+done to close each one. Two items remain genuinely out of scope — they're called
+out at the end rather than glossed over.
 
-- **Chapter 53 — Notification APIs** (`GET /notifications`, `PATCH
-  /notifications/:id/read`, `POST /notifications`). The `Notification` model exists
-  in the schema (unused).
-- **Chapter 54 — Backup APIs**. No corresponding model or discussion yet.
+### 11.1 Closed — email delivery
 
-Everything else in the 6-volume doc — every BRD/SRS module, every DDD table, every
-API Specification chapter through Chapter 52 (Cloudinary uploads) — has a working
-backend endpoint, and the large majority also have a wired-up frontend page. The
-Settings module (Chapter 30 — shop name/address/logo/currency/timezone) has no
-dedicated CRUD endpoints or page yet either, though the underlying `Setting`
-key-value table already stores the shop logo URL from the Uploads module.
+**Was:** Forgot-password was fully functional end-to-end (token generation,
+expiry, anti-enumeration response, consumption on reset) but no email provider was
+wired up — the reset link only ever reached the server's log output.
+
+**Now:** `backend/src/config/mailer.ts` wraps `nodemailer` behind an
+`isEmailConfigured` gate (same "degrade gracefully if unset" pattern as
+Cloudinary). `auth.service.ts`'s `forgotPassword` sends a real email via Gmail
+SMTP when `SMTP_HOST`/`SMTP_USER`/`SMTP_PASS` are set in `.env`, and still falls
+back to a logged link if they aren't. `SMTP_PASS` must be a Gmail **App
+Password** (not the account password) supplied by whoever owns the sending
+account.
+
+### 11.2 Closed — pagination
+
+**Was:** Every list page fetched a single hardcoded-limit page and rendered
+exactly that, even though every backend list endpoint already returned full
+`{page, limit, total, totalPages}` metadata.
+
+**Now:** One shared `<PaginationControls>` component ("Showing X–Y of Z" +
+Prev/Next) is wired into all ~15 list pages (Sales, Purchases, Products,
+Inventory, Customers, Suppliers, Employees, Expenses, Repairs, Warranties, Users,
+Brands, Categories, Models, plus a new Cash Drawer history section). `Roles`
+deliberately stays unpaginated — its backend `listRoles()` returns a flat array
+by design, there are never enough roles to need it.
+
+### 11.3 Closed — client-side RBAC UI
+
+**Was:** The sidebar rendered every nav item to every logged-in user regardless
+of role. The backend correctly rejected unauthorized requests with a 403 either
+way, but a Cashier saw "Users," "Roles," "Reports," and every other admin link
+they had no access to, and clicking one meant a raw error or a stuck loading
+state.
+
+**Now:** `AppSidebar` filters each nav item against the current user's
+`permissions[]` (arrays copied 1:1 from each route's own
+`requirePermission(...)` call, so the UI can never show something the API would
+reject). A `<RequirePermission>` component plus one `layout.tsx` guard per
+protected route segment (18 of them — Next.js nested layouts cover dynamic
+sub-routes like `sales/[id]` for free) shows a clean "Access denied" card instead
+of a broken page for anyone who navigates to a URL directly. This is a UX layer
+only — `requirePermission` on the backend remains the actual security boundary.
+
+### 11.4 Closed — Settings module
+
+**Was:** No `settings.service.ts`/routes/page existed. The `Setting` key-value
+table was technically usable (Uploads already upserted a `shop_logo` row) but
+nothing ever read or displayed it, and the sidebar's shop name/icon were
+hardcoded.
+
+**Now:** A full `settings` module — `GET /settings` (no permission gate; shop
+branding is read by every role's sidebar) and `PATCH /settings` (gated by
+`SETTINGS_MANAGE`) against a `KNOWN_KEYS` allowlist (`shop_name`,
+`shop_address`, `shop_phone`, `shop_email`, `shop_logo`, `currency`,
+`timezone`) with sensible defaults. A new Settings page lets an Owner/Admin edit
+all of it, including the logo via the same `ImageUploadField` used elsewhere
+(`entityId` made optional to support this logo-as-singleton case). The sidebar
+header and every printable document now source the shop name/logo from here
+instead of a hardcoded value.
+
+### 11.5 Closed — print views
+
+**Was:** No printable invoice or repair receipt existed — a completed sale
+opened the same admin-style detail page used to manage it, and a browser's
+native print button printed the full app chrome, sidebar included.
+
+**Now:** Two standalone routes outside `/dashboard` — `/print/sales/[id]` and
+`/print/repairs/[id]` — render a clean, chrome-free invoice/receipt (shop
+header pulled from Settings, itemized table, totals, a `print:hidden` Print
+button). "Print Invoice" / "Print Receipt" buttons on the Sale and Repair detail
+pages open them in a new tab.
+
+### 11.6 Closed — purchase edit UI
+
+**Was:** `PATCH /purchases/:id` existed on the backend but no Edit button or
+form existed anywhere on the Purchases pages — once created, a purchase could
+only be returned-from or deleted, never edited.
+
+**Now:** An Edit button on the purchase detail page opens
+`PurchaseEditDialog`, which lets you change supplier, purchase date, and
+remarks (the only fields the endpoint allows — line items and payments stay
+immutable once posted, by design).
+
+### 11.7 Closed — missing report cards
+
+**Was:** Three of the seventeen report endpoints had no card on the Reports
+page: Inventory → Stock Movement, Inventory → IMEI Report, and Financial →
+Expense Report. All three worked correctly via direct API call and were fully
+exportable — they just weren't surfaced anywhere in the UI.
+
+**Now:** All three have a table + `<ExportMenu>` card in their respective
+category (Stock Movement and IMEI Register under Inventory, Expenses under
+Financial). All 17 report types are now on the page.
+
+### 11.8 Closed — audit logging
+
+**Was:** The `AUDIT_VIEW` permission was seeded and assignable to any role, but
+nothing ever wrote an `AuditLog` row and no endpoint or page existed to view
+one — checking the permission for a role did nothing.
+
+**Now:** `common/utils/auditLog.ts` provides `logAudit()`/`logAuditFromRequest()`
+(fire-and-forget, swallows its own errors so a logging failure never blocks the
+real mutation). It's wired into the sensitive actions that matter most: user
+create/update/deactivate, role create/update/delete/permission-assignment,
+password change and reset, sale cancellation, stock adjustments, and expense
+deletion. `GET /audit-logs` (gated by `AUDIT_VIEW`, paginated, filterable by
+module/action/user/date range) backs a new Audit Log page in the sidebar.
+Verified end-to-end: creating and deleting a test role produced exactly the
+expected two rows with correct actor, IP, and description.
+
+### 11.9 Still out of scope
+
+Two items from the original audit were **not** built — both are genuinely new
+feature surfaces rather than gaps in existing functionality, and neither was
+requested:
+
+- **Chapter 53 — Notification APIs.** The `Notification` model and
+  `NotificationType` enum exist in the schema; nothing creates, reads, or
+  updates a row in that table.
+- **Chapter 54 — Backup APIs.** No model, no implementation.
+
+### 11.10 Everything else
+
+Every other BRD/SRS module, DDD table, and API Specification chapter has a
+working backend endpoint and a fully wired frontend page — Auth, Users, Roles,
+Products/Brands/Categories/Models, Inventory, Customers, Suppliers, Purchases (+
+returns, now + edit), Sales/POS (+ returns, cancellation, print invoice),
+Payments, Cash Drawer, Repairs (+ print receipt), Warranties, Employees,
+Expenses, Settings, Reports (all 17 report types have a page card), Export
+(PDF/Excel/CSV), Uploads (all 5 types, including the shop logo), and Audit Log.

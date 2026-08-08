@@ -25,6 +25,15 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+
+  // Transactional email (forgot-password link). SMTP so any provider works —
+  // Gmail: smtp.gmail.com / 587, with an App Password (not the account
+  // password) as SMTP_PASS.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -54,3 +63,10 @@ export const corsOrigins = env.CORS_ORIGIN.split(",").map((origin) => origin.tri
 export const isCloudinaryConfigured = Boolean(
   env.CLOUDINARY_CLOUD_NAME && env.CLOUDINARY_API_KEY && env.CLOUDINARY_API_SECRET,
 );
+
+export const isEmailConfigured = Boolean(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS);
+
+// The frontend origin, for building links that go out in emails (password
+// reset). Reuses CORS_ORIGIN rather than a separate env var — in this
+// project the two are always the same host.
+export const frontendUrl = corsOrigins[0] ?? "http://localhost:3000";

@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchWarranties, type Warranty } from "@/lib/api/warranties";
 import { ClaimDialog } from "./claim-dialog";
 
 const STATUS_ITEMS = { all: "All statuses", ACTIVE: "Active", EXPIRED: "Expired", CLAIMED: "Claimed", CANCELLED: "Cancelled" };
+const PAGE_SIZE = 50;
 
 const STATUS_VARIANT: Record<Warranty["status"], "default" | "secondary" | "destructive" | "outline"> = {
   ACTIVE: "default",
@@ -21,12 +23,13 @@ const STATUS_VARIANT: Record<Warranty["status"], "default" | "secondary" | "dest
 
 export default function WarrantiesPage() {
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
   const [claimOpen, setClaimOpen] = useState(false);
   const [selectedWarranty, setSelectedWarranty] = useState<Warranty | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["warranties", { status }],
-    queryFn: () => fetchWarranties({ status: status === "all" ? undefined : (status as Warranty["status"]), limit: 50 }),
+    queryKey: ["warranties", { status, page }],
+    queryFn: () => fetchWarranties({ status: status === "all" ? undefined : (status as Warranty["status"]), page, limit: PAGE_SIZE }),
   });
 
   const openClaim = (warranty: Warranty) => {
@@ -42,7 +45,14 @@ export default function WarrantiesPage() {
       </div>
 
       <div className="max-w-xs">
-        <Select items={STATUS_ITEMS} value={status} onValueChange={(v) => setStatus(v ?? "all")}>
+        <Select
+          items={STATUS_ITEMS}
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v ?? "all");
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -108,6 +118,16 @@ export default function WarrantiesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <ClaimDialog open={claimOpen} onOpenChange={setClaimOpen} warranty={selectedWarranty} />
     </div>

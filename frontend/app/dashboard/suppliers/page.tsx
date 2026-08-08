@@ -8,17 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchSuppliers, type Supplier } from "@/lib/api/suppliers";
 import { SupplierFormDialog } from "./supplier-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function SuppliersPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["suppliers", { search }],
-    queryFn: () => fetchSuppliers({ search: search || undefined, limit: 50 }),
+    queryKey: ["suppliers", { search, page }],
+    queryFn: () => fetchSuppliers({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const openCreate = () => {
@@ -49,7 +53,10 @@ export default function SuppliersPage() {
           placeholder="Search by name, phone, or code..."
           className="pl-8"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -109,6 +116,16 @@ export default function SuppliersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <SupplierFormDialog open={formOpen} onOpenChange={setFormOpen} supplier={editingSupplier} />
     </div>

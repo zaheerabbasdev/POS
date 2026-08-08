@@ -8,17 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchEmployees, type Employee } from "@/lib/api/employees";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["employees", { search }],
-    queryFn: () => fetchEmployees({ search: search || undefined, limit: 50 }),
+    queryKey: ["employees", { search, page }],
+    queryFn: () => fetchEmployees({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const openCreate = () => {
@@ -49,7 +53,10 @@ export default function EmployeesPage() {
           placeholder="Search by name, phone, or code..."
           className="pl-8"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
         />
       </div>
 
@@ -103,6 +110,16 @@ export default function EmployeesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <EmployeeFormDialog open={formOpen} onOpenChange={setFormOpen} employee={editingEmployee} />
     </div>

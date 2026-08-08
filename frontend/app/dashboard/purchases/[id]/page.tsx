@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchPurchase } from "@/lib/api/purchases";
 import { PurchaseReturnDialog } from "./purchase-return-dialog";
+import { PurchaseEditDialog } from "./purchase-edit-dialog";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
   PAID: "default",
@@ -19,6 +20,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = 
 export default function PurchaseDetailPage(props: PageProps<"/dashboard/purchases/[id]">) {
   const { id } = use(props.params);
   const [returnOpen, setReturnOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: purchase, isLoading } = useQuery({
     queryKey: ["purchases", id],
@@ -40,6 +42,9 @@ export default function PurchaseDetailPage(props: PageProps<"/dashboard/purchase
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={STATUS_VARIANT[purchase.status] ?? "outline"}>{purchase.status}</Badge>
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            Edit
+          </Button>
           <Button variant="outline" onClick={() => setReturnOpen(true)}>
             Return Items
           </Button>
@@ -104,6 +109,12 @@ export default function PurchaseDetailPage(props: PageProps<"/dashboard/purchase
               <span>Total</span>
               <span>{purchase.totalAmount}</span>
             </div>
+            {purchase.remarks ? (
+              <div className="mt-1 border-t pt-1.5">
+                <span className="text-muted-foreground">Remarks</span>
+                <p>{purchase.remarks}</p>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -131,6 +142,7 @@ export default function PurchaseDetailPage(props: PageProps<"/dashboard/purchase
       </div>
 
       <PurchaseReturnDialog open={returnOpen} onOpenChange={setReturnOpen} purchase={purchase} />
+      <PurchaseEditDialog open={editOpen} onOpenChange={setEditOpen} purchase={purchase} />
     </div>
   );
 }

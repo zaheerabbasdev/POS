@@ -9,9 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchRepairs, type RepairStatus } from "@/lib/api/repairs";
 import { REPAIR_STATUS_ITEMS } from "@/lib/select-items";
 import { RepairFormDialog } from "./repair-form-dialog";
+
+const PAGE_SIZE = 50;
 
 const STATUS_VARIANT: Record<RepairStatus, "default" | "secondary" | "destructive" | "outline"> = {
   RECEIVED: "outline",
@@ -27,11 +30,12 @@ const STATUS_FILTER_ITEMS = { all: "All statuses", ...REPAIR_STATUS_ITEMS };
 
 export default function RepairsPage() {
   const [status, setStatus] = useState("all");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["repairs", { status }],
-    queryFn: () => fetchRepairs({ status: status === "all" ? undefined : (status as RepairStatus), limit: 50 }),
+    queryKey: ["repairs", { status, page }],
+    queryFn: () => fetchRepairs({ status: status === "all" ? undefined : (status as RepairStatus), page, limit: PAGE_SIZE }),
   });
 
   return (
@@ -47,7 +51,14 @@ export default function RepairsPage() {
       </div>
 
       <div className="max-w-xs">
-        <Select items={STATUS_FILTER_ITEMS} value={status} onValueChange={(v) => setStatus(v ?? "all")}>
+        <Select
+          items={STATUS_FILTER_ITEMS}
+          value={status}
+          onValueChange={(v) => {
+            setStatus(v ?? "all");
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
@@ -111,6 +122,16 @@ export default function RepairsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <RepairFormDialog open={formOpen} onOpenChange={setFormOpen} />
     </div>

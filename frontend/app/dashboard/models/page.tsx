@@ -10,20 +10,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { PaginationControls } from "@/components/pagination-controls";
 import { fetchProductModels, deleteProductModel, type ProductModel } from "@/lib/api/product-models";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ModelFormDialog } from "./model-form-dialog";
 
+const PAGE_SIZE = 50;
+
 export default function ModelsPage() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<ProductModel | undefined>(undefined);
   const [deletingModel, setDeletingModel] = useState<ProductModel | undefined>(undefined);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["product-models", { search }],
-    queryFn: () => fetchProductModels({ search: search || undefined, limit: 50 }),
+    queryKey: ["product-models", { search, page }],
+    queryFn: () => fetchProductModels({ search: search || undefined, page, limit: PAGE_SIZE }),
   });
 
   const deleteMutation = useMutation({
@@ -60,7 +64,15 @@ export default function ModelsPage() {
 
       <div className="relative max-w-sm">
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search models..." className="pl-8" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input
+          placeholder="Search models..."
+          className="pl-8"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
       </div>
 
       <Card>
@@ -112,6 +124,16 @@ export default function ModelsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {data ? (
+        <PaginationControls
+          page={page}
+          totalPages={data.pagination.totalPages}
+          total={data.pagination.total}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
+      ) : null}
 
       <ModelFormDialog open={formOpen} onOpenChange={setFormOpen} model={editingModel} />
 
