@@ -49,7 +49,6 @@ export function DashboardHeader() {
     <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger />
       <span className="text-sm font-medium text-muted-foreground">Dashboard</span>
-
       <div className="ml-auto flex items-center gap-3">
         {isLoading || !user ? (
           <Skeleton className="h-8 w-8 rounded-full" />
