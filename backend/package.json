@@ -5,6 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:db": "prisma dev",
+    "dev:all": "concurrently -n DB,API -c magenta,cyan -k \"npm:dev:db\" \"npm:dev\"",
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
@@ -53,6 +55,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.20.4",
+    "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "nodemon": "^3.1.14",
     "pino-pretty": "^13.1.3",

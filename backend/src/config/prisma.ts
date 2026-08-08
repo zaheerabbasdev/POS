@@ -10,9 +10,28 @@ const adapter = new PrismaPg({ connectionString: env.DIRECT_DATABASE_URL });
 
 export const prisma = new PrismaClient({ adapter });
 
+const CONNECT_MAX_ATTEMPTS = 15;
+const CONNECT_RETRY_DELAY_MS = 1000;
+
+/**
+ * Retries on startup because `npm run dev:all` launches `prisma dev` (the
+ * local Postgres server) and this app concurrently — the API process can
+ * easily win the race and try to connect before Postgres has finished
+ * booting. Without this, that's a hard crash ("Server has closed the
+ * connection") rather than a few seconds' wait.
+ */
 export async function connectDatabase(): Promise<void> {
-  await prisma.$queryRaw`SELECT 1`;
-  logger.info("Database connection established.");
+  for (let attempt = 1; attempt <= CONNECT_MAX_ATTEMPTS; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      logger.info("Database connection established.");
+      return;
+    } catch (err) {
+      if (attempt === CONNECT_MAX_ATTEMPTS) throw err;
+      logger.warn(`Database not ready yet (attempt ${attempt}/${CONNECT_MAX_ATTEMPTS}) — retrying in ${CONNECT_RETRY_DELAY_MS}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, CONNECT_RETRY_DELAY_MS));
+    }
+  }
 }
 
 export async function disconnectDatabase(): Promise<void> {
