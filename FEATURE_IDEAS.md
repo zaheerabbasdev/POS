@@ -123,6 +123,59 @@ verified, so this file stays an honest record of what's done vs. still an idea.
 
 ---
 
+## 8. What makes this different from generic POS software
+
+If you ever sell or pitch this system to another shop owner, this is the answer
+to "why should I buy this instead of Square / Shopify POS / Loyverse?" — things
+big general-purpose POS software simply doesn't do, because it wasn't built for
+a phone shop.
+
+### Already true today (no new code needed — just worth saying out loud)
+
+- **No monthly subscription, no per-transaction fee** — Square/Shopify/Loyverse
+  charge recurring fees forever, sometimes a cut of every sale. A one-time
+  purchase or self-hosted setup saves real money every month, forever.
+- **You own your data** — it lives in your own database, not on a foreign
+  company's servers that could raise prices, get bought out, or shut down.
+- **IMEI tracking per unit, already built** — most POS software has no concept
+  of "this one physical phone has its own serial number and its own
+  warranty." This is a real advantage over generic retail POS today.
+- **Repair + retail in one connected system** — most software is *either* a
+  retail POS *or* repair-shop software, not both tightly integrated (e.g. a
+  repaired phone going straight back into resale stock).
+
+### Mobile-shop-specific features worth adding (things big brands will never build)
+
+- [ ] **PTA registration status tracking** (Pakistan-specific) — every phone
+  sold in Pakistan needs to be PTA-registered to work on local SIMs. Track
+  "registered / not registered / pending" per IMEI, with a warning at
+  checkout before selling an unregistered phone. No international POS
+  software will ever build this — it's a Pakistan-only problem, so it's a
+  genuine local advantage. *Medium.*
+- [ ] **IMEI blacklist / stolen-phone check** — before buying a used phone
+  (trade-in) or accepting one for repair, check if that IMEI is reported
+  lost/stolen, protecting the shop from unknowingly handling stolen devices.
+  *Medium — depends on an available lookup source.*
+- [ ] **Unlock/flash service tracking** — network unlock, iCloud unlock, FRP
+  unlock as their own service type (separate from "repair"), with their own
+  pricing and status. A real revenue stream for many mobile shops that
+  generic POS has no category for. *Quick–medium win.*
+- [ ] **Used-phone condition grading** — grade a used phone (e.g. "Grade A –
+  like new," "Grade B – minor scratches," "Grade C – heavy wear") with
+  photos attached, so trade-in/resale pricing and customer expectations stay
+  consistent instead of guessed per staff member. *Medium.*
+- [ ] **Warranty QR card on the printed invoice** — a QR code the customer can
+  scan anytime to instantly check their warranty status online, without
+  calling the shop. *Quick win.*
+- [ ] **"Suggest accessory" prompt at checkout** — after adding a phone to the
+  cart, POS suggests commonly-paired items (cover, screen protector) — a
+  small upsell nudge tailored to phone accessories specifically. *Quick win.*
+- [ ] **Old-phone value estimator** — a simple lookup (brand + model +
+  condition → suggested trade-in price) so trade-in offers are consistent
+  instead of guessed on the spot. *Medium.*
+
+---
+
 ## Already built (for context — not on this list because it's done)
 
 Everything in this section already exists and works, confirmed earlier this
