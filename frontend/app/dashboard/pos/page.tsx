@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Minus, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,9 @@ export default function PosPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 250);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState("");
   const [discount, setDiscount] = useState("");
@@ -55,6 +58,19 @@ export default function PosPage() {
     queryFn: () => fetchProducts({ search: debouncedSearch, status: "active", limit: 10 }),
     enabled: debouncedSearch.length > 0,
   });
+
+  // Closes the search dropdown on an outside click — it otherwise stays
+  // open forever, since visibility was previously driven only by whether
+  // searchResults had data (which lingers as stale cache after selecting).
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const { data: customers } = useQuery({
     queryKey: ["customers", { forSelect: true }],
@@ -70,6 +86,7 @@ export default function PosPage() {
       toast.error(`"${product.name}" is out of stock.`);
       return;
     }
+
     if (product.tracksImei) {
       setCart((prev) => [
         ...prev,
@@ -85,32 +102,37 @@ export default function PosPage() {
           maxStock: product.stock,
         },
       ]);
-      return;
+    } else {
+      setCart((prev) => {
+        const existing = prev.find((line) => line.productId === product.id && !line.tracksImei);
+        if (existing) {
+          return prev.map((line) =>
+            line.key === existing.key ? { ...line, quantity: Math.min(line.quantity + 1, line.maxStock) } : line,
+          );
+        }
+        return [
+          ...prev,
+          {
+            key: crypto.randomUUID(),
+            productId: product.id,
+            name: product.name,
+            sku: product.sku,
+            tracksImei: false,
+            price: Number(product.price),
+            quantity: 1,
+            imei: "",
+            maxStock: product.stock,
+          },
+        ];
+      });
     }
 
-    setCart((prev) => {
-      const existing = prev.find((line) => line.productId === product.id && !line.tracksImei);
-      if (existing) {
-        return prev.map((line) =>
-          line.key === existing.key ? { ...line, quantity: Math.min(line.quantity + 1, line.maxStock) } : line,
-        );
-      }
-      return [
-        ...prev,
-        {
-          key: crypto.randomUUID(),
-          productId: product.id,
-          name: product.name,
-          sku: product.sku,
-          tracksImei: false,
-          price: Number(product.price),
-          quantity: 1,
-          imei: "",
-          maxStock: product.stock,
-        },
-      ];
-    });
+    // Close the dropdown and clear the box for both branches — previously
+    // the IMEI branch returned early and skipped this, leaving the
+    // dropdown open after every scan of a tracked product.
     setSearch("");
+    setIsSearchOpen(false);
+    searchInputRef.current?.focus();
   };
 
   const updateLine = (key: string, patch: Partial<CartLine>) => {
@@ -166,16 +188,21 @@ export default function PosPage() {
           <p className="text-muted-foreground">Search a product by name, SKU, or barcode to add it to the cart.</p>
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={searchContainerRef}>
           <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             autoFocus
             placeholder="Search products..."
             className="pl-8"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setIsSearchOpen(true);
+            }}
+            onFocus={() => setIsSearchOpen(true)}
           />
-          {searchResults && searchResults.data.length > 0 ? (
+          {isSearchOpen && searchResults && searchResults.data.length > 0 ? (
             <Card className="absolute z-10 mt-1 w-full max-h-72 overflow-y-auto py-1">
               {searchResults.data.map((product) => (
                 <button
@@ -242,16 +269,38 @@ export default function PosPage() {
                         {line.tracksImei ? (
                           1
                         ) : (
-                          <Input
-                            className="h-8 w-16 text-right"
-                            inputMode="numeric"
-                            value={line.quantity}
-                            onChange={(e) =>
-                              updateLine(line.key, {
-                                quantity: Math.max(1, Math.min(Number(e.target.value) || 1, line.maxStock)),
-                              })
-                            }
-                          />
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              disabled={line.quantity <= 1}
+                              onClick={() => updateLine(line.key, { quantity: Math.max(1, line.quantity - 1) })}
+                            >
+                              <Minus />
+                            </Button>
+                            <Input
+                              className="h-8 w-14 text-center"
+                              inputMode="numeric"
+                              value={line.quantity}
+                              onChange={(e) =>
+                                updateLine(line.key, {
+                                  quantity: Math.max(1, Math.min(Number(e.target.value) || 1, line.maxStock)),
+                                })
+                              }
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              disabled={line.quantity >= line.maxStock}
+                              onClick={() =>
+                                updateLine(line.key, { quantity: Math.min(line.maxStock, line.quantity + 1) })
+                              }
+                            >
+                              <Plus />
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
