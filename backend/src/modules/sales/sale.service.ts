@@ -3,7 +3,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { generateCode } from "../../common/utils/code.js";
 import { PAYMENT_METHOD_INPUT_MAP } from "../../common/utils/paymentMethod.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
-import { BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
+import { AppError, BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
 import { recordDrawerMovement } from "../cashDrawer/cashDrawer.service.js";
 
 const saleListSelect = {
@@ -164,13 +164,41 @@ export interface CreateSaleInput {
   remarks?: string;
 }
 
+const CREATE_SALE_MAX_ATTEMPTS = 3;
+const CREATE_SALE_RETRY_DELAY_MS = 150;
+
 /**
  * POST /api/v1/sales (API Spec Chapter 34.3). Follows the doc's Sale
  * Processing Flow: validate stock → validate IMEI → create invoice →
  * decrease stock → update IMEI status → create warranty → receive payment —
  * all inside one transaction (SAD Chapter 22).
+ *
+ * Wrapped with a small retry loop: under real concurrency (two cashiers
+ * racing for the same last unit) the database layer can surface a
+ * transient error — e.g. a "bind message" protocol error — that has
+ * nothing to do with the actual business outcome. A thrown AppError
+ * (BadRequestError/ConflictError/NotFoundError) is a deliberate, correct
+ * result — e.g. "not enough stock" — and is never retried, it propagates
+ * immediately. Anything else (a genuine transient DB hiccup) gets a
+ * couple of quick retries before giving up.
  */
 export async function createSale(input: CreateSaleInput, cashierId: string) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= CREATE_SALE_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await attemptCreateSale(input, cashierId);
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      lastError = err;
+      if (attempt < CREATE_SALE_MAX_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, CREATE_SALE_RETRY_DELAY_MS));
+      }
+    }
+  }
+  throw lastError;
+}
+
+async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
   if (input.customerId) {
     const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
     if (!customer) throw new NotFoundError("Customer not found.");
@@ -189,9 +217,18 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
     if (!product) throw new NotFoundError(`Product ${item.productId} not found.`);
     if (!product.isActive) throw new BadRequestError(`"${product.productName}" is inactive and cannot be sold.`);
 
+    // Fast-fail pre-check — catches the common single-cashier case with a
+    // friendly error before a Sale row even gets created. This is NOT the
+    // authoritative guard: two cashiers can both pass this check for the
+    // same last unit in the same instant, since neither has claimed the
+    // stock yet. The real, race-proof guard is the atomic updateMany
+    // (WHERE availableQuantity >= quantity) inside the transaction below —
+    // that's what actually prevents overselling under concurrency.
     const available = product.inventory?.availableQuantity ?? 0;
     if (available < item.quantity) {
-      throw new BadRequestError(`Insufficient stock for "${product.productName}" (available: ${available}).`);
+      throw new BadRequestError(
+        `Not enough stock for "${product.productName}" — only ${available} available. Please adjust the quantity.`,
+      );
     }
 
     if (product.tracksImei) {
@@ -203,7 +240,9 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
         throw new NotFoundError(`IMEI "${item.imei}" not found for this product.`);
       }
       if (imeiRecord.status !== "AVAILABLE") {
-        throw new ConflictError(`IMEI "${item.imei}" is not available for sale (status: ${imeiRecord.status}).`);
+        throw new ConflictError(
+          `"${product.productName}" (IMEI ${item.imei}) was just sold in another sale. Please remove it and pick a different unit.`,
+        );
       }
       imeiByItemIndex.set(index, { id: imeiRecord.id, warrantyMonths: product.warrantyMonths });
     }
@@ -254,14 +293,25 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
         },
       });
 
-      const inventory = await tx.inventory.update({
-        where: { productId: item.productId },
+      // Atomic, race-proof decrement — the WHERE clause re-checks
+      // availableQuantity against the current committed row, not the
+      // possibly-stale value read before the transaction started. If
+      // another concurrent sale already claimed the stock, this matches
+      // zero rows and we roll back with a clear error instead of driving
+      // availableQuantity negative.
+      const inventoryUpdate = await tx.inventory.updateMany({
+        where: { productId: item.productId, availableQuantity: { gte: item.quantity } },
         data: { quantity: { decrement: item.quantity }, availableQuantity: { decrement: item.quantity } },
       });
+      if (inventoryUpdate.count === 0) {
+        throw new ConflictError(
+          `Not enough stock for "${product.productName}" — someone else may have just sold it. Please adjust the quantity and try again.`,
+        );
+      }
 
       await tx.inventoryTransaction.create({
         data: {
-          inventoryId: inventory.id,
+          inventoryId: product.inventory!.id,
           productId: item.productId,
           transactionType: "SALE",
           quantity: -item.quantity,
@@ -271,7 +321,18 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
       });
 
       if (imeiInfo) {
-        await tx.imeiNumber.update({ where: { id: imeiInfo.id }, data: { status: "SOLD", saleId: sale.id } });
+        // Same pattern for IMEI — only flip to SOLD if it's still
+        // AVAILABLE at this exact moment, closing the equivalent race for
+        // IMEI-tracked units (each IMEI is its own unit of stock).
+        const imeiUpdate = await tx.imeiNumber.updateMany({
+          where: { id: imeiInfo.id, status: "AVAILABLE" },
+          data: { status: "SOLD", saleId: sale.id },
+        });
+        if (imeiUpdate.count === 0) {
+          throw new ConflictError(
+            `"${product.productName}" (IMEI ${item.imei}) was just sold in another sale. Please remove it and pick a different unit.`,
+          );
+        }
       }
 
       // Warranty requires a customer (DDD Table 29 — customer_id is NOT
