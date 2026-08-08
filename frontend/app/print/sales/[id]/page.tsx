@@ -26,12 +26,6 @@ export default function PrintSalePage(props: PageProps<"/print/sales/[id]">) {
 
   return (
     <div className="mx-auto max-w-2xl p-8 print:p-0">
-      <div className="mb-6 flex justify-end print:hidden">
-        <Button onClick={() => window.print()}>
-          <Printer /> Print
-        </Button>
-      </div>
-
       <div className="flex items-start justify-between border-b pb-4">
         <div>
           <h1 className="text-xl font-semibold">{settings?.shop_name || "Mobile Shop POS"}</h1>
@@ -113,6 +107,12 @@ export default function PrintSalePage(props: PageProps<"/print/sales/[id]">) {
       ) : null}
 
       <p className="mt-8 text-center text-xs text-muted-foreground">Thank you for your business.</p>
+
+      <div className="mt-6 flex justify-center print:hidden">
+        <Button onClick={() => window.print()}>
+          <Printer /> Print
+        </Button>
+      </div>
     </div>
   );
 }
