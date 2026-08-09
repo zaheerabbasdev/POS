@@ -8,7 +8,24 @@ export interface ApiErrorBody {
   errors?: { field?: string; message: string }[];
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+// The backend's httpOnly auth cookie is scoped to whichever host answers the
+// request — so the API must be called on the SAME host the browser loaded
+// this app from (localhost, a LAN IP, ...), or the cookie becomes invisible
+// to proxy.ts's auth check after login (login "succeeds" but bounces
+// straight back to /login). Deriving this from window.location.hostname at
+// runtime, rather than baking in one fixed host, makes the app work
+// identically whether opened via localhost or a LAN IP. NEXT_PUBLIC_API_URL
+// remains available as an explicit override for a genuinely separate API
+// host (e.g. a real deployment), but leave it unset for local dev.
+function resolveApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== "undefined") {
+    return `${window.location.protocol}//${window.location.hostname}:4000`;
+  }
+  return "http://localhost:4000";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 // `withCredentials` sends/receives the httpOnly `pos_token` cookie the
 // backend sets on login — that's what actually authenticates requests.

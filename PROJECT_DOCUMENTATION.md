@@ -478,14 +478,37 @@ sales and purchases. No specific permission gate — every role lands here after
 
 ## 10. Environment & Running Locally
 
-**Backend** (`backend/.env` — see `.env.example`):
+Two ways to provide the Postgres database `DATABASE_URL`/`DIRECT_DATABASE_URL` point at —
+either works unchanged with the rest of the stack, since Prisma just sees a connection string
+either way.
+
+### Option A — a real local PostgreSQL install (this machine's setup)
+
+A standard PostgreSQL server (e.g. installed via the official Windows installer, which also
+bundles pgAdmin) running as a normal service on port 5432, with a dedicated database
+(`posdb`) created ahead of time. `DATABASE_URL` and `DIRECT_DATABASE_URL` are the *same*
+value here — there's no dev-proxy involved, just a normal TCP connection:
+
+```
+DATABASE_URL="postgresql://postgres:<password>@localhost:5432/posdb"
+DIRECT_DATABASE_URL="postgresql://postgres:<password>@localhost:5432/posdb"
+```
+
+```bash
+cd backend
+npm run prisma:migrate   # applies all migrations to posdb (run once, and again after any new migration)
+npm run prisma:seed      # permissions, roles, expense categories, admin user
+npm run dev               # http://localhost:4000 — no separate DB terminal needed, Postgres runs as a background service
+```
+
+### Option B — Prisma's local dev-proxy (`prisma dev`)
+
+No local Postgres install required — Prisma spins up its own self-contained
+Postgres-compatible server on demand.
+
 ```
 DATABASE_URL=prisma+postgres://localhost:51213/?api_key=...   # from `prisma dev`
 DIRECT_DATABASE_URL=postgres://postgres:postgres@localhost:51214/template1
-JWT_SECRET=...
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
 ```
 
 ```bash
@@ -500,7 +523,16 @@ npm run prisma:migrate   # apply schema changes
 npm run prisma:seed      # permissions, roles, expense categories, admin user
 ```
 
-Seeded admin login: `admin` / `Admin@12345` (seed script prints a warning to change
+### Both options
+
+```
+JWT_SECRET=...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+Seeded admin login: `admin` / `Abc@1234` (seed script prints a warning to change
 it immediately).
 
 **Frontend**:
