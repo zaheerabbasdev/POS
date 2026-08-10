@@ -32,10 +32,17 @@ interface Paginated<T> {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 }
 
+export interface PurchaseReturnListParams {
+  purchaseId?: string;
+  supplierId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 // GET /api/v1/purchase-returns (API Spec Chapter 33.1).
-export async function fetchPurchaseReturns(params: { purchaseId?: string; page?: number; limit?: number } = {}): Promise<
-  Paginated<PurchaseReturn>
-> {
+export async function fetchPurchaseReturns(params: PurchaseReturnListParams = {}): Promise<Paginated<PurchaseReturn>> {
   const { data } = await apiClient.get<Paginated<PurchaseReturn>>("/purchase-returns", { params });
   return data;
 }

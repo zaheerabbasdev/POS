@@ -24,6 +24,8 @@ import {
   BarChart3,
   Settings,
   History,
+  Undo2,
+  RotateCcw,
 } from "lucide-react";
 import {
   Sidebar,
@@ -56,7 +58,14 @@ const MAIN_NAV_ITEMS: NavItem[] = [
 
 const TRANSACTION_NAV_ITEMS: NavItem[] = [
   { title: "Sales", href: "/dashboard/sales", icon: ReceiptText, permissions: ["SALE_VIEW", "SALE_CREATE"] },
+  { title: "Sales Returns", href: "/dashboard/sales-returns", icon: Undo2, permissions: ["SALE_VIEW", "SALE_CANCEL"] },
   { title: "Purchases", href: "/dashboard/purchases", icon: ClipboardList, permissions: ["PURCHASE_VIEW", "PURCHASE_CREATE"] },
+  {
+    title: "Purchase Returns",
+    href: "/dashboard/purchase-returns",
+    icon: RotateCcw,
+    permissions: ["PURCHASE_VIEW", "PURCHASE_RETURN"],
+  },
   { title: "Cash Drawer", href: "/dashboard/cash-drawer", icon: Wallet, permissions: ["CASH_DRAWER_VIEW", "CASH_DRAWER_MANAGE"] },
   { title: "Expenses", href: "/dashboard/expenses", icon: Banknote, permissions: ["EXPENSE_VIEW", "EXPENSE_MANAGE"] },
   { title: "Customers", href: "/dashboard/customers", icon: Users, permissions: ["CUSTOMER_VIEW", "CUSTOMER_MANAGE"] },
