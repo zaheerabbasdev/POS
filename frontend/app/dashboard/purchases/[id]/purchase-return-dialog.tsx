@@ -72,6 +72,7 @@ function PurchaseReturnDialogBody({
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["purchases", purchase.id] });
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      void queryClient.invalidateQueries({ queryKey: ["purchase-returns"] });
       toast.success("Return sent to supplier and stock reversed.");
       onOpenChange(false);
     },

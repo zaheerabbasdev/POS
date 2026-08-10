@@ -3,13 +3,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { fetchPurchaseReturns } from "@/lib/api/purchase-returns";
+import { fetchPurchase, type PurchaseDetail, type PurchaseListItem } from "@/lib/api/purchases";
+import { getApiErrorMessage } from "@/lib/api-client";
+import { PurchaseReturnDialog } from "../purchases/[id]/purchase-return-dialog";
+import { PickPurchaseDialog } from "./pick-purchase-dialog";
 
 const PAGE_SIZE = 50;
 
@@ -19,6 +24,26 @@ export default function PurchaseReturnsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
+
+  // "+ New Return" — pick the original purchase first (it needs full
+  // line-item detail, which the list row doesn't have), then hand off to
+  // the same PurchaseReturnDialog the purchase detail page already uses.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<PurchaseDetail | null>(null);
+  const [isLoadingPurchase, setIsLoadingPurchase] = useState(false);
+
+  const handlePicked = async (item: PurchaseListItem) => {
+    setIsLoadingPurchase(true);
+    try {
+      const detail = await fetchPurchase(item.id);
+      setSelectedPurchase(detail);
+      setPickerOpen(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setIsLoadingPurchase(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["purchase-returns", { startDate, endDate, page }],
@@ -36,9 +61,14 @@ export default function PurchaseReturnsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Purchase Returns</h1>
-        <p className="text-muted-foreground">Every item sent back to a supplier, and the credit it created.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Purchase Returns</h1>
+          <p className="text-muted-foreground">Every item sent back to a supplier, and the credit it created.</p>
+        </div>
+        <Button onClick={() => setPickerOpen(true)} disabled={isLoadingPurchase}>
+          <Plus /> {isLoadingPurchase ? "Loading purchase..." : "New Return"}
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
@@ -146,6 +176,15 @@ export default function PurchaseReturnsPage() {
           total={data.pagination.total}
           limit={PAGE_SIZE}
           onPageChange={setPage}
+        />
+      ) : null}
+
+      <PickPurchaseDialog open={pickerOpen} onOpenChange={setPickerOpen} onPicked={(item) => void handlePicked(item)} />
+      {selectedPurchase ? (
+        <PurchaseReturnDialog
+          open={Boolean(selectedPurchase)}
+          onOpenChange={(open) => !open && setSelectedPurchase(null)}
+          purchase={selectedPurchase}
         />
       ) : null}
     </div>

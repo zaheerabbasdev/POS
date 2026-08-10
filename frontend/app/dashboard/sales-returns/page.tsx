@@ -3,13 +3,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PaginationControls } from "@/components/pagination-controls";
 import { fetchSalesReturns } from "@/lib/api/sales-returns";
+import { fetchSale, type SaleDetail, type SaleListItem } from "@/lib/api/sales";
+import { getApiErrorMessage } from "@/lib/api-client";
+import { SalesReturnDialog } from "../sales/[id]/sales-return-dialog";
+import { PickSaleDialog } from "./pick-sale-dialog";
 
 const PAGE_SIZE = 50;
 
@@ -19,6 +24,30 @@ export default function SalesReturnsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
+
+  // "+ New Return" — pick the original sale first (it needs full line-item
+  // detail, which the list row doesn't have), then hand off to the same
+  // SalesReturnDialog the sale detail page already uses.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<SaleDetail | null>(null);
+  const [isLoadingSale, setIsLoadingSale] = useState(false);
+
+  const handlePicked = async (item: SaleListItem) => {
+    if (item.isCancelled) {
+      toast.error("This sale was cancelled — nothing to return.");
+      return;
+    }
+    setIsLoadingSale(true);
+    try {
+      const detail = await fetchSale(item.id);
+      setSelectedSale(detail);
+      setPickerOpen(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setIsLoadingSale(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["sales-returns", { startDate, endDate, page }],
@@ -36,9 +65,14 @@ export default function SalesReturnsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Sales Returns</h1>
-        <p className="text-muted-foreground">Every item a customer has returned, with the refund it triggered.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Sales Returns</h1>
+          <p className="text-muted-foreground">Every item a customer has returned, with the refund it triggered.</p>
+        </div>
+        <Button onClick={() => setPickerOpen(true)} disabled={isLoadingSale}>
+          <Plus /> {isLoadingSale ? "Loading sale..." : "New Return"}
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
@@ -141,6 +175,15 @@ export default function SalesReturnsPage() {
           total={data.pagination.total}
           limit={PAGE_SIZE}
           onPageChange={setPage}
+        />
+      ) : null}
+
+      <PickSaleDialog open={pickerOpen} onOpenChange={setPickerOpen} onPicked={(item) => void handlePicked(item)} />
+      {selectedSale ? (
+        <SalesReturnDialog
+          open={Boolean(selectedSale)}
+          onOpenChange={(open) => !open && setSelectedSale(null)}
+          sale={selectedSale}
         />
       ) : null}
     </div>

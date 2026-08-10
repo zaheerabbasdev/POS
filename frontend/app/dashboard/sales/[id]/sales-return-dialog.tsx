@@ -71,6 +71,7 @@ function SalesReturnDialogBody({ sale, onOpenChange }: { sale: SaleDetail; onOpe
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["sales", sale.id] });
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      void queryClient.invalidateQueries({ queryKey: ["sales-returns"] });
       toast.success("Return processed and refund recorded.");
       onOpenChange(false);
     },
