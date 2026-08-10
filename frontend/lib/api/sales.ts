@@ -67,7 +67,9 @@ export interface CreateSaleInput {
   customerId?: string;
   items: CreateSaleItemInput[];
   discount?: number;
-  payment?: { method: string; paidAmount: number };
+  // A sale can be split across more than one method (e.g. part cash, part
+  // card) — each entry becomes its own payment record.
+  payments?: { method: string; paidAmount: number }[];
   remarks?: string;
 }
 

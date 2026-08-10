@@ -27,17 +27,20 @@ const saleItemSchema = z.object({
   imei: z.string().trim().optional(),
 });
 
+// A sale can be paid with more than one method in one go (e.g. part cash,
+// part card) — each entry becomes its own Payment record, so payment
+// history/reports stay accurate about how much came in through which method.
+const salePaymentSchema = z.object({
+  method: z.enum(PAYMENT_METHOD_INPUT_VALUES),
+  paidAmount: z.coerce.number().positive(),
+});
+
 // POST /api/v1/sales (API Spec Chapter 34.3).
 export const createSaleSchema = z.object({
   customerId: z.string().uuid().optional(),
   items: z.array(saleItemSchema).min(1, "At least one item is required."),
   discount: z.coerce.number().nonnegative().optional(),
-  payment: z
-    .object({
-      method: z.enum(PAYMENT_METHOD_INPUT_VALUES),
-      paidAmount: z.coerce.number().nonnegative(),
-    })
-    .optional(),
+  payments: z.array(salePaymentSchema).optional(),
   remarks: z.string().trim().optional(),
 });
 

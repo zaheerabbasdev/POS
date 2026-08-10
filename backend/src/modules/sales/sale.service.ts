@@ -160,7 +160,9 @@ export interface CreateSaleInput {
   customerId?: string;
   items: CreateSaleItemInput[];
   discount?: number;
-  payment?: { method: string; paidAmount: number };
+  // A sale can be split across more than one method (e.g. part cash, part
+  // card) — each entry becomes its own Payment record.
+  payments?: { method: string; paidAmount: number }[];
   remarks?: string;
 }
 
@@ -253,7 +255,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
   const itemTaxTotal = input.items.reduce((sum, item) => sum + (item.tax ?? 0), 0);
   const discount = (input.discount ?? 0) + itemDiscountTotal;
   const totalAmount = subtotal - discount + itemTaxTotal;
-  const paidAmount = input.payment?.paidAmount ?? 0;
+  const paidAmount = (input.payments ?? []).reduce((sum, p) => sum + p.paidAmount, 0);
   const dueAmount = Math.max(0, totalAmount - paidAmount);
   const paymentStatus = paidAmount <= 0 ? "UNPAID" : paidAmount >= totalAmount ? "PAID" : "PARTIAL";
 
@@ -367,15 +369,18 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
       }
     }
 
-    if (paidAmount > 0) {
-      const method = PAYMENT_METHOD_INPUT_MAP[input.payment!.method]!;
+    // One Payment row per split entry — e.g. "5000 Cash + 3000 Card" becomes
+    // two separate records, not one blended one, so payment history/reports
+    // accurately show how much came in through each method.
+    for (const p of input.payments ?? []) {
+      const method = PAYMENT_METHOD_INPUT_MAP[p.method]!;
       await tx.payment.create({
         data: {
           paymentType: "SALE_PAYMENT",
           referenceId: sale.id,
           paymentMethod: method,
           paymentDate: new Date(),
-          amount: paidAmount,
+          amount: p.paidAmount,
           receivedById: cashierId,
         },
       });
@@ -384,7 +389,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
       // silently skipped if the cashier has no session open (SAD Chapter 26:
       // Cash Drawer tracks sessions, it doesn't gate the sale itself).
       if (method === "CASH") {
-        await recordDrawerMovement(tx, cashierId, "SALE", paidAmount, sale.invoiceNumber);
+        await recordDrawerMovement(tx, cashierId, "SALE", p.paidAmount, sale.invoiceNumber);
       }
     }
 
