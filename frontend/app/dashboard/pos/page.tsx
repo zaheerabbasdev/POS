@@ -424,20 +424,31 @@ export default function PosPage() {
                           </span>
                         </div>
                         <div className="flex gap-1.5">
+                          {/*
+                            style={{ color }} directly on the icons below:
+                            DropdownMenuItem forces `focus:**:text-accent-foreground`
+                            onto every descendant while the row is hovered —
+                            that wildcard sets `color` directly on the nested
+                            <svg> itself, not just the <button>, so a
+                            Tailwind className on the icon was still losing
+                            that fight. An inline `style` always wins over a
+                            non-!important external class rule regardless of
+                            the selector, so this is the guaranteed fix.
+                          */}
                           <Button
                             size="sm"
-                            className="h-7 flex-1 text-xs"
+                            className="h-7 flex-1 text-xs text-primary-foreground!"
                             onClick={() => proceedHeldSale(held.id)}
                           >
-                            <Check /> Proceed
+                            <Check style={{ color: "var(--primary-foreground)" }} /> Proceed
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-7 flex-1 text-xs text-destructive"
+                            className="h-7 flex-1 text-xs text-destructive!"
                             onClick={() => cancelHeldSale(held.id)}
                           >
-                            <X /> Cancel
+                            <X style={{ color: "var(--destructive)" }} /> Cancel
                           </Button>
                         </div>
                       </DropdownMenuItem>
