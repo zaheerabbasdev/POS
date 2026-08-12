@@ -12,7 +12,14 @@ function setAuthCookie(res: Response, token: string): void {
   res.cookie(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax",
+    // "lax" only sends the cookie on same-site requests — fine for local
+    // dev (frontend and backend share a hostname, just different ports),
+    // but breaks login entirely once frontend (Vercel) and backend (a
+    // separate host) are on different domains, since axios's cross-site
+    // fetch calls would never carry it. "none" is required for that case,
+    // and browsers only honor "none" when the cookie is also Secure
+    // (isProduction implies https, so this pairing is always valid).
+    sameSite: isProduction ? "none" : "lax",
     maxAge: parseDurationMs(env.JWT_EXPIRES_IN),
     path: "/",
   });
@@ -26,7 +33,10 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logout = asyncHandler(async (_req: Request, res: Response) => {
-  res.clearCookie(AUTH_COOKIE_NAME, { path: "/" });
+  // Browsers only clear a cookie when these attributes match how it was
+  // set — mismatched sameSite/secure here would silently leave the old
+  // cookie in place after "logging out".
+  res.clearCookie(AUTH_COOKIE_NAME, { path: "/", secure: isProduction, sameSite: isProduction ? "none" : "lax" });
   sendSuccess(res, null, "Logout successful.");
 });
 
