@@ -4,6 +4,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch src/server.ts",
     "dev:db": "prisma dev",
     "dev:all": "concurrently -n DB,API -c magenta,cyan -k \"npm:dev:db\" \"npm:dev\"",
@@ -55,6 +56,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/pg": "^8.20.4",
+    "@vercel/node": "^5.9.9",
     "concurrently": "^10.0.4",
     "eslint": "^10.8.0",
     "nodemon": "^3.1.14",
