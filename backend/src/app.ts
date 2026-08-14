@@ -1,6 +1,6 @@
 import express, { type Application } from "express";
 import cors from "cors";
-import helmet from "helmet";
+import helmetImport from "helmet";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import { corsOrigins, isDevelopment } from "./config/env.js";
@@ -10,6 +10,15 @@ import { notFoundHandler } from "./common/middleware/notFoundHandler.js";
 import { errorHandler } from "./common/middleware/errorHandler.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { apiRouter } from "./routes/index.js";
+
+// helmet ships a `.d.cts` declaration file with an ESM-style `export {helmet
+// as default}` statement inside a CJS-typed file — a legal but unusual
+// authoring pattern that different TypeScript versions have interpreted
+// inconsistently under strict NodeNext/verbatimModuleSyntax settings
+// (observed: passes under some TS versions, fails with "not callable" under
+// others, for the exact same locked dependency version). This unwrap works
+// correctly regardless of which shape a given TS version resolves it to.
+const helmet = (helmetImport as unknown as { default?: typeof helmetImport }).default ?? helmetImport;
 
 // Express application assembly (SAD Chapter 18 — Request Lifecycle).
 // server.ts owns process lifecycle (listen, shutdown); this file only wires
