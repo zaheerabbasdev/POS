@@ -1,6 +1,6 @@
-import express, { type Application } from "express";
+import express, { type Application, type RequestHandler } from "express";
 import cors from "cors";
-import helmetImport from "helmet";
+import helmetImport, { type HelmetOptions } from "helmet";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import { corsOrigins, isDevelopment } from "./config/env.js";
@@ -16,9 +16,13 @@ import { apiRouter } from "./routes/index.js";
 // authoring pattern that different TypeScript versions have interpreted
 // inconsistently under strict NodeNext/verbatimModuleSyntax settings
 // (observed: passes under some TS versions, fails with "not callable" under
-// others, for the exact same locked dependency version). This unwrap works
-// correctly regardless of which shape a given TS version resolves it to.
-const helmet = (helmetImport as unknown as { default?: typeof helmetImport }).default ?? helmetImport;
+// others, for the exact same locked dependency version, even on the same
+// machine). An earlier attempt to fix this reused `typeof helmetImport` in
+// its own cast, which just re-inherits the same broken/ambiguous type — this
+// version asserts an explicit, independent function signature instead (taken
+// straight from helmet's own .d.cts), so it can't be affected by however a
+// given TS version chooses to interpret the original import.
+const helmet = helmetImport as unknown as (options?: Readonly<HelmetOptions>) => RequestHandler;
 
 // Express application assembly (SAD Chapter 18 — Request Lifecycle).
 // server.ts owns process lifecycle (listen, shutdown); this file only wires
