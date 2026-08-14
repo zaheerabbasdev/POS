@@ -36,5 +36,11 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Excludes "api" too, now that next.config.ts's rewrite forwards
+  // "/api/*" browser calls to the real backend — without this, this
+  // middleware intercepted those calls itself (since they're not in
+  // PUBLIC_PATHS and no cookie exists yet on first login), redirecting the
+  // POST to /api/v1/auth/login into a POST to /login?next=..., which isn't
+  // a valid method for a plain page route (405 Method Not Allowed).
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
