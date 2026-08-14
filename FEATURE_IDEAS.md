@@ -191,5 +191,3 @@ asked for them yet: **Notifications** (an in-app bell/alerts feed) and a basic
 **Backup API** — both would be natural building blocks for several ideas above
 (Notifications ties into low-stock alerts and WhatsApp/SMS; Backup ties into
 "automatic backups + restore").
-
-kk
