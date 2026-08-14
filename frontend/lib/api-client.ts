@@ -14,11 +14,20 @@ export interface ApiErrorBody {
 // to proxy.ts's auth check after login (login "succeeds" but bounces
 // straight back to /login). Deriving this from window.location.hostname at
 // runtime, rather than baking in one fixed host, makes the app work
-// identically whether opened via localhost or a LAN IP. NEXT_PUBLIC_API_URL
-// remains available as an explicit override for a genuinely separate API
-// host (e.g. a real deployment), but leave it unset for local dev.
+// identically whether opened via localhost or a LAN IP.
+//
+// When NEXT_PUBLIC_API_URL is set (a real deployment, frontend and backend
+// on separate hosts), calling it directly from the browser would make the
+// auth cookie third-party and many browsers now refuse to store those at
+// all — see the comment in next.config.ts. So in the browser we instead
+// call our own origin at "/api/v1/...", which next.config.ts's rewrite
+// quietly forwards to the real backend server-side, keeping the cookie
+// first-party. NEXT_PUBLIC_API_URL is still used as-is for any server-side
+// (non-browser) call, since those never touch cookies or that rewrite.
 function resolveApiBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_API_URL;
+  }
   if (typeof window !== "undefined") {
     return `${window.location.protocol}//${window.location.hostname}:4000`;
   }
