@@ -6,7 +6,6 @@ promise of what's coming. Each item says what it does, why it helps, and roughly
 how big a job it is, so you can prioritize by what actually matters for how your
 shop runs.
 
-
 **How to use this file:** tell me which items you want, in any order, and I'll build
 them one at a time. Check a box (`- [x]`) once something is actually built and
 verified, so this file stays an honest record of what's done vs. still an idea.
