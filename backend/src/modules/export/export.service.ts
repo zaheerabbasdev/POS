@@ -128,6 +128,7 @@ const CONTENT_TYPES: Record<string, string> = {
 
 /** POST /api/v1/export/report (API Spec Chapter 51.1). */
 export async function exportReport(
+  shopId: string,
   reportType: string,
   format: "csv" | "excel" | "pdf",
   filters: ReportFilters,
@@ -139,7 +140,7 @@ export async function exportReport(
     );
   }
 
-  const data = await definition.fetch(filters);
+  const data = await definition.fetch(shopId, filters);
   const { columns, rows } = toRows(data, definition.isSummary, definition.columns);
 
   const datePart = new Date().toISOString().slice(0, 10);

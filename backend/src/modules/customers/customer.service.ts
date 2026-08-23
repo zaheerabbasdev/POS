@@ -51,9 +51,10 @@ export interface ListCustomersInput extends PaginationQuery {
 }
 
 /** GET /api/v1/customers (API Spec Chapter 27.1) — search covers name, phone, customer code. */
-export async function listCustomers(input: ListCustomersInput) {
+export async function listCustomers(shopId: string, input: ListCustomersInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.CustomerWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.customerType ? { customerType: input.customerType } : {}),
     ...(input.search
@@ -76,8 +77,8 @@ export async function listCustomers(input: ListCustomersInput) {
   return { data: customers.map(toCustomerDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getCustomerById(id: string) {
-  const customer = await prisma.customer.findUnique({ where: { id }, select: customerSelect });
+export async function getCustomerById(shopId: string, id: string) {
+  const customer = await prisma.customer.findFirst({ where: { id, shopId }, select: customerSelect });
   if (!customer) throw new NotFoundError("Customer not found.");
   return toCustomerDto(customer);
 }
@@ -93,12 +94,13 @@ export interface CreateCustomerInput {
   notes?: string;
 }
 
-/** POST /api/v1/customers (API Spec Chapter 27.2) — "Customer mobile numbers should be unique" (SRS Module 15). */
-export async function createCustomer(input: CreateCustomerInput) {
+/** POST /api/v1/customers (API Spec Chapter 27.2) — "Customer mobile numbers should be unique" (SRS Module 15), scoped per shop. */
+export async function createCustomer(shopId: string, input: CreateCustomerInput) {
   const { firstName, lastName } = splitName(input.name);
 
   const customer = await prisma.customer.create({
     data: {
+      shopId,
       customerCode: generateCode("CUS"),
       firstName,
       lastName,
@@ -128,8 +130,8 @@ export interface UpdateCustomerInput {
 }
 
 /** PATCH /api/v1/customers/{id} (API Spec Chapter 27.3). */
-export async function updateCustomer(id: string, input: UpdateCustomerInput) {
-  const existing = await prisma.customer.findUnique({ where: { id } });
+export async function updateCustomer(shopId: string, id: string, input: UpdateCustomerInput) {
+  const existing = await prisma.customer.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Customer not found.");
 
   const nameUpdate = input.name ? splitName(input.name) : null;
@@ -153,12 +155,12 @@ export async function updateCustomer(id: string, input: UpdateCustomerInput) {
 }
 
 /** GET /api/v1/customers/{id}/history (API Spec Chapter 27.4). */
-export async function getCustomerHistory(id: string) {
-  const customer = await prisma.customer.findUnique({ where: { id } });
+export async function getCustomerHistory(shopId: string, id: string) {
+  const customer = await prisma.customer.findFirst({ where: { id, shopId } });
   if (!customer) throw new NotFoundError("Customer not found.");
 
   const sales = await prisma.sale.findMany({
-    where: { customerId: id },
+    where: { customerId: id, shopId },
     orderBy: { saleDate: "desc" },
     select: { id: true, invoiceNumber: true, saleDate: true, totalAmount: true, paymentStatus: true },
   });
@@ -169,7 +171,7 @@ export async function getCustomerHistory(id: string) {
   const saleIds = sales.map((sale) => sale.id);
   const salePayments = saleIds.length
     ? await prisma.payment.findMany({
-        where: { paymentType: "SALE_PAYMENT", referenceId: { in: saleIds } },
+        where: { paymentType: "SALE_PAYMENT", referenceId: { in: saleIds }, shopId },
         orderBy: { paymentDate: "desc" },
         select: { id: true, referenceId: true, amount: true, paymentMethod: true, paymentDate: true, notes: true },
       })

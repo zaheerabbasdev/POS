@@ -11,9 +11,10 @@ export interface ListAuditLogsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/audit-logs — read-only trail, gated by AUDIT_VIEW. */
-export async function listAuditLogs(input: ListAuditLogsInput) {
+export async function listAuditLogs(shopId: string, input: ListAuditLogsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.AuditLogWhereInput = {
+    shopId,
     ...(input.module ? { module: input.module } : {}),
     ...(input.action ? { action: input.action } : {}),
     ...(input.userId ? { userId: input.userId } : {}),

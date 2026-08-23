@@ -4,6 +4,10 @@ export interface AuthUser {
   id: string;
   name: string;
   role: string | null;
+  // Multi-tenancy: null = Platform Admin, non-null = the shop this user
+  // belongs to. Not consumed by any UI yet (increment 1 is backend-only) —
+  // added for forward compatibility with the upcoming admin/tenant UI.
+  shopId: string | null;
 }
 
 export interface CurrentUser extends AuthUser {

@@ -54,26 +54,33 @@ export interface UploadImageResult {
  * already had its own dedicated endpoint (multi-image, primary-flag aware)
  * from Phase 4 — reused here rather than duplicated.
  */
-export async function uploadImage(type: UploadType, file: Express.Multer.File, entityId?: string): Promise<UploadImageResult> {
+export async function uploadImage(
+  shopId: string,
+  type: UploadType,
+  file: Express.Multer.File,
+  entityId?: string,
+): Promise<UploadImageResult> {
   assertCloudinaryConfigured();
 
   if (type === "product") {
     if (!entityId) throw new BadRequestError("entityId (productId) is required for product images.");
-    const image = await uploadProductImageToProduct(entityId, file);
+    const image = await uploadProductImageToProduct(shopId, entityId, file);
     return { id: image.id, url: image.imageUrl, type, entityId };
   }
 
   const dataUri = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
   const result = await cloudinary.uploader.upload(dataUri, {
-    folder: `mobile-shop-pos/${type}s`,
+    // Multi-tenancy: shop-namespaced folder so one tenant can never overwrite
+    // or enumerate another's Cloudinary assets (spec §53).
+    folder: `pos/shops/${shopId}/${type}`,
     resource_type: "image",
   });
 
   if (type === "logo") {
     await prisma.setting.upsert({
-      where: { settingKey: LOGO_SETTING_KEY },
+      where: { shopId_settingKey: { shopId, settingKey: LOGO_SETTING_KEY } },
       update: { settingValue: result.secure_url },
-      create: { settingKey: LOGO_SETTING_KEY, settingValue: result.secure_url, description: "Shop logo image URL" },
+      create: { shopId, settingKey: LOGO_SETTING_KEY, settingValue: result.secure_url, description: "Shop logo image URL" },
     });
     return { id: `logo:shop`, url: result.secure_url, type, entityId: null };
   }
@@ -81,15 +88,15 @@ export async function uploadImage(type: UploadType, file: Express.Multer.File, e
   if (!entityId) throw new BadRequestError(`entityId is required for ${type} images.`);
 
   if (type === "employee") {
-    const employee = await prisma.employee.findUnique({ where: { id: entityId } });
+    const employee = await prisma.employee.findFirst({ where: { id: entityId, shopId } });
     if (!employee) throw new NotFoundError("Employee not found.");
     await prisma.employee.update({ where: { id: entityId }, data: { profileImage: result.secure_url } });
   } else if (type === "customer") {
-    const customer = await prisma.customer.findUnique({ where: { id: entityId } });
+    const customer = await prisma.customer.findFirst({ where: { id: entityId, shopId } });
     if (!customer) throw new NotFoundError("Customer not found.");
     await prisma.customer.update({ where: { id: entityId }, data: { attachmentUrl: result.secure_url } });
   } else {
-    const repair = await prisma.repair.findUnique({ where: { id: entityId } });
+    const repair = await prisma.repair.findFirst({ where: { id: entityId, shopId } });
     if (!repair) throw new NotFoundError("Repair not found.");
     await prisma.repair.update({ where: { id: entityId }, data: { imageUrl: result.secure_url } });
   }
@@ -104,11 +111,11 @@ export async function uploadImage(type: UploadType, file: Express.Multer.File, e
  * "type:entityId"/"logo:shop" string this module's own upload response
  * returns for the single-field entities.
  */
-export async function deleteImage(id: string): Promise<void> {
+export async function deleteImage(shopId: string, id: string): Promise<void> {
   assertCloudinaryConfigured();
 
   if (UUID_PATTERN.test(id)) {
-    const image = await prisma.productImage.findUnique({ where: { id } });
+    const image = await prisma.productImage.findFirst({ where: { id, product: { shopId } } });
     if (!image) throw new NotFoundError("Image not found.");
     if (image.publicId) {
       try {
@@ -125,15 +132,18 @@ export async function deleteImage(id: string): Promise<void> {
   if (!type || !entityId) throw new BadRequestError(`Invalid image id "${id}".`);
 
   if (type === "logo") {
-    const setting = await prisma.setting.findUnique({ where: { settingKey: LOGO_SETTING_KEY } });
+    const setting = await prisma.setting.findFirst({ where: { shopId, settingKey: LOGO_SETTING_KEY } });
     if (!setting?.settingValue) throw new NotFoundError("Logo image not found.");
     await destroyCloudinaryAsset(setting.settingValue);
-    await prisma.setting.update({ where: { settingKey: LOGO_SETTING_KEY }, data: { settingValue: null } });
+    await prisma.setting.update({
+      where: { shopId_settingKey: { shopId, settingKey: LOGO_SETTING_KEY } },
+      data: { settingValue: null },
+    });
     return;
   }
 
   if (type === "employee") {
-    const employee = await prisma.employee.findUnique({ where: { id: entityId } });
+    const employee = await prisma.employee.findFirst({ where: { id: entityId, shopId } });
     if (!employee?.profileImage) throw new NotFoundError("Employee photo not found.");
     await destroyCloudinaryAsset(employee.profileImage);
     await prisma.employee.update({ where: { id: entityId }, data: { profileImage: null } });
@@ -141,7 +151,7 @@ export async function deleteImage(id: string): Promise<void> {
   }
 
   if (type === "customer") {
-    const customer = await prisma.customer.findUnique({ where: { id: entityId } });
+    const customer = await prisma.customer.findFirst({ where: { id: entityId, shopId } });
     if (!customer?.attachmentUrl) throw new NotFoundError("Customer attachment not found.");
     await destroyCloudinaryAsset(customer.attachmentUrl);
     await prisma.customer.update({ where: { id: entityId }, data: { attachmentUrl: null } });
@@ -149,7 +159,7 @@ export async function deleteImage(id: string): Promise<void> {
   }
 
   if (type === "repair") {
-    const repair = await prisma.repair.findUnique({ where: { id: entityId } });
+    const repair = await prisma.repair.findFirst({ where: { id: entityId, shopId } });
     if (!repair?.imageUrl) throw new NotFoundError("Repair image not found.");
     await destroyCloudinaryAsset(repair.imageUrl);
     await prisma.repair.update({ where: { id: entityId }, data: { imageUrl: null } });

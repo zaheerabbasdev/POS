@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validate } from "../../common/middleware/validate.js";
 import { authenticate } from "../../common/middleware/authenticate.js";
 import { requirePermission } from "../../common/middleware/authorize.js";
+import { requireOperationalAccess } from "../../common/middleware/operationalAccess.js";
 import * as saleController from "./sale.controller.js";
 import { cancelSaleSchema, createSaleSchema, listSalesQuerySchema, saleIdParamSchema } from "./sale.validation.js";
 
@@ -21,10 +22,17 @@ saleRouter.get(
   validate({ params: saleIdParamSchema }),
   saleController.getSale,
 );
-saleRouter.post("/", requirePermission("SALE_CREATE"), validate({ body: createSaleSchema }), saleController.createSale);
+saleRouter.post(
+  "/",
+  requirePermission("SALE_CREATE"),
+  requireOperationalAccess,
+  validate({ body: createSaleSchema }),
+  saleController.createSale,
+);
 saleRouter.patch(
   "/:id/cancel",
   requirePermission("SALE_CANCEL"),
+  requireOperationalAccess,
   validate({ params: saleIdParamSchema, body: cancelSaleSchema }),
   saleController.cancelSale,
 );

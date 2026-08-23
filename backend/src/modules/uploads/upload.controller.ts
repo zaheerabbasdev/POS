@@ -3,6 +3,7 @@ import { asyncHandler } from "../../common/middleware/asyncHandler.js";
 import { sendSuccess } from "../../common/utils/apiResponse.js";
 import { HttpStatus } from "../../common/constants/httpStatus.js";
 import { BadRequestError, ForbiddenError, UnauthorizedError } from "../../common/errors/AppError.js";
+import { getShopId } from "../../common/middleware/tenant.js";
 import * as uploadService from "./upload.service.js";
 import type { UploadType } from "./upload.service.js";
 
@@ -35,8 +36,9 @@ export function requirePermissionForUploadType(req: Request, _res: Response, nex
 
 export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) throw new BadRequestError("An image file is required.");
+  const shopId = getShopId(req);
   const body = req.body as { type: UploadType; entityId?: string };
-  const result = await uploadService.uploadImage(body.type, req.file, body.entityId);
+  const result = await uploadService.uploadImage(shopId, body.type, req.file, body.entityId);
   sendSuccess(res, result, "Image uploaded successfully.", HttpStatus.CREATED);
 });
 
@@ -58,6 +60,7 @@ export function requirePermissionForDelete(req: Request, _res: Response, next: N
 }
 
 export const deleteImage = asyncHandler(async (req: Request, res: Response) => {
-  await uploadService.deleteImage(req.params.id as string);
+  const shopId = getShopId(req);
+  await uploadService.deleteImage(shopId, req.params.id as string);
   sendSuccess(res, null, "Image deleted successfully.");
 });

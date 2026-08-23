@@ -23,9 +23,10 @@ export interface SalesSummaryInput extends DateRangeInput {
 }
 
 /** GET /api/v1/reports/sales/summary (45.1). */
-export async function getSalesSummary(input: SalesSummaryInput) {
+export async function getSalesSummary(shopId: string, input: SalesSummaryInput) {
   const range = dateRangeWhere(input);
   const where: Prisma.SaleWhereInput = {
+    shopId,
     isCancelled: false,
     ...(range ? { saleDate: range } : {}),
     ...(input.employeeId ? { cashierId: input.employeeId } : {}),
@@ -51,10 +52,10 @@ export async function getSalesSummary(input: SalesSummaryInput) {
  * rest of this system already treats dueAmount as the credit signal (e.g.
  * Payment Management's Outstanding Balance).
  */
-export async function getDailySalesReport(input: DateRangeInput) {
+export async function getDailySalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const sales = await prisma.sale.findMany({
-    where: { isCancelled: false, ...(range ? { saleDate: range } : {}) },
+    where: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) },
     select: { saleDate: true, totalAmount: true, dueAmount: true },
   });
 
@@ -80,10 +81,10 @@ export async function getDailySalesReport(input: DateRangeInput) {
  * per-sale unit cost, so this can't reconstruct true historical COGS (same
  * simplification Financial Reports' Profit & Loss makes below).
  */
-export async function getProductSalesReport(input: DateRangeInput) {
+export async function getProductSalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const items = await prisma.saleItem.findMany({
-    where: { sale: { isCancelled: false, ...(range ? { saleDate: range } : {}) } },
+    where: { sale: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) } },
     select: { productId: true, quantity: true, lineTotal: true, product: { select: { productName: true, purchasePrice: true } } },
   });
 
@@ -108,10 +109,10 @@ export async function getProductSalesReport(input: DateRangeInput) {
 }
 
 /** GET /api/v1/reports/sales/employees (45.4). */
-export async function getEmployeeSalesReport(input: DateRangeInput) {
+export async function getEmployeeSalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const sales = await prisma.sale.findMany({
-    where: { isCancelled: false, cashierId: { not: null }, ...(range ? { saleDate: range } : {}) },
+    where: { shopId, isCancelled: false, cashierId: { not: null }, ...(range ? { saleDate: range } : {}) },
     select: { totalAmount: true, cashier: { select: { id: true, username: true } } },
   });
 
@@ -134,9 +135,9 @@ export async function getEmployeeSalesReport(input: DateRangeInput) {
 // =====================================================================
 
 /** GET /api/v1/reports/purchases/summary (46.1). */
-export async function getPurchaseSummary(input: DateRangeInput) {
+export async function getPurchaseSummary(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const where: Prisma.PurchaseWhereInput = range ? { purchaseDate: range } : {};
+  const where: Prisma.PurchaseWhereInput = { shopId, ...(range ? { purchaseDate: range } : {}) };
 
   const [agg, supplierIds, pendingPayments] = await Promise.all([
     prisma.purchase.aggregate({ where, _sum: { totalAmount: true }, _count: { id: true } }),
@@ -153,10 +154,10 @@ export async function getPurchaseSummary(input: DateRangeInput) {
 }
 
 /** GET /api/v1/reports/purchases/suppliers (46.2). */
-export async function getSupplierPurchaseReport(input: DateRangeInput) {
+export async function getSupplierPurchaseReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const purchases = await prisma.purchase.findMany({
-    where: range ? { purchaseDate: range } : {},
+    where: { shopId, ...(range ? { purchaseDate: range } : {}) },
     select: { totalAmount: true, supplier: { select: { id: true, supplierName: true, outstandingBalance: true } } },
   });
 
@@ -181,8 +182,9 @@ export async function getSupplierPurchaseReport(input: DateRangeInput) {
 // =====================================================================
 
 /** GET /api/v1/reports/inventory/stock (47.1). */
-export async function getStockReport() {
+export async function getStockReport(shopId: string) {
   const inventory = await prisma.inventory.findMany({
+    where: { shopId },
     select: {
       availableQuantity: true,
       product: { select: { id: true, sku: true, productName: true, purchasePrice: true } },
@@ -201,8 +203,9 @@ export async function getStockReport() {
 }
 
 /** GET /api/v1/reports/inventory/low-stock (47.2) — "Current Stock <= Minimum Stock Level." */
-export async function getLowStockReport() {
+export async function getLowStockReport(shopId: string) {
   const inventory = await prisma.inventory.findMany({
+    where: { shopId },
     select: {
       quantity: true,
       reorderLevel: true,
@@ -226,10 +229,11 @@ export interface StockMovementInput extends DateRangeInput {
 }
 
 /** GET /api/v1/reports/inventory/movement (47.3). */
-export async function getStockMovementReport(input: StockMovementInput) {
+export async function getStockMovementReport(shopId: string, input: StockMovementInput) {
   const range = dateRangeWhere(input);
   const transactions = await prisma.inventoryTransaction.findMany({
     where: {
+      shopId,
       ...(input.productId ? { productId: input.productId } : {}),
       ...(range ? { createdAt: range } : {}),
     },
@@ -267,9 +271,10 @@ type ImeiStatusValue = (typeof IMEI_STATUS_VALUES)[number];
  * means "within/outside the warranty window," matching what this report
  * needs without an extra query.
  */
-export async function getImeiReport(input: { productId?: string; status?: ImeiStatusValue } = {}) {
+export async function getImeiReport(shopId: string, input: { productId?: string; status?: ImeiStatusValue } = {}) {
   const imeis = await prisma.imeiNumber.findMany({
     where: {
+      shopId,
       ...(input.productId ? { productId: input.productId } : {}),
       ...(input.status ? { status: input.status } : {}),
     },
@@ -304,9 +309,9 @@ export async function getImeiReport(input: { productId?: string; status?: ImeiSt
  * the same purchasePrice-as-COGS-proxy simplification as the Product Sales
  * Report above.
  */
-export async function getProfitLossReport(input: DateRangeInput) {
+export async function getProfitLossReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const saleWhere: Prisma.SaleWhereInput = { isCancelled: false, ...(range ? { saleDate: range } : {}) };
+  const saleWhere: Prisma.SaleWhereInput = { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) };
 
   const [salesAgg, saleItems, expensesAgg] = await Promise.all([
     prisma.sale.aggregate({ where: saleWhere, _sum: { totalAmount: true } }),
@@ -315,7 +320,7 @@ export async function getProfitLossReport(input: DateRangeInput) {
       select: { quantity: true, product: { select: { purchasePrice: true } } },
     }),
     prisma.expense.aggregate({
-      where: range ? { expenseDate: range } : {},
+      where: { shopId, ...(range ? { expenseDate: range } : {}) },
       _sum: { amount: true },
     }),
   ]);
@@ -333,10 +338,10 @@ export async function getProfitLossReport(input: DateRangeInput) {
 }
 
 /** GET /api/v1/reports/financial/expenses (48.2). */
-export async function getExpenseReport(input: DateRangeInput) {
+export async function getExpenseReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const expenses = await prisma.expense.findMany({
-    where: range ? { expenseDate: range } : {},
+    where: { shopId, ...(range ? { expenseDate: range } : {}) },
     orderBy: { expenseDate: "desc" },
     select: {
       id: true,
@@ -360,10 +365,10 @@ const CASH_INFLOW_TYPES = new Set(["OPENING_BALANCE", "SALE", "CASH_IN"]);
 const CASH_OUTFLOW_TYPES = new Set(["REFUND", "EXPENSE", "CASH_OUT"]);
 
 /** GET /api/v1/reports/financial/cash-flow (48.3) — across all cash drawer sessions. */
-export async function getCashFlowReport(input: DateRangeInput) {
+export async function getCashFlowReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const transactions = await prisma.cashDrawerTransaction.findMany({
-    where: range ? { createdAt: range } : {},
+    where: { shopId, ...(range ? { createdAt: range } : {}) },
     select: { transactionType: true, amount: true },
   });
 
@@ -383,10 +388,10 @@ export async function getCashFlowReport(input: DateRangeInput) {
 // =====================================================================
 
 /** GET /api/v1/reports/customers/purchases (49.1). */
-export async function getCustomerPurchaseReport(input: DateRangeInput) {
+export async function getCustomerPurchaseReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const sales = await prisma.sale.findMany({
-    where: { isCancelled: false, customerId: { not: null }, ...(range ? { saleDate: range } : {}) },
+    where: { shopId, isCancelled: false, customerId: { not: null }, ...(range ? { saleDate: range } : {}) },
     select: { totalAmount: true, saleDate: true, customer: { select: { id: true, firstName: true, lastName: true } } },
   });
 
@@ -410,15 +415,15 @@ export async function getCustomerPurchaseReport(input: DateRangeInput) {
 }
 
 /** GET /api/v1/reports/customers/balance (49.2). */
-export async function getCustomerBalanceReport() {
+export async function getCustomerBalanceReport(shopId: string) {
   const customers = await prisma.customer.findMany({
-    where: { isActive: true },
+    where: { shopId, isActive: true },
     select: { id: true, firstName: true, lastName: true, creditLimit: true, outstandingBalance: true },
   });
 
   const paidSums = await prisma.sale.groupBy({
     by: ["customerId"],
-    where: { isCancelled: false, customerId: { not: null } },
+    where: { shopId, isCancelled: false, customerId: { not: null } },
     _sum: { paidAmount: true },
   });
   const paidByCustomer = new Map(paidSums.map((row) => [row.customerId, Number(row._sum.paidAmount ?? 0)]));
@@ -441,14 +446,17 @@ export async function getCustomerBalanceReport() {
  * no paidAmount column — payments against a purchase only exist as separate
  * Payment rows — so "paid" is summed from there instead of a groupBy.
  */
-export async function getSupplierBalanceReport() {
+export async function getSupplierBalanceReport(shopId: string) {
   const [suppliers, purchases, payments] = await Promise.all([
     prisma.supplier.findMany({
-      where: { isActive: true },
+      where: { shopId, isActive: true },
       select: { id: true, supplierName: true, outstandingBalance: true },
     }),
-    prisma.purchase.findMany({ select: { id: true, supplierId: true, totalAmount: true } }),
-    prisma.payment.findMany({ where: { paymentType: "PURCHASE_PAYMENT" }, select: { referenceId: true, amount: true } }),
+    prisma.purchase.findMany({ where: { shopId }, select: { id: true, supplierId: true, totalAmount: true } }),
+    prisma.payment.findMany({
+      where: { shopId, paymentType: "PURCHASE_PAYMENT" },
+      select: { referenceId: true, amount: true },
+    }),
   ]);
 
   const supplierIdByPurchaseId = new Map(purchases.map((p) => [p.id, p.supplierId]));
@@ -473,15 +481,17 @@ export async function getSupplierBalanceReport() {
 }
 
 /** GET /api/v1/reports/suppliers/payments (50.2). */
-export async function getSupplierPaymentHistory(input: DateRangeInput) {
+export async function getSupplierPaymentHistory(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
   const purchases = await prisma.purchase.findMany({
+    where: { shopId },
     select: { id: true, purchaseNumber: true, supplier: { select: { id: true, supplierName: true } } },
   });
   const purchaseById = new Map(purchases.map((p) => [p.id, p]));
 
   const payments = await prisma.payment.findMany({
     where: {
+      shopId,
       paymentType: "PURCHASE_PAYMENT",
       referenceId: { in: purchases.map((p) => p.id) },
       ...(range ? { paymentDate: range } : {}),

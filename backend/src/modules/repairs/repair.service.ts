@@ -78,9 +78,10 @@ export interface ListRepairsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/repairs — "Repair History" (SRS Module 19). */
-export async function listRepairs(input: ListRepairsInput) {
+export async function listRepairs(shopId: string, input: ListRepairsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.RepairWhereInput = {
+    shopId,
     ...(input.customerId ? { customerId: input.customerId } : {}),
     ...(input.technicianId ? { technicianId: input.technicianId } : {}),
     ...(input.status ? { repairStatus: input.status } : {}),
@@ -94,8 +95,8 @@ export async function listRepairs(input: ListRepairsInput) {
   return { data: repairs.map(toRepairListItem), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getRepairById(id: string) {
-  const repair = await prisma.repair.findUnique({ where: { id }, include: repairDetailInclude });
+export async function getRepairById(shopId: string, id: string) {
+  const repair = await prisma.repair.findFirst({ where: { id, shopId }, include: repairDetailInclude });
   if (!repair) throw new NotFoundError("Repair not found.");
   return toRepairDetailDto(repair);
 }
@@ -120,18 +121,23 @@ export interface CreateRepairInput {
  * record, and the free-text device/imei are always preserved in remarks so
  * nothing typed by the technician is lost.
  */
-export async function createRepair(input: CreateRepairInput) {
-  const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
+export async function createRepair(shopId: string, input: CreateRepairInput) {
+  const customer = await prisma.customer.findFirst({ where: { id: input.customerId, shopId } });
   if (!customer) throw new NotFoundError("Customer not found.");
 
+  if (input.productId) {
+    const product = await prisma.product.findFirst({ where: { id: input.productId, shopId } });
+    if (!product) throw new NotFoundError("Product not found.");
+  }
+
   if (input.technicianId) {
-    const technician = await prisma.employee.findUnique({ where: { id: input.technicianId } });
+    const technician = await prisma.employee.findFirst({ where: { id: input.technicianId, shopId } });
     if (!technician) throw new NotFoundError("Technician not found.");
   }
 
   let imeiId: string | undefined;
   if (input.imei) {
-    const imeiRecord = await prisma.imeiNumber.findUnique({ where: { imeiNumber: input.imei } });
+    const imeiRecord = await prisma.imeiNumber.findFirst({ where: { imeiNumber: input.imei, shopId } });
     if (imeiRecord) imeiId = imeiRecord.id;
   }
 
@@ -141,6 +147,7 @@ export async function createRepair(input: CreateRepairInput) {
 
   const repair = await prisma.repair.create({
     data: {
+      shopId,
       repairTicketNumber: generateCode("RPR"),
       customerId: input.customerId,
       ...(input.productId !== undefined ? { productId: input.productId } : {}),
@@ -158,8 +165,8 @@ export async function createRepair(input: CreateRepairInput) {
 }
 
 /** PATCH /api/v1/repairs/{id}/status (API Spec Chapter 41.2). */
-export async function updateRepairStatus(id: string, status: RepairStatusValue) {
-  const repair = await prisma.repair.findUnique({ where: { id } });
+export async function updateRepairStatus(shopId: string, id: string, status: RepairStatusValue) {
+  const repair = await prisma.repair.findFirst({ where: { id, shopId } });
   if (!repair) throw new NotFoundError("Repair not found.");
   if (repair.repairStatus === "DELIVERED") throw new ConflictError("This repair has already been delivered.");
   if (repair.repairStatus === "CANCELLED") throw new ConflictError("This repair has been cancelled.");
@@ -188,12 +195,12 @@ export interface UpdateRepairInput {
 }
 
 /** PATCH /api/v1/repairs/{id} — diagnosis, cost, technician assignment, notes. */
-export async function updateRepair(id: string, input: UpdateRepairInput) {
-  const existing = await prisma.repair.findUnique({ where: { id } });
+export async function updateRepair(shopId: string, id: string, input: UpdateRepairInput) {
+  const existing = await prisma.repair.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Repair not found.");
 
   if (input.technicianId) {
-    const technician = await prisma.employee.findUnique({ where: { id: input.technicianId } });
+    const technician = await prisma.employee.findFirst({ where: { id: input.technicianId, shopId } });
     if (!technician) throw new NotFoundError("Technician not found.");
   }
 
@@ -225,11 +232,11 @@ export interface AddRepairItemInput {
  * separately-editable running total (via updateRepair) since it also
  * covers labor, which has no dedicated column in DDD Table 27.
  */
-export async function addRepairItem(id: string, input: AddRepairItemInput) {
-  const repair = await prisma.repair.findUnique({ where: { id } });
+export async function addRepairItem(shopId: string, id: string, input: AddRepairItemInput) {
+  const repair = await prisma.repair.findFirst({ where: { id, shopId } });
   if (!repair) throw new NotFoundError("Repair not found.");
 
-  const product = await prisma.product.findUnique({ where: { id: input.productId }, include: { inventory: true } });
+  const product = await prisma.product.findFirst({ where: { id: input.productId, shopId }, include: { inventory: true } });
   if (!product) throw new NotFoundError("Product not found.");
 
   const available = product.inventory?.availableQuantity ?? 0;
@@ -251,6 +258,7 @@ export async function addRepairItem(id: string, input: AddRepairItemInput) {
 
     await tx.inventoryTransaction.create({
       data: {
+        shopId,
         inventoryId: inventory.id,
         productId: input.productId,
         transactionType: "REPAIR",
@@ -260,5 +268,5 @@ export async function addRepairItem(id: string, input: AddRepairItemInput) {
     });
   });
 
-  return getRepairById(id);
+  return getRepairById(shopId, id);
 }

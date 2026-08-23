@@ -1,29 +1,12 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../common/middleware/asyncHandler.js";
 import { sendSuccess } from "../../common/utils/apiResponse.js";
-import { parseDurationMs } from "../../common/utils/duration.js";
 import { AUTH_COOKIE_NAME } from "../../common/constants/auth.js";
-import { env, isProduction } from "../../config/env.js";
+import { isProduction } from "../../config/env.js";
 import { UnauthorizedError } from "../../common/errors/AppError.js";
 import { logAudit, logAuditFromRequest } from "../../common/utils/auditLog.js";
+import { setAuthCookie } from "../../common/utils/authCookie.js";
 import * as authService from "./auth.service.js";
-
-function setAuthCookie(res: Response, token: string): void {
-  res.cookie(AUTH_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: isProduction,
-    // "lax" only sends the cookie on same-site requests — fine for local
-    // dev (frontend and backend share a hostname, just different ports),
-    // but breaks login entirely once frontend (Vercel) and backend (a
-    // separate host) are on different domains, since axios's cross-site
-    // fetch calls would never carry it. "none" is required for that case,
-    // and browsers only honor "none" when the cookie is also Secure
-    // (isProduction implies https, so this pairing is always valid).
-    sameSite: isProduction ? "none" : "lax",
-    maxAge: parseDurationMs(env.JWT_EXPIRES_IN),
-    path: "/",
-  });
-}
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { username, password } = req.body as { username: string; password: string };

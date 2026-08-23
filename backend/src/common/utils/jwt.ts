@@ -5,10 +5,14 @@ import { parseDurationMs } from "./duration.js";
 // JWT payload shape (SAD Chapter 16 — Authentication Architecture):
 // "User ID, Username, Employee ID, Role IDs, Issued Time, Expiration Time".
 // iat/exp are added automatically by jsonwebtoken.
+// Multi-tenancy: shopId is carried for symmetry/debuggability, but
+// authenticate.ts never trusts it directly — it always re-reads the current
+// shopId from the database via `sub` on every request, same as roles/perms.
 export interface AuthTokenPayload {
   sub: string;
   username: string;
   employeeId: string | null;
+  shopId: string | null;
   roleIds: string[];
 }
 

@@ -1,11 +1,15 @@
 import "express";
 
-// Populated by the (not-yet-built) auth middleware once a JWT is verified.
-// Declared now so downstream middleware/controllers can rely on the shape.
+// Populated by common/middleware/authenticate.ts once a JWT is verified.
 export interface AuthenticatedUser {
   id: string;
   username: string;
   employeeId: string | null;
+  // Multi-tenancy: NULL = Platform Admin (operates above all shops);
+  // non-NULL = the shop this user belongs to. Tenant-scoped routes must
+  // derive their shopId from here via common/middleware/tenant.ts's
+  // getShopId(req) — never from a client-supplied value.
+  shopId: string | null;
   roles: string[];
   permissions: string[];
 }

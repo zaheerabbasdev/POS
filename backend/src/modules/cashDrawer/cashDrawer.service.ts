@@ -41,34 +41,45 @@ function toDrawerDto(drawer: DrawerRow) {
 }
 
 /** Best-effort lookup used by other modules (Sales) — never throws. */
-export async function findOpenDrawer(cashierId: string) {
-  return prisma.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+export async function findOpenDrawer(shopId: string, cashierId: string) {
+  return prisma.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
 }
 
 /**
  * Records a cash movement against a cashier's open drawer if one exists.
- * Called from the Sales module on cash payments/refunds — deliberately
- * silent (no throw) when no drawer is open, since only cash payments have
- * any relationship to the physical drawer and a missing session shouldn't
- * block the sale itself.
+ * Called from the Sales/Sales-Returns modules on cash payments/refunds —
+ * deliberately silent (no throw) when no drawer is open, since only cash
+ * payments have any relationship to the physical drawer and a missing
+ * session shouldn't block the sale itself.
  */
 export async function recordDrawerMovement(
   tx: Prisma.TransactionClient,
+  shopId: string,
   cashierId: string,
   transactionType: "SALE" | "REFUND",
   amount: number,
   referenceNumber?: string,
 ) {
-  const drawer = await tx.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+  const drawer = await tx.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
   if (!drawer) return;
   await tx.cashDrawerTransaction.create({
-    data: { cashDrawerId: drawer.id, transactionType, amount, ...(referenceNumber ? { referenceNumber } : {}) },
+    data: {
+      shopId,
+      cashDrawerId: drawer.id,
+      transactionType,
+      amount,
+      ...(referenceNumber ? { referenceNumber } : {}),
+    },
   });
 }
 
-async function computeExpectedBalance(drawerId: string, openingBalance: Prisma.Decimal | number): Promise<number> {
+async function computeExpectedBalance(
+  shopId: string,
+  drawerId: string,
+  openingBalance: Prisma.Decimal | number,
+): Promise<number> {
   const transactions = await prisma.cashDrawerTransaction.findMany({
-    where: { cashDrawerId: drawerId, transactionType: { notIn: ["OPENING_BALANCE", "CLOSING_BALANCE"] } },
+    where: { shopId, cashDrawerId: drawerId, transactionType: { notIn: ["OPENING_BALANCE", "CLOSING_BALANCE"] } },
     select: { transactionType: true, amount: true },
   });
 
@@ -82,39 +93,39 @@ async function computeExpectedBalance(drawerId: string, openingBalance: Prisma.D
 }
 
 /** GET /api/v1/cash-drawer/current — the caller's open session, if any. */
-export async function getCurrentDrawer(cashierId: string) {
+export async function getCurrentDrawer(shopId: string, cashierId: string) {
   const drawer = await prisma.cashDrawer.findFirst({
-    where: { cashierId, status: "OPEN" },
+    where: { shopId, cashierId, status: "OPEN" },
     select: drawerListSelect,
   });
   return drawer ? toDrawerDto(drawer) : null;
 }
 
 /** POST /api/v1/cash-drawer/open (API Spec Chapter 37.1). */
-export async function openDrawer(cashierId: string, openingBalance: number) {
-  const existing = await prisma.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+export async function openDrawer(shopId: string, cashierId: string, openingBalance: number) {
+  const existing = await prisma.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
   if (existing) throw new ConflictError("You already have an open cash drawer session.");
 
   await prisma.$transaction(async (tx) => {
     const created = await tx.cashDrawer.create({
-      data: { cashierId, openingBalance, status: "OPEN" },
+      data: { shopId, cashierId, openingBalance, status: "OPEN" },
     });
     await tx.cashDrawerTransaction.create({
-      data: { cashDrawerId: created.id, transactionType: "OPENING_BALANCE", amount: openingBalance },
+      data: { shopId, cashDrawerId: created.id, transactionType: "OPENING_BALANCE", amount: openingBalance },
     });
   });
 
-  const drawer = await getCurrentDrawer(cashierId);
+  const drawer = await getCurrentDrawer(shopId, cashierId);
   if (!drawer) throw new NotFoundError("Cash drawer session could not be created.");
   return drawer;
 }
 
 /** POST /api/v1/cash-drawer/close (API Spec Chapter 37.2). */
-export async function closeDrawer(cashierId: string, closingBalance: number, notes: string | undefined) {
-  const drawer = await prisma.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+export async function closeDrawer(shopId: string, cashierId: string, closingBalance: number, notes: string | undefined) {
+  const drawer = await prisma.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
   if (!drawer) throw new NotFoundError("No open cash drawer session found.");
 
-  const expectedBalance = await computeExpectedBalance(drawer.id, drawer.openingBalance);
+  const expectedBalance = await computeExpectedBalance(shopId, drawer.id, drawer.openingBalance);
   const difference = closingBalance - expectedBalance;
 
   await prisma.$transaction(async (tx) => {
@@ -124,6 +135,7 @@ export async function closeDrawer(cashierId: string, closingBalance: number, not
     });
     await tx.cashDrawerTransaction.create({
       data: {
+        shopId,
         cashDrawerId: drawer.id,
         transactionType: "CLOSING_BALANCE",
         amount: closingBalance,
@@ -132,32 +144,32 @@ export async function closeDrawer(cashierId: string, closingBalance: number, not
     });
   });
 
-  const closed = await prisma.cashDrawer.findUniqueOrThrow({ where: { id: drawer.id }, select: drawerListSelect });
+  const closed = await prisma.cashDrawer.findFirstOrThrow({ where: { id: drawer.id, shopId }, select: drawerListSelect });
   return toDrawerDto(closed);
 }
 
-async function requireOpenDrawer(cashierId: string) {
-  const drawer = await prisma.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+async function requireOpenDrawer(shopId: string, cashierId: string) {
+  const drawer = await prisma.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
   if (!drawer) throw new BadRequestError("Open the cash drawer before recording cash movements.");
   return drawer;
 }
 
 /** Manual "Cash In" (DDD Module 18 feature — owner/manager adding float). */
-export async function cashIn(cashierId: string, amount: number, remarks: string | undefined) {
-  const drawer = await requireOpenDrawer(cashierId);
+export async function cashIn(shopId: string, cashierId: string, amount: number, remarks: string | undefined) {
+  const drawer = await requireOpenDrawer(shopId, cashierId);
   await prisma.cashDrawerTransaction.create({
-    data: { cashDrawerId: drawer.id, transactionType: "CASH_IN", amount, ...(remarks ? { remarks } : {}) },
+    data: { shopId, cashDrawerId: drawer.id, transactionType: "CASH_IN", amount, ...(remarks ? { remarks } : {}) },
   });
-  return getCurrentDrawer(cashierId);
+  return getCurrentDrawer(shopId, cashierId);
 }
 
 /** Manual "Cash Out" (e.g. bank deposit, till skim). */
-export async function cashOut(cashierId: string, amount: number, remarks: string | undefined) {
-  const drawer = await requireOpenDrawer(cashierId);
+export async function cashOut(shopId: string, cashierId: string, amount: number, remarks: string | undefined) {
+  const drawer = await requireOpenDrawer(shopId, cashierId);
   await prisma.cashDrawerTransaction.create({
-    data: { cashDrawerId: drawer.id, transactionType: "CASH_OUT", amount, ...(remarks ? { remarks } : {}) },
+    data: { shopId, cashDrawerId: drawer.id, transactionType: "CASH_OUT", amount, ...(remarks ? { remarks } : {}) },
   });
-  return getCurrentDrawer(cashierId);
+  return getCurrentDrawer(shopId, cashierId);
 }
 
 /**
@@ -165,14 +177,14 @@ export async function cashOut(cashierId: string, amount: number, remarks: string
  * Sales Cash, Expenses, Closing Cash, Difference." Defaults to the caller's
  * open session; pass drawerId to review a past (closed) session instead.
  */
-export async function getSummary(cashierId: string, drawerId?: string) {
+export async function getSummary(shopId: string, cashierId: string, drawerId?: string) {
   const drawer = drawerId
-    ? await prisma.cashDrawer.findUnique({ where: { id: drawerId } })
-    : await prisma.cashDrawer.findFirst({ where: { cashierId, status: "OPEN" } });
+    ? await prisma.cashDrawer.findFirst({ where: { id: drawerId, shopId } })
+    : await prisma.cashDrawer.findFirst({ where: { shopId, cashierId, status: "OPEN" } });
   if (!drawer) throw new NotFoundError(drawerId ? "Cash drawer session not found." : "No open cash drawer session found.");
 
   const transactions = await prisma.cashDrawerTransaction.findMany({
-    where: { cashDrawerId: drawer.id },
+    where: { shopId, cashDrawerId: drawer.id },
     orderBy: { createdAt: "asc" },
   });
 
@@ -220,9 +232,10 @@ export interface ListDrawersInput extends PaginationQuery {
 }
 
 /** GET /api/v1/cash-drawer — session history (for managers/owners). */
-export async function listDrawers(input: ListDrawersInput) {
+export async function listDrawers(shopId: string, input: ListDrawersInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.CashDrawerWhereInput = {
+    shopId,
     ...(input.cashierId ? { cashierId: input.cashierId } : {}),
     ...(input.status ? { status: input.status } : {}),
   };

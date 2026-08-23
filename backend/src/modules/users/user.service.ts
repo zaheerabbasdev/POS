@@ -52,10 +52,11 @@ export interface ListUsersInput extends PaginationQuery {
 }
 
 /** GET /api/v1/users (API Spec Chapter 21.1). */
-export async function listUsers(input: ListUsersInput) {
+export async function listUsers(shopId: string, input: ListUsersInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
 
   const where: Prisma.UserWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.role ? { roles: { some: { role: { roleName: { equals: input.role, mode: "insensitive" } } } } } : {}),
     ...(input.search
@@ -79,8 +80,8 @@ export async function listUsers(input: ListUsersInput) {
 }
 
 /** GET /api/v1/users/{id} (API Spec Chapter 21.2). */
-export async function getUserById(id: string) {
-  const user = await prisma.user.findUnique({ where: { id }, select: userDetailSelect });
+export async function getUserById(shopId: string, id: string) {
+  const user = await prisma.user.findFirst({ where: { id, shopId }, select: userDetailSelect });
   if (!user) throw new NotFoundError("User not found.");
   return toUserDetail(user);
 }
@@ -99,8 +100,8 @@ export interface CreateUserInput {
  * user via this admin-facing endpoint also provisions the linked Employee
  * record from the single "name" field the API contract accepts.
  */
-export async function createUser(input: CreateUserInput) {
-  const role = await prisma.role.findUnique({ where: { id: input.roleId } });
+export async function createUser(shopId: string, input: CreateUserInput) {
+  const role = await prisma.role.findFirst({ where: { id: input.roleId, shopId } });
   if (!role) throw new NotFoundError("Role not found.");
 
   const hashedPassword = await hashPassword(input.password);
@@ -108,10 +109,11 @@ export async function createUser(input: CreateUserInput) {
 
   const user = await prisma.$transaction(async (tx) => {
     const employee = await tx.employee.create({
-      data: { employeeCode: generateCode("EMP"), firstName, lastName, joiningDate: new Date() },
+      data: { shopId, employeeCode: generateCode("EMP"), firstName, lastName, joiningDate: new Date() },
     });
     return tx.user.create({
       data: {
+        shopId,
         username: input.username,
         email: input.email,
         password: hashedPassword,
@@ -134,12 +136,12 @@ export interface UpdateUserInput {
 }
 
 /** PATCH /api/v1/users/{id} (API Spec Chapter 21.4). */
-export async function updateUser(id: string, input: UpdateUserInput) {
-  const existing = await prisma.user.findUnique({ where: { id }, select: { id: true, employeeId: true } });
+export async function updateUser(shopId: string, id: string, input: UpdateUserInput) {
+  const existing = await prisma.user.findFirst({ where: { id, shopId }, select: { id: true, employeeId: true } });
   if (!existing) throw new NotFoundError("User not found.");
 
   if (input.roleId) {
-    const role = await prisma.role.findUnique({ where: { id: input.roleId } });
+    const role = await prisma.role.findFirst({ where: { id: input.roleId, shopId } });
     if (!role) throw new NotFoundError("Role not found.");
   }
 
@@ -151,7 +153,7 @@ export async function updateUser(id: string, input: UpdateUserInput) {
         await tx.employee.update({ where: { id: existing.employeeId }, data: nameUpdate });
       } else {
         const employee = await tx.employee.create({
-          data: { employeeCode: generateCode("EMP"), ...nameUpdate, joiningDate: new Date() },
+          data: { shopId, employeeCode: generateCode("EMP"), ...nameUpdate, joiningDate: new Date() },
         });
         await tx.user.update({ where: { id }, data: { employeeId: employee.id } });
       }
@@ -182,13 +184,13 @@ export async function updateUser(id: string, input: UpdateUserInput) {
  * FK or silently orphan history; "Keep audit history" is one of the two
  * rules the spec lists right alongside "Cannot delete main administrator".
  */
-export async function deleteUser(id: string, requestingUserId: string): Promise<void> {
+export async function deleteUser(shopId: string, id: string, requestingUserId: string): Promise<void> {
   if (id === requestingUserId) {
     throw new BadRequestError("You cannot delete your own account.");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id },
+  const user = await prisma.user.findFirst({
+    where: { id, shopId },
     select: { id: true, roles: { select: { role: { select: { roleName: true } } } } },
   });
   if (!user) throw new NotFoundError("User not found.");
@@ -196,7 +198,7 @@ export async function deleteUser(id: string, requestingUserId: string): Promise<
   const isOwner = user.roles.some((r) => r.role.roleName === "Owner");
   if (isOwner) {
     const activeOwnerCount = await prisma.user.count({
-      where: { isActive: true, roles: { some: { role: { roleName: "Owner" } } } },
+      where: { shopId, isActive: true, roles: { some: { role: { roleName: "Owner" } } } },
     });
     if (activeOwnerCount <= 1) {
       throw new BadRequestError("Cannot remove the last remaining Owner account.");

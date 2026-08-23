@@ -76,3 +76,30 @@ export class InternalServerError extends AppError {
     super(message, HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.SERVER_ERROR);
   }
 }
+
+/**
+ * 403 — a shop's subscription/trial is inactive (common/middleware/
+ * operationalAccess.ts). Same shape as UnauthorizedError: a message plus an
+ * explicit code, so the caller can pick TRIAL_EXPIRED / SHOP_EXPIRED /
+ * SHOP_SUSPENDED / SUBSCRIPTION_REQUIRED per situation while still throwing
+ * one class.
+ */
+export class SubscriptionInactiveError extends AppError {
+  constructor(message: string, code: ErrorCodeType = ErrorCode.SUBSCRIPTION_REQUIRED) {
+    super(message, HttpStatus.FORBIDDEN, code);
+  }
+}
+
+/**
+ * 403 — multi-tenancy guard rail (common/middleware/tenant.ts). Thrown when
+ * a Platform Admin (shopId = null) calls a shop-scoped route without
+ * impersonation, or — in principle — a shop user's token somehow resolves
+ * to a shop the request has no business touching. Kept distinct from the
+ * generic ForbiddenError so tenant-boundary violations are identifiable by
+ * `code` alone (useful for the tenant-isolation test suite and audit review).
+ */
+export class TenantAccessDeniedError extends AppError {
+  constructor(message = "You do not have access to this shop's data.") {
+    super(message, HttpStatus.FORBIDDEN, ErrorCode.TENANT_ACCESS_DENIED);
+  }
+}

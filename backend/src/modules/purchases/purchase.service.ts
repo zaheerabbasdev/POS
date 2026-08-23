@@ -34,14 +34,17 @@ const purchaseDetailInclude = {
 
 type PurchaseDetailRow = Prisma.PurchaseGetPayload<{ include: typeof purchaseDetailInclude }>;
 
-async function toPurchaseDetailDto(purchase: PurchaseDetailRow) {
+async function toPurchaseDetailDto(shopId: string, purchase: PurchaseDetailRow) {
+  // purchase.id is already confirmed to belong to this shop by every caller
+  // below (getPurchaseById always looks the purchase up shop-scoped first);
+  // the shopId filters here are defense-in-depth.
   const [imeiNumbers, payments] = await Promise.all([
     prisma.imeiNumber.findMany({
-      where: { purchaseId: purchase.id },
+      where: { purchaseId: purchase.id, shopId },
       select: { id: true, imeiNumber: true, productId: true, status: true },
     }),
     prisma.payment.findMany({
-      where: { paymentType: "PURCHASE_PAYMENT", referenceId: purchase.id },
+      where: { paymentType: "PURCHASE_PAYMENT", referenceId: purchase.id, shopId },
       orderBy: { paymentDate: "desc" },
     }),
   ]);
@@ -94,9 +97,10 @@ export interface ListPurchasesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/purchases (API Spec Chapter 31.1). */
-export async function listPurchases(input: ListPurchasesInput) {
+export async function listPurchases(shopId: string, input: ListPurchasesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.PurchaseWhereInput = {
+    shopId,
     ...(input.supplierId ? { supplierId: input.supplierId } : {}),
     ...(input.status ? { paymentStatus: input.status } : {}),
     ...(input.startDate || input.endDate
@@ -118,10 +122,10 @@ export async function listPurchases(input: ListPurchasesInput) {
 }
 
 /** GET /api/v1/purchases/{id} (API Spec Chapter 31.2). */
-export async function getPurchaseById(id: string) {
-  const purchase = await prisma.purchase.findUnique({ where: { id }, include: purchaseDetailInclude });
+export async function getPurchaseById(shopId: string, id: string) {
+  const purchase = await prisma.purchase.findFirst({ where: { id, shopId }, include: purchaseDetailInclude });
   if (!purchase) throw new NotFoundError("Purchase not found.");
-  return toPurchaseDetailDto(purchase);
+  return toPurchaseDetailDto(shopId, purchase);
 }
 
 export interface CreatePurchaseItemInput {
@@ -151,12 +155,12 @@ export interface CreatePurchaseInput {
  * transaction (SAD Chapter 22 requires this for exactly this kind of
  * multi-step write).
  */
-export async function createPurchase(input: CreatePurchaseInput, createdById: string) {
-  const supplier = await prisma.supplier.findUnique({ where: { id: input.supplierId } });
+export async function createPurchase(shopId: string, input: CreatePurchaseInput, createdById: string) {
+  const supplier = await prisma.supplier.findFirst({ where: { id: input.supplierId, shopId } });
   if (!supplier) throw new NotFoundError("Supplier not found.");
 
   const products = await prisma.product.findMany({
-    where: { id: { in: input.items.map((item) => item.productId) } },
+    where: { id: { in: input.items.map((item) => item.productId) }, shopId },
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 
@@ -169,6 +173,8 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
           `"${product.productName}" tracks IMEI — provide exactly ${item.quantity} IMEI number(s).`,
         );
       }
+      // IMEI numbers are deliberately globally unique (real-world hardware
+      // identifiers), not shop-scoped — see the ImeiNumber model comment.
       const existing = await prisma.imeiNumber.findMany({ where: { imeiNumber: { in: item.imeis } } });
       if (existing.length > 0) {
         throw new ConflictError(`IMEI already registered: ${existing.map((e) => e.imeiNumber).join(", ")}`);
@@ -188,6 +194,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
   const purchaseId = await prisma.$transaction(async (tx) => {
     const purchase = await tx.purchase.create({
       data: {
+        shopId,
         purchaseNumber: input.invoiceNo ?? generateCode("PUR"),
         supplierId: input.supplierId,
         purchaseDate: input.purchaseDate ?? new Date(),
@@ -222,6 +229,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
         where: { productId: item.productId },
         update: { quantity: { increment: item.quantity }, availableQuantity: { increment: item.quantity } },
         create: {
+          shopId,
           productId: item.productId,
           quantity: item.quantity,
           availableQuantity: item.quantity,
@@ -231,6 +239,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
 
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId: item.productId,
           transactionType: "PURCHASE",
@@ -243,6 +252,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
       if (product.tracksImei && item.imeis) {
         await tx.imeiNumber.createMany({
           data: item.imeis.map((imeiNumber) => ({
+            shopId,
             productId: item.productId,
             imeiNumber,
             purchaseId: purchase.id,
@@ -256,6 +266,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
       const method = PAYMENT_METHOD_INPUT_MAP[input.payment!.method]!;
       await tx.payment.create({
         data: {
+          shopId,
           paymentType: "PURCHASE_PAYMENT",
           referenceId: purchase.id,
           paymentMethod: method,
@@ -277,7 +288,7 @@ export async function createPurchase(input: CreatePurchaseInput, createdById: st
     return purchase.id;
   });
 
-  return getPurchaseById(purchaseId);
+  return getPurchaseById(shopId, purchaseId);
 }
 
 export interface UpdatePurchaseInput {
@@ -287,12 +298,12 @@ export interface UpdatePurchaseInput {
 }
 
 /** PATCH /api/v1/purchases/{id} (API Spec Chapter 31.4). */
-export async function updatePurchase(id: string, input: UpdatePurchaseInput) {
-  const existing = await prisma.purchase.findUnique({ where: { id } });
+export async function updatePurchase(shopId: string, id: string, input: UpdatePurchaseInput) {
+  const existing = await prisma.purchase.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Purchase not found.");
 
   if (input.supplierId) {
-    const supplier = await prisma.supplier.findUnique({ where: { id: input.supplierId } });
+    const supplier = await prisma.supplier.findFirst({ where: { id: input.supplierId, shopId } });
     if (!supplier) throw new NotFoundError("Supplier not found.");
   }
 
@@ -305,7 +316,7 @@ export async function updatePurchase(id: string, input: UpdatePurchaseInput) {
     },
   });
 
-  return getPurchaseById(id);
+  return getPurchaseById(shopId, id);
 }
 
 /**
@@ -315,14 +326,14 @@ export async function updatePurchase(id: string, input: UpdatePurchaseInput) {
  * of that stock has already moved (sold IMEIs, or reversal would take
  * available quantity negative) since it can no longer be cleanly undone.
  */
-export async function deletePurchase(id: string): Promise<void> {
-  const purchase = await prisma.purchase.findUnique({
-    where: { id },
+export async function deletePurchase(shopId: string, id: string): Promise<void> {
+  const purchase = await prisma.purchase.findFirst({
+    where: { id, shopId },
     include: { items: true },
   });
   if (!purchase) throw new NotFoundError("Purchase not found.");
 
-  const imeiNumbers = await prisma.imeiNumber.findMany({ where: { purchaseId: id } });
+  const imeiNumbers = await prisma.imeiNumber.findMany({ where: { purchaseId: id, shopId } });
   const nonAvailable = imeiNumbers.filter((imei) => imei.status !== "AVAILABLE");
   if (nonAvailable.length > 0) {
     throw new ConflictError(
@@ -345,6 +356,7 @@ export async function deletePurchase(id: string): Promise<void> {
       });
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId: item.productId,
           transactionType: "PURCHASE_RETURN",
@@ -355,10 +367,10 @@ export async function deletePurchase(id: string): Promise<void> {
       });
     }
 
-    await tx.imeiNumber.deleteMany({ where: { purchaseId: id } });
+    await tx.imeiNumber.deleteMany({ where: { purchaseId: id, shopId } });
 
     const paymentAgg = await tx.payment.aggregate({
-      where: { paymentType: "PURCHASE_PAYMENT", referenceId: id },
+      where: { paymentType: "PURCHASE_PAYMENT", referenceId: id, shopId },
       _sum: { amount: true },
     });
     const dueAmount = purchase.totalAmount.minus(paymentAgg._sum.amount ?? 0);
@@ -370,7 +382,7 @@ export async function deletePurchase(id: string): Promise<void> {
     }
 
     await tx.purchaseItem.deleteMany({ where: { purchaseId: id } });
-    await tx.payment.deleteMany({ where: { paymentType: "PURCHASE_PAYMENT", referenceId: id } });
+    await tx.payment.deleteMany({ where: { paymentType: "PURCHASE_PAYMENT", referenceId: id, shopId } });
     await tx.purchase.delete({ where: { id } });
   });
 }

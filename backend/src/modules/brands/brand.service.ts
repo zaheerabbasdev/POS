@@ -31,9 +31,10 @@ export interface ListBrandsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/brands (API Spec Chapter 23.1). */
-export async function listBrands(input: ListBrandsInput) {
+export async function listBrands(shopId: string, input: ListBrandsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.BrandWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.search ? { brandName: { contains: input.search, mode: "insensitive" } } : {}),
   };
@@ -46,8 +47,8 @@ export async function listBrands(input: ListBrandsInput) {
   return { data: brands.map(toBrandDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getBrandById(id: string) {
-  const brand = await prisma.brand.findUnique({ where: { id }, select: brandSelect });
+export async function getBrandById(shopId: string, id: string) {
+  const brand = await prisma.brand.findFirst({ where: { id, shopId }, select: brandSelect });
   if (!brand) throw new NotFoundError("Brand not found.");
   return toBrandDto(brand);
 }
@@ -59,10 +60,11 @@ export interface CreateBrandInput {
   status?: "active" | "inactive";
 }
 
-/** POST /api/v1/brands (API Spec Chapter 23.2) — "Brand names must be unique" (SRS Module 3). */
-export async function createBrand(input: CreateBrandInput) {
+/** POST /api/v1/brands (API Spec Chapter 23.2) — "Brand names must be unique" (SRS Module 3), scoped per shop. */
+export async function createBrand(shopId: string, input: CreateBrandInput) {
   const brand = await prisma.brand.create({
     data: {
+      shopId,
       brandName: input.name,
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.logoUrl !== undefined ? { logoUrl: input.logoUrl } : {}),
@@ -81,8 +83,8 @@ export interface UpdateBrandInput {
 }
 
 /** PATCH /api/v1/brands/{id} (API Spec Chapter 23.3). */
-export async function updateBrand(id: string, input: UpdateBrandInput) {
-  const existing = await prisma.brand.findUnique({ where: { id } });
+export async function updateBrand(shopId: string, id: string, input: UpdateBrandInput) {
+  const existing = await prisma.brand.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Brand not found.");
 
   const brand = await prisma.brand.update({
@@ -103,11 +105,11 @@ export async function updateBrand(id: string, input: UpdateBrandInput) {
  * linked with products. Deactivate instead." Unlike Users, a brand with no
  * products at all is genuinely removed (SRS never asks for brand history).
  */
-export async function deleteBrand(id: string): Promise<void> {
-  const brand = await prisma.brand.findUnique({ where: { id } });
+export async function deleteBrand(shopId: string, id: string): Promise<void> {
+  const brand = await prisma.brand.findFirst({ where: { id, shopId } });
   if (!brand) throw new NotFoundError("Brand not found.");
 
-  const productCount = await prisma.product.count({ where: { brandId: id } });
+  const productCount = await prisma.product.count({ where: { brandId: id, shopId } });
   if (productCount > 0) {
     throw new ConflictError("Cannot delete a brand linked to products. Deactivate it instead.");
   }

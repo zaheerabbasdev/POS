@@ -44,8 +44,14 @@ export function LoginForm() {
     onSuccess: (user) => {
       void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       toast.success(`Welcome back, ${user.name}.`);
-      const next = searchParams.get("next");
-      router.push(next && next.startsWith("/") ? next : "/dashboard");
+      // Platform Admins (shopId: null) have their own area — never /dashboard,
+      // which is shop-scoped and would 403 every API call for them.
+      if (user.shopId === null) {
+        router.push("/admin");
+      } else {
+        const next = searchParams.get("next");
+        router.push(next && next.startsWith("/") ? next : "/dashboard");
+      }
       router.refresh();
     },
     onError: (error) => {
@@ -109,6 +115,13 @@ export function LoginForm() {
             {loginMutation.isPending ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="underline underline-offset-2 hover:text-foreground">
+            Register Shop
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );

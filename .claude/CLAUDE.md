@@ -89,8 +89,15 @@ npm run prisma:migrate                 # apply a new migration (prisma migrate d
 npm run prisma:seed                     # permissions, roles, expense categories, admin user
 npm run prisma:studio                    # Prisma Studio GUI
 ```
-No backend test suite exists (`npm test` is a stub that exits 1). There is no
-single-test command because there are no tests to target.
+Backend tests: `npm test` (`vitest run`) / `npm run test:watch`. So far this is one
+suite, `backend/tests/tenant-isolation.test.ts` — boots the real Express app
+(`createApp()`) via `supertest`, creates two isolated shops, and asserts Shop B can
+never read/list/update Shop A's data (404, not a leak). Needs a real Postgres
+connection: `TEST_DATABASE_URL` if set, else falls back to `DIRECT_DATABASE_URL`
+(safe against the shared dev DB — every row is randomly suffixed and cleaned up in
+`afterAll`, just not parallel-safe, hence `vitest.config.ts`'s `fileParallelism:
+false`). No single-test-file command beyond vitest's own CLI filtering
+(`vitest run tests/tenant-isolation.test.ts`).
 
 **Frontend** (`cd frontend`):
 ```bash
@@ -217,10 +224,22 @@ fields via `@map`. Full field-level detail, key relationships, and every
 deliberate deviation from the DDD spec (with rationale) are in
 `PROJECT_DOCUMENTATION.md` §5 — summarized here:
 
+**Multi-tenancy**: one shared database, every business table carries a `shopId`
+column — see `PROJECT_DOCUMENTATION.md` §5.0 for the full model, and the
+"Multi-tenancy" section further below for the request-scoping pattern every module
+follows. In progress: schema + every module `shopId`-scoped, public shop
+registration + free trial, Platform Admin shop management + trial enforcement
+(`requireOperationalAccess`), subscription plan CRUD + shop-side plan selection
+(no real payment gateway — plan selection is a manually-managed state change, per
+spec §40), and a platform admin dashboard (stat tiles, no charts yet) are all
+done. Platform-wide cross-shop reports, dashboard charts, and plan-limit
+enforcement are not built yet (see `PROJECT_DOCUMENTATION.md` §11.9).
+
 ### Domain groups → models
 
 | Domain | Models |
 |---|---|
+| Multi-tenancy | `Shop`, `SubscriptionPlan`, `Subscription`, `SubscriptionHistory` |
 | Auth & Access | `User`, `PasswordResetToken`, `Role`, `Permission`, `UserRole`, `RolePermission` |
 | Employees | `Employee` |
 | Product catalog | `Brand`, `Category`, `ProductModel`, `Product`, `ProductImage` |
@@ -252,6 +271,27 @@ deliberate deviation from the DDD spec (with rationale) are in
 | `RepairStatus` | RECEIVED, UNDER_INSPECTION, WAITING_FOR_PARTS, IN_PROGRESS, READY_FOR_DELIVERY, DELIVERED, CANCELLED |
 | `WarrantyStatus` | ACTIVE, EXPIRED, CLAIMED, CANCELLED |
 | `NotificationType` | LOW_STOCK, NEW_SALE, PURCHASE, REPAIR, WARRANTY, PAYMENT, SYSTEM |
+| `ShopStatus` | TRIAL, ACTIVE, EXPIRED, SUSPENDED, CANCELLED |
+| `SubscriptionStatus` | TRIAL, ACTIVE, EXPIRED, SUSPENDED, CANCELLED, PAST_DUE |
+| `SubscriptionPaymentStatus` | NOT_REQUIRED, PENDING, PAID, FAILED |
+| `BillingInterval` | MONTHLY, YEARLY, CUSTOM |
+
+### Multi-tenancy — the pattern every module follows
+
+- Every controller calls `getShopId(req)` (`common/middleware/tenant.ts`) first and
+  passes `shopId` as the first argument into its service function — never reads a
+  client-supplied `shopId` from body/query/params. Throws `TenantAccessDeniedError`
+  (403) if the caller is a Platform Admin (`req.user.shopId === null`) hitting a
+  shop-scoped route.
+- Every service function that touches Prisma takes `shopId: string` first, adds it
+  to every `where`/`data`, and uses `findFirst({ where: { id, shopId } })` — never
+  `findUnique({ where: { id } })` — for any lookup by a client-supplied id, so a
+  valid UUID belonging to another shop 404s exactly like a nonexistent one.
+- `User`/`Role` are the only models with a nullable `shopId` among the "direct"
+  group (`NULL` = platform-level); `ProductImage`/`PurchaseItem`/`SaleItem`/
+  `RepairItem` have no `shopId` column at all — reached only through an
+  already-scoped parent id. Every other tenant model has a required `shopId`.
+- Reference implementation: `backend/src/modules/products/product.{service,controller}.ts`.
 
 ### Relationships worth knowing before touching Sales/Purchases/Inventory
 
@@ -333,6 +373,45 @@ against each module's `*.routes.ts`.
 | PATCH | `/change-password` | authenticated |
 | POST | `/forgot-password` | Public (rate-limited) |
 | POST | `/reset-password` | Public (rate-limited) |
+
+### Registration — `/registration` (multi-tenancy)
+| Method | Path | Permission |
+|---|---|---|
+| POST | `/shop` | Public (rate-limited) — creates Shop + Owner + roles + 30-day trial, one transaction; auto-logs in (sets `pos_token`) |
+
+### Subscription — `/subscription` (multi-tenancy)
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/` | authenticated — current shop's plan/status/trial dates |
+| GET | `/plans` | authenticated — active, non-trial plans the shop can switch to |
+| POST | `/select-plan` | authenticated — `{ planId }`, switches the shop onto it immediately (no payment gateway — `paymentStatus: PENDING` for priced plans, not faked as paid) |
+
+### Admin Subscription Plans — `/admin/subscription-plans` (multi-tenancy, Platform Admin only)
+Same `requirePlatformContext` gate as Admin Shops below.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/` | PLATFORM_PLAN_VIEW, PLATFORM_PLAN_MANAGE |
+| POST | `/` | PLATFORM_PLAN_MANAGE |
+| PATCH | `/:id` | PLATFORM_PLAN_MANAGE — includes the `isActive` toggle; no delete |
+
+### Admin Shops — `/admin/shops` (multi-tenancy, Platform Admin only)
+Router-level `requirePlatformContext` (rejects any caller whose token resolves to a
+real shop) on top of the per-route permission below.
+
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/` , `/:id` | PLATFORM_SHOP_VIEW |
+| POST | `/` | PLATFORM_SHOP_CREATE — always grants a 1-month free trial |
+| PATCH | `/:id` | PLATFORM_SHOP_UPDATE |
+| PATCH | `/:id/suspend` | PLATFORM_SHOP_SUSPEND |
+| PATCH | `/:id/activate` | PLATFORM_SHOP_ACTIVATE |
+| POST | `/:id/extend-trial` | PLATFORM_TRIAL_EXTEND — `{ days, reason }`, reason required |
+
+### Admin Dashboard — `/admin/dashboard` (multi-tenancy, Platform Admin only)
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/summary` | PLATFORM_DASHBOARD_VIEW — shop status-bucket counts (from `Shop.status`, not raw `Subscription` rows), expiring-trial count, total users, this-month new-subscription revenue, 5 most recent shops. No charts yet. |
 
 ### Users — `/users`
 | Method | Path | Permission |
@@ -516,8 +595,12 @@ payment-method split.
 
 ### Pages (App Router)
 
-**Public**: `/login`, `/forgot-password`, `/reset-password`
+**Public**: `/login`, `/register`, `/forgot-password`, `/reset-password`
 **Print (chrome-free, outside `/dashboard`)**: `/print/sales/[id]`, `/print/repairs/[id]`
+**Platform Admin** (`shopId: null`, own layout/sidebar — `components/tenant-redirect-guard.tsx`
+bounces a shop user out of these and a Platform Admin out of `/dashboard`):
+`/admin` (dashboard — stat tiles + recent shops), `/admin/shops`, `/admin/shops/new`,
+`/admin/shops/[id]`, `/admin/subscription-plans`
 
 **Authenticated**, under `/dashboard`:
 
@@ -525,6 +608,7 @@ payment-method split.
 |---|---|
 | `/dashboard` | Landing page — stat tiles + recent sales/purchases, auto-refreshes every 60s |
 | `/dashboard/pos` | Point-of-sale screen (product search, cart, checkout) |
+| `/dashboard/subscription` | Trial/plan status (multi-tenancy) |
 | `/dashboard/sales`, `/sales/[id]` | Sales list + detail (payment recording, cancel, return) |
 | `/dashboard/purchases`, `/purchases/new`, `/purchases/[id]` | Purchase list, create, detail (edit, return) |
 | `/dashboard/cash-drawer` | Open/close, cash in/out, live session summary |

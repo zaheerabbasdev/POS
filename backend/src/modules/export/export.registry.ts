@@ -17,7 +17,7 @@ export interface ReportDefinition {
   // reads far better in a PDF/Excel/CSV export than one giant row.
   isSummary: boolean;
   columns: ExportColumn[];
-  fetch: (filters: ReportFilters) => Promise<unknown>;
+  fetch: (shopId: string, filters: ReportFilters) => Promise<unknown>;
 }
 
 // Keyed by the same path each report already answers to under
@@ -33,7 +33,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "totalInvoices", label: "Total Invoices" },
       { key: "averageSale", label: "Average Sale" },
     ],
-    fetch: (f) => reportService.getSalesSummary(f),
+    fetch: (shopId, f) => reportService.getSalesSummary(shopId, f),
   },
   "sales/daily": {
     title: "Daily Sales Report",
@@ -45,7 +45,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "cashSales", label: "Cash Sales" },
       { key: "creditSales", label: "Credit Sales" },
     ],
-    fetch: (f) => reportService.getDailySalesReport(f),
+    fetch: (shopId, f) => reportService.getDailySalesReport(shopId, f),
   },
   "sales/products": {
     title: "Product Sales Report",
@@ -56,7 +56,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "revenue", label: "Revenue" },
       { key: "profit", label: "Profit" },
     ],
-    fetch: (f) => reportService.getProductSalesReport(f),
+    fetch: (shopId, f) => reportService.getProductSalesReport(shopId, f),
   },
   "sales/employees": {
     title: "Employee Sales Report",
@@ -66,7 +66,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "totalSales", label: "Total Sales" },
       { key: "transactions", label: "Transactions" },
     ],
-    fetch: (f) => reportService.getEmployeeSalesReport(f),
+    fetch: (shopId, f) => reportService.getEmployeeSalesReport(shopId, f),
   },
   "purchases/summary": {
     title: "Purchase Summary",
@@ -77,7 +77,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "supplierCount", label: "Supplier Count" },
       { key: "pendingPayments", label: "Pending Payments" },
     ],
-    fetch: (f) => reportService.getPurchaseSummary(f),
+    fetch: (shopId, f) => reportService.getPurchaseSummary(shopId, f),
   },
   "purchases/suppliers": {
     title: "Supplier Purchase Report",
@@ -88,7 +88,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "totalAmount", label: "Total Amount" },
       { key: "outstandingBalance", label: "Outstanding Balance" },
     ],
-    fetch: (f) => reportService.getSupplierPurchaseReport(f),
+    fetch: (shopId, f) => reportService.getSupplierPurchaseReport(shopId, f),
   },
   "inventory/stock": {
     title: "Stock Report",
@@ -100,7 +100,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "purchasePrice", label: "Purchase Price" },
       { key: "stockValue", label: "Stock Value" },
     ],
-    fetch: () => reportService.getStockReport(),
+    fetch: (shopId) => reportService.getStockReport(shopId),
   },
   "inventory/low-stock": {
     title: "Low Stock Report",
@@ -111,7 +111,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "currentStock", label: "Current Stock" },
       { key: "reorderLevel", label: "Reorder Level" },
     ],
-    fetch: () => reportService.getLowStockReport(),
+    fetch: (shopId) => reportService.getLowStockReport(shopId),
   },
   "inventory/movement": {
     title: "Stock Movement Report",
@@ -124,7 +124,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "quantity", label: "Quantity" },
       { key: "referenceNumber", label: "Reference" },
     ],
-    fetch: (f) => reportService.getStockMovementReport(f),
+    fetch: (shopId, f) => reportService.getStockMovementReport(shopId, f),
   },
   "inventory/imei": {
     title: "IMEI Report",
@@ -137,7 +137,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "saleStatus", label: "Sale Status" },
       { key: "warrantyStatus", label: "Warranty Status" },
     ],
-    fetch: () => reportService.getImeiReport(),
+    fetch: (shopId) => reportService.getImeiReport(shopId),
   },
   "financial/profit-loss": {
     title: "Profit & Loss Report",
@@ -148,7 +148,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "expenses", label: "Expenses" },
       { key: "netProfit", label: "Net Profit" },
     ],
-    fetch: (f) => reportService.getProfitLossReport(f),
+    fetch: (shopId, f) => reportService.getProfitLossReport(shopId, f),
   },
   "financial/expenses": {
     title: "Expense Report",
@@ -159,7 +159,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "date", label: "Date" },
       { key: "employee", label: "Employee" },
     ],
-    fetch: (f) => reportService.getExpenseReport(f),
+    fetch: (shopId, f) => reportService.getExpenseReport(shopId, f),
   },
   "financial/cash-flow": {
     title: "Cash Flow Report",
@@ -169,7 +169,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "cashOut", label: "Cash Out" },
       { key: "currentBalance", label: "Current Balance" },
     ],
-    fetch: (f) => reportService.getCashFlowReport(f),
+    fetch: (shopId, f) => reportService.getCashFlowReport(shopId, f),
   },
   "customers/purchases": {
     title: "Customer Purchase Report",
@@ -180,7 +180,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "totalAmount", label: "Total Amount" },
       { key: "lastPurchaseDate", label: "Last Purchase" },
     ],
-    fetch: (f) => reportService.getCustomerPurchaseReport(f),
+    fetch: (shopId, f) => reportService.getCustomerPurchaseReport(shopId, f),
   },
   "customers/balance": {
     title: "Customer Balance Report",
@@ -191,7 +191,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "paidAmount", label: "Paid Amount" },
       { key: "remainingBalance", label: "Remaining Balance" },
     ],
-    fetch: () => reportService.getCustomerBalanceReport(),
+    fetch: (shopId) => reportService.getCustomerBalanceReport(shopId),
   },
   "suppliers/balance": {
     title: "Supplier Balance Report",
@@ -202,7 +202,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "paidAmount", label: "Paid Amount" },
       { key: "remainingAmount", label: "Remaining Amount" },
     ],
-    fetch: () => reportService.getSupplierBalanceReport(),
+    fetch: (shopId) => reportService.getSupplierBalanceReport(shopId),
   },
   "suppliers/payments": {
     title: "Supplier Payment History",
@@ -214,7 +214,7 @@ export const REPORT_REGISTRY: Record<string, ReportDefinition> = {
       { key: "method", label: "Method" },
       { key: "date", label: "Date" },
     ],
-    fetch: (f) => reportService.getSupplierPaymentHistory(f),
+    fetch: (shopId, f) => reportService.getSupplierPaymentHistory(shopId, f),
   },
 };
 

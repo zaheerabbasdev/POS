@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validate } from "../../common/middleware/validate.js";
 import { authenticate } from "../../common/middleware/authenticate.js";
 import { requirePermission } from "../../common/middleware/authorize.js";
+import { requireOperationalAccess } from "../../common/middleware/operationalAccess.js";
 import * as cashDrawerController from "./cashDrawer.controller.js";
 import {
   cashMovementSchema,
@@ -35,6 +36,7 @@ cashDrawerRouter.get(
 cashDrawerRouter.post(
   "/open",
   requirePermission("CASH_DRAWER_MANAGE"),
+  requireOperationalAccess,
   validate({ body: openDrawerSchema }),
   cashDrawerController.openDrawer,
 );
@@ -47,12 +49,14 @@ cashDrawerRouter.post(
 cashDrawerRouter.post(
   "/cash-in",
   requirePermission("CASH_DRAWER_MANAGE"),
+  requireOperationalAccess,
   validate({ body: cashMovementSchema }),
   cashDrawerController.cashIn,
 );
 cashDrawerRouter.post(
   "/cash-out",
   requirePermission("CASH_DRAWER_MANAGE"),
+  requireOperationalAccess,
   validate({ body: cashMovementSchema }),
   cashDrawerController.cashOut,
 );

@@ -126,10 +126,66 @@ One schema file (`backend/prisma/schema.prisma`), organized into the same domain
 DDD volume uses. UUID primary keys everywhere; `snake_case` Postgres columns mapped
 from `camelCase` Prisma fields via `@map`.
 
+### 5.0 Multi-tenancy
+
+Converted from a single-shop schema into a multi-tenant SaaS platform: **one shared
+Postgres database**, no per-shop database or schema — every business table carries a
+`shopId` column instead. This is not in the original DDD (which only ever modeled one
+shop); it's the foundation increment for a Platform Admin layer, subscriptions, and
+public shop registration (in progress — see §11 for what's built so far).
+
+- **`Shop`** is the tenant root. `Shop.ownerId` points at the `User` who owns it;
+  that same user's own `User.shopId` points back at the shop (two separate FK
+  columns, both set together — see `Shop`'s comment in `schema.prisma`).
+- **`User.shopId` is nullable**: `NULL` means a **Platform Admin** (operates above
+  every shop, via a separate `PLATFORM_*` permission set — see §6); non-`NULL` means
+  an ordinary shop user (Owner/Manager/Cashier/etc., scoped to exactly one shop).
+  `User.username`/`User.email` stay **globally** unique across the whole platform —
+  not shop-scoped — so there's one login namespace for everyone.
+- **`Role.shopId` is nullable too**: every shop gets its **own editable copy** of the
+  seeded roles (`@@unique([shopId, roleName])`), not a shared global set — matching
+  this app's existing "roles are fully editable at runtime" behavior, just per shop
+  now. `NULL` is reserved for the single seeded "Platform Admin" role.
+  `Permission` itself stays one global, unscoped catalog (fixed constants); the
+  `module` column just distinguishes `"Platform"` permissions from shop-module ones.
+- **Direct `shopId` column** on every header/list-level tenant table — see the domain
+  table below for the full list. **Derived via parent only** (no column) for
+  `ProductImage`, `PurchaseItem`, `SaleItem`, `RepairItem` — always reached through an
+  already shop-scoped parent id, so a duplicate column would be pure redundancy.
+- **Tenant isolation is enforced explicitly in every service function**, not via a
+  Prisma middleware/extension: `common/middleware/tenant.ts`'s `getShopId(req)` is the
+  one place every controller pulls the caller's shop id from (never from a
+  client-supplied body/query/param value), threaded as the first argument into the
+  matching service function, which adds it to every `where`/`data`. Any lookup of a
+  single record by a client-supplied id uses `findFirst({ where: { id, shopId } })`,
+  never `findUnique({ where: { id } })` — a valid UUID belonging to another shop 404s
+  exactly like a nonexistent one, so cross-tenant existence is never leaked.
+- **Deliberately still globally unique** (not shop-scoped) despite living on a tenant
+  table: `ImeiNumber.imeiNumber` — a real IMEI is a globally unique hardware
+  identifier by GSMA standard, so shop-scoping that constraint would be factually
+  wrong. Every other former single-column unique on a tenant table (SKU, invoice
+  number, customer/employee/supplier code, role name, setting key, expense
+  number, …) became a `@@unique([shopId, <field>])` composite — which also
+  implements per-shop invoice/purchase/repair numbering "for free."
+- **Migrating an already-populated database** (e.g. real production data) to this
+  shape is a 3-step, zero-data-loss sequence — see `backend/prisma/backfill-default-shop.ts`'s
+  header comment for the exact order (additive nullable-`shopId` migration → run the
+  backfill script → additive-turned-required NOT NULL migration). A fresh dev
+  database instead just runs `prisma/seed.ts`, which is shop-aware and creates its
+  own "Default Shop" if none exists.
+- **Not yet built** (tracked in §11): Platform Admin CRUD endpoints/UI, public shop
+  registration, trial/subscription enforcement (`requireOperationalAccess`
+  middleware), and the admin dashboard/reports. `Shop`, `SubscriptionPlan`,
+  `Subscription`, and `SubscriptionHistory` exist in the schema now so this can land
+  without another disruptive migration, but nothing writes to `Subscription`/
+  `SubscriptionHistory` yet outside the seed/backfill scripts' one-off "Legacy
+  Access" row.
+
 ### 5.1 Domain groups
 
 | Domain | Models |
 |---|---|
+| Multi-tenancy | `Shop`, `SubscriptionPlan`, `Subscription`, `SubscriptionHistory` |
 | Auth & Access | `User`, `PasswordResetToken`, `Role`, `Permission`, `UserRole`, `RolePermission` |
 | Employees | `Employee` |
 | Product catalog | `Brand`, `Category`, `ProductModel`, `Product`, `ProductImage` |
@@ -161,6 +217,10 @@ from `camelCase` Prisma fields via `@map`.
 | `RepairStatus` | RECEIVED, UNDER_INSPECTION, WAITING_FOR_PARTS, IN_PROGRESS, READY_FOR_DELIVERY, DELIVERED, CANCELLED |
 | `WarrantyStatus` | ACTIVE, EXPIRED, CLAIMED, CANCELLED |
 | `NotificationType` | LOW_STOCK, NEW_SALE, PURCHASE, REPAIR, WARRANTY, PAYMENT, SYSTEM |
+| `ShopStatus` | TRIAL, ACTIVE, EXPIRED, SUSPENDED, CANCELLED |
+| `SubscriptionStatus` | TRIAL, ACTIVE, EXPIRED, SUSPENDED, CANCELLED, PAST_DUE |
+| `SubscriptionPaymentStatus` | NOT_REQUIRED, PENDING, PAID, FAILED |
+| `BillingInterval` | MONTHLY, YEARLY, CUSTOM |
 
 ### 5.3 Key relationships worth knowing
 
@@ -214,7 +274,11 @@ built, not speculatively up front.
   for the frontend to store itself — the cookie is the only place it lives).
 - **Every request** re-verifies the JWT and re-resolves the user's roles →
   permissions fresh from the database — no permission caching, so role/permission
-  edits apply immediately.
+  edits apply immediately. The re-fetch also re-reads `shopId` fresh every time
+  (never trusted from the JWT payload alone), same reasoning: a shop reassignment
+  applies immediately, not just after the token expires.
+- **Multi-tenancy**: `req.user.shopId` (`null` for a Platform Admin) is what every
+  tenant-scoped route's authorization is actually built on — see §5.0.
 - **RBAC**: permissions are granular codes (`SALE_CREATE`, `PRODUCT_MANAGE`, …), not
   role names. `requirePermission("A", "B")` grants access if the user holds *any* of
   the listed codes. Roles are just named, editable bundles of permissions (Users →
@@ -274,6 +338,54 @@ All endpoints are mounted under `/api/v1`. Every route requires authentication
 | PATCH | `/change-password` | Requires current password. |
 | POST | `/forgot-password` | Public. Anti-enumeration (always generic success). |
 | POST | `/reset-password` | Public, rate-limited. Consumes a `PasswordResetToken`. |
+
+### Registration — `/api/v1/registration` (multi-tenancy)
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/shop` | Public, rate-limited (same limiter as `/auth/login`). One transaction: creates `Shop` (`status: TRIAL`) + Owner `Employee`/`User` + that shop's own copy of the 6 default roles + a 30-day `Subscription`/`SubscriptionHistory` + a platform-level `AuditLog` row, then sets the `pos_token` cookie — registration doubles as auto-login. Reuses `common/utils/authCookie.ts#setAuthCookie` (also used by `/auth/login`) and `common/constants/defaultRoles.ts` (also used by `prisma/seed.ts`). |
+
+### Subscription — `/api/v1/subscription` (multi-tenancy)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/` | Authenticated, shop-scoped. Current plan/status/trial dates + a live-computed `daysRemaining`/`isExpired` (never trusts a cached value). |
+| GET | `/plans` | Active, non-trial plans the shop can switch to. |
+| POST | `/select-plan` | `{ planId }`. Switches the shop onto it immediately (`status: ACTIVE`, `endDate` = now + plan duration) — no payment gateway exists, so this *is* the "manually managed" subscription-status support spec §40 explicitly allows, not faked billing; `paymentStatus` is `PENDING` for a priced plan, `NOT_REQUIRED` for a free one. Writes a `SubscriptionHistory` row. |
+
+### Admin Subscription Plans — `/api/v1/admin/subscription-plans` (multi-tenancy, Platform Admin only)
+`PLATFORM_PLAN_VIEW`/`PLATFORM_PLAN_MANAGE`. Platform-level reference data (not
+shop-scoped). `GET /`, `POST /` (create — commercial fields only: name,
+description, price, currency, billing interval, duration; the schema's plan-limit
+fields like `maxUsers`/feature toggles keep their defaults, no admin UI for them
+yet — see §11.9), `PATCH /:id` (edit, including the `isActive` toggle). No delete —
+same soft-delete-only convention as Brand/Category.
+
+### Admin Shops — `/api/v1/admin/shops` (multi-tenancy, Platform Admin only)
+Gated by `requirePlatformContext` (rejects any caller whose token resolves to a real
+shop) + `PLATFORM_SHOP_*`/`PLATFORM_TRIAL_EXTEND` permissions.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/` , `/:id` | Paginated list (search by shop/owner name, filter by status) / detail (shop + owner + current subscription). |
+| POST | `/` | Same `common/services/provisionShop.ts` transaction registration uses — admin-created shops always get the 1-month free trial. |
+| PATCH | `/:id` | Edit shop info. |
+| PATCH | `/:id/suspend` , `/:id/activate` | Flips `Shop.status` and the current `Subscription.status` together; activating a still-within-term subscription restores `TRIAL`, otherwise falls back to `ACTIVE`. |
+| POST | `/:id/extend-trial` | `{ days, reason }`, reason required. Extends from the current end date if still active, from *now* if already expired (never an already-expired extension) — writes a `SubscriptionHistory` row and an `AuditLog` entry with the before/after end date. |
+
+### Admin Dashboard — `/api/v1/admin/dashboard` (multi-tenancy, Platform Admin only)
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/summary` | `PLATFORM_DASHBOARD_VIEW`. Shop status-bucket counts (Total/Active/Trial/Expiring-within-7-days/Expired/Suspended — computed from `Shop.status`, the one-row-per-shop cached column, **not** raw `Subscription` rows, which accumulate one per plan change and would double-count a shop that's switched plans), total platform users (excludes Platform Admin accounts), new-subscriptions-this-month revenue (labeled precisely — no billing-cycle automation exists, so this isn't collected/recurring revenue), and the 5 most recently created shops. No charts yet (see §11.9). |
+
+### Operational access enforcement (multi-tenancy)
+`common/middleware/operationalAccess.ts#requireOperationalAccess` sits on the write
+routes of Sales, Purchases, Sales/Purchase Returns, Inventory adjustments, Expenses,
+Repairs, and Cash Drawer open/cash-in/cash-out (not `/close`, so a mid-expiry shop can
+still close out its drawer) — throws a 403 (`TRIAL_EXPIRED`/`SHOP_EXPIRED`/
+`SHOP_SUSPENDED`/`SUBSCRIPTION_REQUIRED`) if the shop's current subscription is
+expired/suspended/cancelled/missing, computed live from `Subscription.endDate` (same
+"never trust the cache" principle as `Shop.status`). Read routes, `/auth/*`,
+`/subscription`, and `/settings` are deliberately never gated by it. A newly-detected
+expiry also self-heals the cached `Shop`/`Subscription` status columns, best-effort.
 
 ### Users — `/api/v1/users`
 Full CRUD; `DELETE` is a soft-delete (deactivate). Creating/editing a user's name
@@ -396,7 +508,19 @@ sales and purchases. No specific permission gate — every role lands here after
 
 ### 8.1 Pages (App Router)
 
-**Public**: `/login`, `/forgot-password`, `/reset-password`
+**Public**: `/login`, `/register`, `/forgot-password`, `/reset-password`
+
+**Platform Admin** (`shopId: null`, own layout/sidebar per spec §56 — never mixed
+with the shop sidebar; a shop user hitting these gets redirected to `/dashboard`,
+and vice versa — `components/tenant-redirect-guard.tsx`):
+
+| Route | Purpose |
+|---|---|
+| `/admin` | Platform dashboard — stat tiles + recent shops. |
+| `/admin/shops` | List + search/filter by status. |
+| `/admin/shops/new` | Create-shop form — always grants a free trial. |
+| `/admin/subscription-plans` | Plan list + create/edit dialog. |
+| `/admin/shops/[id]` | Detail + Suspend/Activate + Extend Trial dialog. |
 
 **Authenticated** (all under `/dashboard`):
 
@@ -404,6 +528,7 @@ sales and purchases. No specific permission gate — every role lands here after
 |---|---|
 | `/dashboard` | Real-data landing page — stat tiles + recent sales/purchases |
 | `/dashboard/pos` | Point-of-sale screen (product search, cart, checkout) |
+| `/dashboard/subscription` | Trial/plan status (multi-tenancy — `TrialStatus` component) |
 | `/dashboard/sales`, `/sales/[id]` | Sales list + detail (payment recording, cancel, return) |
 | `/dashboard/purchases`, `/purchases/new`, `/purchases/[id]` | Purchase list, create, detail (return) |
 | `/dashboard/cash-drawer` | Open/close, cash in/out, live session summary |
@@ -661,7 +786,95 @@ module/action/user/date range) backs a new Audit Log page in the sidebar.
 Verified end-to-end: creating and deleting a test role produced exactly the
 expected two rows with correct actor, IP, and description.
 
-### 11.9 Still out of scope
+### 11.9 In progress — multi-tenant SaaS conversion
+
+**Increment 1 (database multi-tenancy + platform RBAC foundation) is done** — see
+§5.0. Every existing module's service/controller is `shopId`-scoped, cross-shop
+access is 404 (never a leak), and an automated test suite
+(`backend/tests/tenant-isolation.test.ts`, `npm test`) verifies it end-to-end
+against the real HTTP API.
+
+**Increment 2 (public shop registration + free trial) is done** — a complete,
+demoable vertical slice: `POST /api/v1/registration/shop` (public, rate-limited)
+creates a `Shop` + Owner login + that shop's own copy of the 6 default roles + a
+30-day `Subscription` (all one transaction) and auto-logs the new owner in; the
+`/register` page (linked from `/login`) drives it end-to-end; `GET /api/v1/subscription`
++ the `TrialStatus` component + `/dashboard/subscription` page show the live trial
+countdown. Verified: full registration flow via the real API (shop/user/roles/
+subscription created correctly, auto-login cookie works, friendly 409s on duplicate
+username/email), and the existing tenant-isolation suite still passes unmodified.
+Two small refactors landed alongside it to avoid duplication:
+`common/constants/defaultRoles.ts` (the 6-role catalog, now shared between
+`prisma/seed.ts` and the registration service) and
+`common/utils/authCookie.ts` (the cookie-setting logic, now shared between
+`/auth/login` and registration).
+
+**Increment 3 (admin shop management + trial enforcement) is done** — the Platform
+Admin side now actually does something, and trial expiry has real consequences:
+`/api/v1/admin/shops` (list/create/update/suspend/activate/extend-trial, see §7)
+plus a full `/admin` frontend area (own layout/sidebar, list/create/detail pages),
+and `requireOperationalAccess` (§7) now blocks write actions on Sales, Purchases,
+Sales/Purchase Returns, Inventory adjustments, Expenses, Repairs, and Cash Drawer
+open/cash-in/cash-out once a shop's subscription is expired/suspended/cancelled —
+reads and `/subscription` stay open regardless, so an affected owner can always see
+their data and go choose a plan. `common/services/provisionShop.ts` now holds the
+one shop-creation transaction shared by both self-registration and admin-created
+shops (extracted from `registration.service.ts` in this pass). Verified end-to-end
+against the real running API: admin creates a shop with trial → extends its trial
+(both "still active" date math, confirmed `+N days` from the *current* end date,
+and the "already expired → from now" branch) → suspends it (owner's writes 403 with
+`SHOP_SUSPENDED`, reads and `/subscription` still 200) → activates it (owner's
+writes reach validation again, no longer blocked); a regular shop user gets 403 from
+`/admin/shops`. Two new automated tests in
+`backend/tests/operational-access.test.ts` cover the admin-permission and
+expired-trial-blocking cases, alongside the existing `tenant-isolation.test.ts`.
+
+**Increment 4 (subscription plans) is done** — a shop can now actually change
+plans: `/api/v1/admin/subscription-plans` (Platform Admin CRUD — commercial fields
+only, see §7) plus `/admin/subscription-plans` UI; `GET /api/v1/subscription/plans`
++ `POST /api/v1/subscription/select-plan` (§7) plus a new "Available Plans" section
+on `/dashboard/subscription` with a `ConfirmDialog`-gated "Switch to this plan"
+button per plan. No payment gateway exists (deliberate — spec §40 forbids faking a
+successful payment), so selecting a plan is the same manually-managed transition
+the app already uses for other subscription state; a priced plan's
+`paymentStatus` records `PENDING` rather than claiming payment was collected.
+Verified end-to-end against the real running API: admin creates a paid
+"Professional" plan → shop owner sees it in their selectable list → selects it →
+`/subscription` immediately reflects the new plan/status/dates/`paymentStatus:
+PENDING` → confirmed `requireOperationalAccess` (increment 3) still allows writes
+against the new subscription (unaffected — its logic only reads
+`Subscription.status`/`endDate`, both set correctly by the new plan).
+
+**Increment 5 (platform admin dashboard) is done** — `/admin` is a real landing
+page now instead of an immediate redirect: `GET /api/v1/admin/dashboard/summary`
+(§7) returns shop status-bucket counts (computed correctly from `Shop.status`, not
+raw `Subscription` rows — see §7 for why that distinction matters), expiring-trial
+count, total platform users, this-month new-subscription revenue (precisely
+labeled, not implying collected/recurring revenue), and the 5 most recent shops;
+the frontend mirrors the shop dashboard's own stat-tile + recent-activity-table
+layout exactly. Verified against the real API: totals cross-checked against
+`/admin/shops`'s own pagination count, a shop user still 403s. Charts (spec §36)
+and "Trial Conversion Rate" (spec §35) were deliberately skipped this pass — see
+"Not yet built" below.
+
+**Not yet built** (follow-up increments, same rollout this one used — schema
+groundwork first, then endpoints):
+- Plan-limit enforcement UI (`maxUsers`/`maxProducts`/feature toggles exist in the
+  schema with sensible defaults but have no admin UI and nothing reads them yet).
+- Any real payment gateway/checkout — "selecting" a paid plan today only records
+  intent (`paymentStatus: PENDING`); there's no follow-up flow that collects money
+  or flips it to `PAID` yet (would need an admin action or gateway webhook).
+- Platform dashboard charts (new shops over time, trial conversion, revenue —
+  deferred until there's enough shop volume for a chart to mean anything) and
+  Trial Conversion Rate (needs proper historical cohort tracking to compute
+  correctly, not a fragile approximation).
+- Platform-wide cross-shop *reports* (sales-by-shop, revenue-by-plan — a bigger
+  lift reusing the existing 17-report-type `reports`/`export` apparatus).
+- Hard delete/archive of a shop.
+- Trial-expiry warning banners (14/7/3/1-day countdowns) — `TrialStatus` shows the
+  current count but doesn't escalate visually as it gets close.
+
+### 11.10 Still out of scope
 
 Two items from the original audit were **not** built — both are genuinely new
 feature surfaces rather than gaps in existing functionality, and neither was
@@ -672,7 +885,7 @@ requested:
   updates a row in that table.
 - **Chapter 54 — Backup APIs.** No model, no implementation.
 
-### 11.10 Everything else
+### 11.11 Everything else
 
 Every other BRD/SRS module, DDD table, and API Specification chapter has a
 working backend endpoint and a fully wired frontend page — Auth, Users, Roles,

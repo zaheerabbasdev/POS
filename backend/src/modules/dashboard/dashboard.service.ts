@@ -11,7 +11,7 @@ function startOfMonth(): Date {
 }
 
 /** GET /api/v1/dashboard/summary (API Spec Chapter 44.1). */
-export async function getDashboardSummary() {
+export async function getDashboardSummary(shopId: string) {
   const today = startOfToday();
   const monthStart = startOfMonth();
 
@@ -31,20 +31,21 @@ export async function getDashboardSummary() {
     pendingRepairs,
   ] = await Promise.all([
     prisma.sale.aggregate({
-      where: { saleDate: { gte: today }, isCancelled: false },
+      where: { shopId, saleDate: { gte: today }, isCancelled: false },
       _sum: { totalAmount: true },
     }),
-    prisma.purchase.aggregate({ where: { purchaseDate: { gte: today } }, _sum: { totalAmount: true } }),
+    prisma.purchase.aggregate({ where: { shopId, purchaseDate: { gte: today } }, _sum: { totalAmount: true } }),
     prisma.sale.aggregate({
-      where: { saleDate: { gte: monthStart }, isCancelled: false },
+      where: { shopId, saleDate: { gte: monthStart }, isCancelled: false },
       _sum: { totalAmount: true },
     }),
-    prisma.sale.aggregate({ where: { isCancelled: false }, _sum: { totalAmount: true } }),
-    prisma.product.count({ where: { isActive: true } }),
-    prisma.customer.count({ where: { isActive: true } }),
-    prisma.supplier.count({ where: { isActive: true } }),
-    prisma.sale.count({ where: { isCancelled: false, dueAmount: { gt: 0 } } }),
+    prisma.sale.aggregate({ where: { shopId, isCancelled: false }, _sum: { totalAmount: true } }),
+    prisma.product.count({ where: { shopId, isActive: true } }),
+    prisma.customer.count({ where: { shopId, isActive: true } }),
+    prisma.supplier.count({ where: { shopId, isActive: true } }),
+    prisma.sale.count({ where: { shopId, isCancelled: false, dueAmount: { gt: 0 } } }),
     prisma.sale.findMany({
+      where: { shopId },
       take: 5,
       orderBy: { createdAt: "desc" },
       select: {
@@ -57,6 +58,7 @@ export async function getDashboardSummary() {
       },
     }),
     prisma.purchase.findMany({
+      where: { shopId },
       take: 5,
       orderBy: { createdAt: "desc" },
       select: {
@@ -68,9 +70,9 @@ export async function getDashboardSummary() {
         supplier: { select: { supplierName: true } },
       },
     }),
-    prisma.inventory.findMany({ select: { quantity: true, reorderLevel: true } }),
-    prisma.expense.aggregate({ _sum: { amount: true } }),
-    prisma.repair.count({ where: { repairStatus: { notIn: ["DELIVERED", "CANCELLED"] } } }),
+    prisma.inventory.findMany({ where: { shopId }, select: { quantity: true, reorderLevel: true } }),
+    prisma.expense.aggregate({ where: { shopId }, _sum: { amount: true } }),
+    prisma.repair.count({ where: { shopId, repairStatus: { notIn: ["DELIVERED", "CANCELLED"] } } }),
   ]);
 
   const lowStockProducts = inventoryLevels.filter((inv) => inv.quantity > 0 && inv.quantity <= inv.reorderLevel).length;

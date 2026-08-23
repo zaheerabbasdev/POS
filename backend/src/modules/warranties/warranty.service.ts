@@ -43,9 +43,10 @@ export interface ListWarrantiesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/warranties (API Spec Chapter 42.1). */
-export async function listWarranties(input: ListWarrantiesInput) {
+export async function listWarranties(shopId: string, input: ListWarrantiesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.WarrantyWhereInput = {
+    shopId,
     ...(input.customerId ? { customerId: input.customerId } : {}),
     ...(input.productId ? { productId: input.productId } : {}),
     ...(input.status ? { warrantyStatus: input.status } : {}),
@@ -65,8 +66,8 @@ export async function listWarranties(input: ListWarrantiesInput) {
   return { data: warranties.map(toWarrantyDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getWarrantyById(id: string) {
-  const warranty = await prisma.warranty.findUnique({ where: { id }, include: warrantyInclude });
+export async function getWarrantyById(shopId: string, id: string) {
+  const warranty = await prisma.warranty.findFirst({ where: { id, shopId }, include: warrantyInclude });
   if (!warranty) throw new NotFoundError("Warranty not found.");
   return toWarrantyDto(warranty);
 }
@@ -83,8 +84,8 @@ export interface CreateWarrantyClaimInput {
  * (RECEIVED, no charge) instead of leaving the claim as a dead-end status
  * flip — connects Warranty and Repair the way a real shop would handle one.
  */
-export async function createWarrantyClaim(input: CreateWarrantyClaimInput) {
-  const warranty = await prisma.warranty.findUnique({ where: { id: input.warrantyId } });
+export async function createWarrantyClaim(shopId: string, input: CreateWarrantyClaimInput) {
+  const warranty = await prisma.warranty.findFirst({ where: { id: input.warrantyId, shopId } });
   if (!warranty) throw new NotFoundError("Warranty not found.");
 
   if (warranty.warrantyStatus === "CLAIMED") throw new ConflictError("This warranty has already been claimed.");
@@ -101,6 +102,7 @@ export async function createWarrantyClaim(input: CreateWarrantyClaimInput) {
 
     const repair = await tx.repair.create({
       data: {
+        shopId,
         repairTicketNumber: generateCode("RPR"),
         customerId: warranty.customerId,
         productId: warranty.productId,
@@ -114,6 +116,6 @@ export async function createWarrantyClaim(input: CreateWarrantyClaimInput) {
     return repair.id;
   });
 
-  const updated = await getWarrantyById(input.warrantyId);
+  const updated = await getWarrantyById(shopId, input.warrantyId);
   return { warranty: updated, repairId };
 }

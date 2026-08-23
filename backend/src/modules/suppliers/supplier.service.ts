@@ -44,9 +44,10 @@ export interface ListSuppliersInput extends PaginationQuery {
 }
 
 /** GET /api/v1/suppliers (API Spec Chapter 28.1). */
-export async function listSuppliers(input: ListSuppliersInput) {
+export async function listSuppliers(shopId: string, input: ListSuppliersInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.SupplierWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.search
       ? {
@@ -67,8 +68,8 @@ export async function listSuppliers(input: ListSuppliersInput) {
   return { data: suppliers.map(toSupplierDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getSupplierById(id: string) {
-  const supplier = await prisma.supplier.findUnique({ where: { id }, select: supplierSelect });
+export async function getSupplierById(shopId: string, id: string) {
+  const supplier = await prisma.supplier.findFirst({ where: { id, shopId }, select: supplierSelect });
   if (!supplier) throw new NotFoundError("Supplier not found.");
   return toSupplierDto(supplier);
 }
@@ -84,9 +85,10 @@ export interface CreateSupplierInput {
 }
 
 /** POST /api/v1/suppliers (API Spec Chapter 28.2). */
-export async function createSupplier(input: CreateSupplierInput) {
+export async function createSupplier(shopId: string, input: CreateSupplierInput) {
   const supplier = await prisma.supplier.create({
     data: {
+      shopId,
       supplierCode: generateCode("SUP"),
       supplierName: input.name,
       phone: input.phone,
@@ -113,8 +115,8 @@ export interface UpdateSupplierInput {
 }
 
 /** PATCH /api/v1/suppliers/{id} (API Spec Chapter 28.3). */
-export async function updateSupplier(id: string, input: UpdateSupplierInput) {
-  const existing = await prisma.supplier.findUnique({ where: { id } });
+export async function updateSupplier(shopId: string, id: string, input: UpdateSupplierInput) {
+  const existing = await prisma.supplier.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Supplier not found.");
 
   const supplier = await prisma.supplier.update({
@@ -135,12 +137,12 @@ export async function updateSupplier(id: string, input: UpdateSupplierInput) {
 }
 
 /** GET /api/v1/suppliers/{id}/history (API Spec Chapter 28.4). */
-export async function getSupplierHistory(id: string) {
-  const supplier = await prisma.supplier.findUnique({ where: { id } });
+export async function getSupplierHistory(shopId: string, id: string) {
+  const supplier = await prisma.supplier.findFirst({ where: { id, shopId } });
   if (!supplier) throw new NotFoundError("Supplier not found.");
 
   const purchases = await prisma.purchase.findMany({
-    where: { supplierId: id },
+    where: { supplierId: id, shopId },
     orderBy: { purchaseDate: "desc" },
     select: { id: true, purchaseNumber: true, purchaseDate: true, totalAmount: true, paymentStatus: true },
   });
@@ -148,7 +150,7 @@ export async function getSupplierHistory(id: string) {
   const purchaseIds = purchases.map((purchase) => purchase.id);
   const payments = purchaseIds.length
     ? await prisma.payment.findMany({
-        where: { paymentType: "PURCHASE_PAYMENT", referenceId: { in: purchaseIds } },
+        where: { paymentType: "PURCHASE_PAYMENT", referenceId: { in: purchaseIds }, shopId },
         orderBy: { paymentDate: "desc" },
         select: { id: true, referenceId: true, amount: true, paymentMethod: true, paymentDate: true, notes: true },
       })

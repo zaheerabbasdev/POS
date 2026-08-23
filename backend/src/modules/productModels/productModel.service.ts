@@ -35,9 +35,10 @@ export interface ListProductModelsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/models (API Spec Chapter 25.1). */
-export async function listProductModels(input: ListProductModelsInput) {
+export async function listProductModels(shopId: string, input: ListProductModelsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.ProductModelWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.brandId ? { brandId: input.brandId } : {}),
     ...(input.search ? { modelName: { contains: input.search, mode: "insensitive" } } : {}),
@@ -51,8 +52,8 @@ export async function listProductModels(input: ListProductModelsInput) {
   return { data: models.map(toProductModelDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getProductModelById(id: string) {
-  const model = await prisma.productModel.findUnique({ where: { id }, select: productModelSelect });
+export async function getProductModelById(shopId: string, id: string) {
+  const model = await prisma.productModel.findFirst({ where: { id, shopId }, select: productModelSelect });
   if (!model) throw new NotFoundError("Product model not found.");
   return toProductModelDto(model);
 }
@@ -66,12 +67,13 @@ export interface CreateProductModelInput {
 }
 
 /** POST /api/v1/models (API Spec Chapter 25.2) — "Duplicate models under the same brand are not allowed" (SRS Module 5). */
-export async function createProductModel(input: CreateProductModelInput) {
-  const brand = await prisma.brand.findUnique({ where: { id: input.brandId } });
+export async function createProductModel(shopId: string, input: CreateProductModelInput) {
+  const brand = await prisma.brand.findFirst({ where: { id: input.brandId, shopId } });
   if (!brand) throw new NotFoundError("Brand not found.");
 
   const model = await prisma.productModel.create({
     data: {
+      shopId,
       modelName: input.name,
       brandId: input.brandId,
       ...(input.releaseYear !== undefined ? { releaseYear: input.releaseYear } : {}),
@@ -92,12 +94,12 @@ export interface UpdateProductModelInput {
 }
 
 /** PATCH /api/v1/models/{id} (API Spec Chapter 25.3). */
-export async function updateProductModel(id: string, input: UpdateProductModelInput) {
-  const existing = await prisma.productModel.findUnique({ where: { id } });
+export async function updateProductModel(shopId: string, id: string, input: UpdateProductModelInput) {
+  const existing = await prisma.productModel.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Product model not found.");
 
   if (input.brandId) {
-    const brand = await prisma.brand.findUnique({ where: { id: input.brandId } });
+    const brand = await prisma.brand.findFirst({ where: { id: input.brandId, shopId } });
     if (!brand) throw new NotFoundError("Brand not found.");
   }
 
@@ -116,11 +118,11 @@ export async function updateProductModel(id: string, input: UpdateProductModelIn
 }
 
 /** DELETE /api/v1/models/{id} (API Spec Chapter 25.4) — same "deactivate instead" rule as Brands/Categories. */
-export async function deleteProductModel(id: string): Promise<void> {
-  const model = await prisma.productModel.findUnique({ where: { id } });
+export async function deleteProductModel(shopId: string, id: string): Promise<void> {
+  const model = await prisma.productModel.findFirst({ where: { id, shopId } });
   if (!model) throw new NotFoundError("Product model not found.");
 
-  const productCount = await prisma.product.count({ where: { productModelId: id } });
+  const productCount = await prisma.product.count({ where: { productModelId: id, shopId } });
   if (productCount > 0) {
     throw new ConflictError("Cannot delete a model linked to products. Deactivate it instead.");
   }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validate } from "../../common/middleware/validate.js";
 import { authenticate } from "../../common/middleware/authenticate.js";
 import { requirePermission } from "../../common/middleware/authorize.js";
+import { requireOperationalAccess } from "../../common/middleware/operationalAccess.js";
 import * as purchaseController from "./purchase.controller.js";
 import {
   createPurchaseSchema,
@@ -29,6 +30,7 @@ purchaseRouter.get(
 purchaseRouter.post(
   "/",
   requirePermission("PURCHASE_CREATE"),
+  requireOperationalAccess,
   validate({ body: createPurchaseSchema }),
   purchaseController.createPurchase,
 );

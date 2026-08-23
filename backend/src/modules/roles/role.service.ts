@@ -23,13 +23,13 @@ function toRoleDto(role: RoleRow) {
 }
 
 /** GET /api/v1/roles (API Spec Chapter 22.1). */
-export async function listRoles() {
-  const roles = await prisma.role.findMany({ select: roleSelect, orderBy: { roleName: "asc" } });
+export async function listRoles(shopId: string) {
+  const roles = await prisma.role.findMany({ where: { shopId }, select: roleSelect, orderBy: { roleName: "asc" } });
   return roles.map(toRoleDto);
 }
 
-export async function getRoleById(id: string) {
-  const role = await prisma.role.findUnique({ where: { id }, select: roleSelect });
+export async function getRoleById(shopId: string, id: string) {
+  const role = await prisma.role.findFirst({ where: { id, shopId }, select: roleSelect });
   if (!role) throw new NotFoundError("Role not found.");
   return toRoleDto(role);
 }
@@ -40,9 +40,13 @@ export interface CreateRoleInput {
 }
 
 /** POST /api/v1/roles (API Spec Chapter 22.2). */
-export async function createRole(input: CreateRoleInput) {
+export async function createRole(shopId: string, input: CreateRoleInput) {
   const role = await prisma.role.create({
-    data: { roleName: input.name, ...(input.description !== undefined ? { description: input.description } : {}) },
+    data: {
+      shopId,
+      roleName: input.name,
+      ...(input.description !== undefined ? { description: input.description } : {}),
+    },
     select: roleSelect,
   });
   return toRoleDto(role);
@@ -55,8 +59,8 @@ export interface UpdateRoleInput {
 }
 
 /** PATCH /api/v1/roles/{id} (API Spec Chapter 22.4). */
-export async function updateRole(id: string, input: UpdateRoleInput) {
-  const existing = await prisma.role.findUnique({ where: { id } });
+export async function updateRole(shopId: string, id: string, input: UpdateRoleInput) {
+  const existing = await prisma.role.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Role not found.");
 
   const role = await prisma.role.update({
@@ -72,8 +76,8 @@ export async function updateRole(id: string, input: UpdateRoleInput) {
 }
 
 /** POST /api/v1/roles/{id}/permissions (API Spec Chapter 22.3). */
-export async function assignPermissions(id: string, permissionCodes: string[]) {
-  const role = await prisma.role.findUnique({ where: { id } });
+export async function assignPermissions(shopId: string, id: string, permissionCodes: string[]) {
+  const role = await prisma.role.findFirst({ where: { id, shopId } });
   if (!role) throw new NotFoundError("Role not found.");
 
   const permissions = await prisma.permission.findMany({ where: { permissionName: { in: permissionCodes } } });
@@ -88,12 +92,12 @@ export async function assignPermissions(id: string, permissionCodes: string[]) {
     prisma.rolePermission.createMany({ data: permissions.map((p) => ({ roleId: id, permissionId: p.id })) }),
   ]);
 
-  return getRoleById(id);
+  return getRoleById(shopId, id);
 }
 
 /** DELETE /api/v1/roles/{id} (API Spec Chapter 22.5). */
-export async function deleteRole(id: string): Promise<void> {
-  const role = await prisma.role.findUnique({ where: { id } });
+export async function deleteRole(shopId: string, id: string): Promise<void> {
+  const role = await prisma.role.findFirst({ where: { id, shopId } });
   if (!role) throw new NotFoundError("Role not found.");
 
   const assignedUserCount = await prisma.userRole.count({ where: { roleId: id } });

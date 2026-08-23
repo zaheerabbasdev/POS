@@ -26,6 +26,11 @@ import { exportRouter } from "../modules/export/index.js";
 import { uploadRouter } from "../modules/uploads/index.js";
 import { settingRouter } from "../modules/settings/index.js";
 import { auditRouter } from "../modules/audit/index.js";
+import { registrationRouter } from "../modules/registration/index.js";
+import { subscriptionRouter } from "../modules/subscriptions/index.js";
+import { shopRouter } from "../modules/shops/index.js";
+import { subscriptionPlanRouter } from "../modules/subscriptionPlans/index.js";
+import { platformDashboardRouter } from "../modules/platformDashboard/index.js";
 
 // Root API router — mounted at /api/v1 in app.ts. Each feature module keeps
 // its own router (e.g. modules/products/product.routes.ts per SAD Chapter
@@ -63,4 +68,9 @@ apiRouter.use("/export", exportRouter);
 apiRouter.use("/uploads", uploadRouter);
 apiRouter.use("/settings", settingRouter);
 apiRouter.use("/audit-logs", auditRouter);
+apiRouter.use("/registration", registrationRouter);
+apiRouter.use("/subscription", subscriptionRouter);
+apiRouter.use("/admin/shops", shopRouter);
+apiRouter.use("/admin/subscription-plans", subscriptionPlanRouter);
+apiRouter.use("/admin/dashboard", platformDashboardRouter);
 // ...

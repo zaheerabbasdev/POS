@@ -59,9 +59,10 @@ export interface ListInventoryInput extends PaginationQuery {
 }
 
 /** GET /api/v1/inventory (API Spec Chapter 38.1). */
-export async function listInventory(input: ListInventoryInput) {
+export async function listInventory(shopId: string, input: ListInventoryInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.InventoryWhereInput = {
+    shopId,
     ...(input.productId ? { productId: input.productId } : {}),
     ...(input.categoryId || input.brandId
       ? {
@@ -99,19 +100,19 @@ export async function listInventory(input: ListInventoryInput) {
   return { data: paged.map(toInventoryDto), pagination: buildPaginationMeta(page, limit, filtered.length) };
 }
 
-export async function getInventoryByProductId(productId: string) {
-  const inventory = await prisma.inventory.findUnique({ where: { productId }, select: inventorySelect });
+export async function getInventoryByProductId(shopId: string, productId: string) {
+  const inventory = await prisma.inventory.findFirst({ where: { productId, shopId }, select: inventorySelect });
   if (!inventory) throw new NotFoundError("Inventory record not found for this product.");
   return toInventoryDto(inventory);
 }
 
 /** GET /api/v1/inventory/{productId}/history (API Spec Chapter 38.2). */
-export async function getStockHistory(productId: string) {
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+export async function getStockHistory(shopId: string, productId: string) {
+  const product = await prisma.product.findFirst({ where: { id: productId, shopId } });
   if (!product) throw new NotFoundError("Product not found.");
 
   const transactions = await prisma.inventoryTransaction.findMany({
-    where: { productId },
+    where: { productId, shopId },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -143,8 +144,11 @@ export interface CreateAdjustmentInput {
 }
 
 /** POST /api/v1/inventory/adjustment (API Spec Chapter 39.1). */
-export async function createAdjustment(input: CreateAdjustmentInput, adjustedById: string) {
-  const inventory = await prisma.inventory.findUnique({ where: { productId: input.productId } });
+export async function createAdjustment(shopId: string, input: CreateAdjustmentInput, adjustedById: string) {
+  const product = await prisma.product.findFirst({ where: { id: input.productId, shopId } });
+  if (!product) throw new NotFoundError("Product not found.");
+
+  const inventory = await prisma.inventory.findFirst({ where: { productId: input.productId, shopId } });
   if (!inventory) throw new NotFoundError("Product has no inventory record.");
 
   const delta = input.type === "increase" ? input.quantity : -input.quantity;
@@ -161,6 +165,7 @@ export async function createAdjustment(input: CreateAdjustmentInput, adjustedByI
     }),
     prisma.stockAdjustment.create({
       data: {
+        shopId,
         inventoryId: inventory.id,
         productId: input.productId,
         previousQuantity: inventory.quantity,
@@ -171,6 +176,7 @@ export async function createAdjustment(input: CreateAdjustmentInput, adjustedByI
     }),
     prisma.inventoryTransaction.create({
       data: {
+        shopId,
         inventoryId: inventory.id,
         productId: input.productId,
         transactionType: "ADJUSTMENT",
@@ -181,5 +187,5 @@ export async function createAdjustment(input: CreateAdjustmentInput, adjustedByI
     }),
   ]);
 
-  return getInventoryByProductId(input.productId);
+  return getInventoryByProductId(shopId, input.productId);
 }

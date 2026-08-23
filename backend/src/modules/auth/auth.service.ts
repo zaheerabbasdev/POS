@@ -16,6 +16,7 @@ const authUserSelect = {
   password: true,
   isActive: true,
   employeeId: true,
+  shopId: true,
   employee: { select: { firstName: true, lastName: true } },
   roles: {
     select: {
@@ -55,12 +56,13 @@ export async function login(username: string, password: string) {
     sub: user.id,
     username: user.username,
     employeeId: user.employeeId,
+    shopId: user.shopId,
     roleIds: user.roles.map((r) => r.role.id),
   });
 
   return {
     token,
-    user: { id: user.id, name: getDisplayName(user), role: getPrimaryRoleName(user) },
+    user: { id: user.id, name: getDisplayName(user), role: getPrimaryRoleName(user), shopId: user.shopId },
   };
 }
 
@@ -73,6 +75,7 @@ export async function getCurrentUser(userId: string) {
     id: user.id,
     name: getDisplayName(user),
     role: getPrimaryRoleName(user),
+    shopId: user.shopId,
     permissions: flattenPermissions(user.roles),
   };
 }

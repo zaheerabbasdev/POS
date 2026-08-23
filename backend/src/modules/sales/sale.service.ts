@@ -47,9 +47,9 @@ const saleDetailInclude = {
 
 type SaleDetailRow = Prisma.SaleGetPayload<{ include: typeof saleDetailInclude }>;
 
-async function toSaleDetailDto(sale: SaleDetailRow) {
+async function toSaleDetailDto(shopId: string, sale: SaleDetailRow) {
   const payments = await prisma.payment.findMany({
-    where: { referenceId: sale.id, paymentType: { in: ["SALE_PAYMENT", "REFUND"] } },
+    where: { shopId, referenceId: sale.id, paymentType: { in: ["SALE_PAYMENT", "REFUND"] } },
     orderBy: { paymentDate: "desc" },
   });
 
@@ -120,9 +120,10 @@ export interface ListSalesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/sales (API Spec Chapter 34.1). */
-export async function listSales(input: ListSalesInput) {
+export async function listSales(shopId: string, input: ListSalesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.SaleWhereInput = {
+    shopId,
     ...(input.customerId ? { customerId: input.customerId } : {}),
     ...(input.employeeId ? { cashierId: input.employeeId } : {}),
     ...(input.status ? { paymentStatus: input.status } : {}),
@@ -141,10 +142,10 @@ export async function listSales(input: ListSalesInput) {
 }
 
 /** GET /api/v1/sales/{id} (API Spec Chapter 34.2). */
-export async function getSaleById(id: string) {
-  const sale = await prisma.sale.findUnique({ where: { id }, include: saleDetailInclude });
+export async function getSaleById(shopId: string, id: string) {
+  const sale = await prisma.sale.findFirst({ where: { id, shopId }, include: saleDetailInclude });
   if (!sale) throw new NotFoundError("Sale not found.");
-  return toSaleDetailDto(sale);
+  return toSaleDetailDto(shopId, sale);
 }
 
 export interface CreateSaleItemInput {
@@ -184,11 +185,11 @@ const CREATE_SALE_RETRY_DELAY_MS = 150;
  * immediately. Anything else (a genuine transient DB hiccup) gets a
  * couple of quick retries before giving up.
  */
-export async function createSale(input: CreateSaleInput, cashierId: string) {
+export async function createSale(shopId: string, input: CreateSaleInput, cashierId: string) {
   let lastError: unknown;
   for (let attempt = 1; attempt <= CREATE_SALE_MAX_ATTEMPTS; attempt++) {
     try {
-      return await attemptCreateSale(input, cashierId);
+      return await attemptCreateSale(shopId, input, cashierId);
     } catch (err) {
       if (err instanceof AppError) throw err;
       lastError = err;
@@ -200,14 +201,14 @@ export async function createSale(input: CreateSaleInput, cashierId: string) {
   throw lastError;
 }
 
-async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
+async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashierId: string) {
   if (input.customerId) {
-    const customer = await prisma.customer.findUnique({ where: { id: input.customerId } });
+    const customer = await prisma.customer.findFirst({ where: { id: input.customerId, shopId } });
     if (!customer) throw new NotFoundError("Customer not found.");
   }
 
   const products = await prisma.product.findMany({
-    where: { id: { in: input.items.map((item) => item.productId) } },
+    where: { id: { in: input.items.map((item) => item.productId) }, shopId },
     include: { inventory: true },
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
@@ -237,7 +238,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
       if (item.quantity !== 1 || !item.imei) {
         throw new BadRequestError(`"${product.productName}" tracks IMEI — quantity must be 1 and imei is required.`);
       }
-      const imeiRecord = await prisma.imeiNumber.findUnique({ where: { imeiNumber: item.imei } });
+      const imeiRecord = await prisma.imeiNumber.findFirst({ where: { imeiNumber: item.imei, shopId } });
       if (!imeiRecord || imeiRecord.productId !== item.productId) {
         throw new NotFoundError(`IMEI "${item.imei}" not found for this product.`);
       }
@@ -262,6 +263,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
   const saleId = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
       data: {
+        shopId,
         invoiceNumber: generateCode("INV"),
         ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
         saleDate: new Date(),
@@ -313,6 +315,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
 
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: product.inventory!.id,
           productId: item.productId,
           transactionType: "SALE",
@@ -347,6 +350,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
 
         await tx.warranty.create({
           data: {
+            shopId,
             saleId: sale.id,
             saleItemId: saleItem.id,
             customerId: input.customerId,
@@ -376,6 +380,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
       const method = PAYMENT_METHOD_INPUT_MAP[p.method]!;
       await tx.payment.create({
         data: {
+          shopId,
           paymentType: "SALE_PAYMENT",
           referenceId: sale.id,
           paymentMethod: method,
@@ -389,7 +394,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
       // silently skipped if the cashier has no session open (SAD Chapter 26:
       // Cash Drawer tracks sessions, it doesn't gate the sale itself).
       if (method === "CASH") {
-        await recordDrawerMovement(tx, cashierId, "SALE", p.paidAmount, sale.invoiceNumber);
+        await recordDrawerMovement(tx, shopId, cashierId, "SALE", p.paidAmount, sale.invoiceNumber);
       }
     }
 
@@ -403,7 +408,7 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
     return sale.id;
   });
 
-  return getSaleById(saleId);
+  return getSaleById(shopId, saleId);
 }
 
 /**
@@ -413,9 +418,9 @@ async function attemptCreateSale(input: CreateSaleInput, cashierId: string) {
  * original payment stays on record, and a REFUND payment + isCancelled flag
  * document what happened.
  */
-export async function cancelSale(id: string, reason: string | undefined, cancelledById: string) {
-  const sale = await prisma.sale.findUnique({
-    where: { id },
+export async function cancelSale(shopId: string, id: string, reason: string | undefined, cancelledById: string) {
+  const sale = await prisma.sale.findFirst({
+    where: { id, shopId },
     include: { items: { include: { imeiNumber: true, warranty: true } } },
   });
   if (!sale) throw new NotFoundError("Sale not found.");
@@ -430,6 +435,7 @@ export async function cancelSale(id: string, reason: string | undefined, cancell
 
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId: item.productId,
           transactionType: "SALES_RETURN",
@@ -455,6 +461,7 @@ export async function cancelSale(id: string, reason: string | undefined, cancell
     if (sale.paidAmount.greaterThan(0)) {
       await tx.payment.create({
         data: {
+          shopId,
           paymentType: "REFUND",
           referenceId: sale.id,
           paymentMethod: "CASH",
@@ -465,7 +472,7 @@ export async function cancelSale(id: string, reason: string | undefined, cancell
         },
       });
 
-      await recordDrawerMovement(tx, cancelledById, "REFUND", sale.paidAmount.toNumber(), sale.invoiceNumber);
+      await recordDrawerMovement(tx, shopId, cancelledById, "REFUND", sale.paidAmount.toNumber(), sale.invoiceNumber);
     }
 
     if (sale.customerId && sale.dueAmount.greaterThan(0)) {
@@ -481,5 +488,5 @@ export async function cancelSale(id: string, reason: string | undefined, cancell
     });
   });
 
-  return getSaleById(id);
+  return getSaleById(shopId, id);
 }

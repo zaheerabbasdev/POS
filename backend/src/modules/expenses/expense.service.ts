@@ -30,9 +30,9 @@ function toExpenseDto(expense: ExpenseRow) {
 }
 
 /** GET /api/v1/expense-categories — for the Add Expense form's dropdown. */
-export async function listExpenseCategories() {
+export async function listExpenseCategories(shopId: string) {
   const categories = await prisma.expenseCategory.findMany({
-    where: { isActive: true },
+    where: { shopId, isActive: true },
     orderBy: { categoryName: "asc" },
   });
   return categories.map((c) => ({ id: c.id, name: c.categoryName }));
@@ -45,9 +45,10 @@ export interface ListExpensesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/expenses (API Spec Chapter 43.1). */
-export async function listExpenses(input: ListExpensesInput) {
+export async function listExpenses(shopId: string, input: ListExpensesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.ExpenseWhereInput = {
+    shopId,
     ...(input.categoryId ? { expenseCategoryId: input.categoryId } : {}),
     ...(input.startDate || input.endDate
       ? { expenseDate: { ...(input.startDate ? { gte: input.startDate } : {}), ...(input.endDate ? { lte: input.endDate } : {}) } }
@@ -77,19 +78,25 @@ export interface CreateExpenseInput {
  * against ExpenseCategory (Module 21's fixed list, seeded at setup) and
  * created on the fly if the shop has added a custom one since.
  */
-export async function createExpense(input: CreateExpenseInput) {
+export async function createExpense(shopId: string, input: CreateExpenseInput) {
   const trimmedName = input.category.trim();
   let category = await prisma.expenseCategory.findFirst({
-    where: { categoryName: { equals: trimmedName, mode: "insensitive" } },
+    where: { shopId, categoryName: { equals: trimmedName, mode: "insensitive" } },
   });
   if (!category) {
-    category = await prisma.expenseCategory.create({ data: { categoryName: trimmedName } });
+    category = await prisma.expenseCategory.create({ data: { shopId, categoryName: trimmedName } });
+  }
+
+  if (input.recordedById !== undefined) {
+    const employee = await prisma.employee.findFirst({ where: { id: input.recordedById, shopId } });
+    if (!employee) throw new NotFoundError("Employee not found.");
   }
 
   const method = input.paymentMethod ? (PAYMENT_METHOD_INPUT_MAP[input.paymentMethod] ?? "CASH") : "CASH";
 
   const expense = await prisma.expense.create({
     data: {
+      shopId,
       expenseNumber: generateCode("EXP"),
       expenseCategoryId: category.id,
       amount: input.amount,
@@ -111,8 +118,8 @@ export interface UpdateExpenseInput {
 }
 
 /** PATCH /api/v1/expenses/{id} — "Edit Expense" (SRS Module 21). */
-export async function updateExpense(id: string, input: UpdateExpenseInput) {
-  const existing = await prisma.expense.findUnique({ where: { id } });
+export async function updateExpense(shopId: string, id: string, input: UpdateExpenseInput) {
+  const existing = await prisma.expense.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Expense not found.");
 
   const method = input.paymentMethod ? PAYMENT_METHOD_INPUT_MAP[input.paymentMethod] : undefined;
@@ -131,8 +138,8 @@ export async function updateExpense(id: string, input: UpdateExpenseInput) {
 }
 
 /** DELETE /api/v1/expenses/{id} — "Delete Expense" (SRS Module 21). Expenses have no dependent records, so this is a real delete. */
-export async function deleteExpense(id: string): Promise<void> {
-  const existing = await prisma.expense.findUnique({ where: { id } });
+export async function deleteExpense(shopId: string, id: string): Promise<void> {
+  const existing = await prisma.expense.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Expense not found.");
   await prisma.expense.delete({ where: { id } });
 }

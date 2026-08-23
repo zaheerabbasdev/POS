@@ -28,8 +28,8 @@ const DEFAULTS: Record<SettingKey, string> = {
 };
 
 /** GET /api/v1/settings (API Spec Chapter 30.1). */
-export async function getSettings(): Promise<Record<SettingKey, string>> {
-  const rows = await prisma.setting.findMany({ where: { settingKey: { in: [...KNOWN_KEYS] } } });
+export async function getSettings(shopId: string): Promise<Record<SettingKey, string>> {
+  const rows = await prisma.setting.findMany({ where: { shopId, settingKey: { in: [...KNOWN_KEYS] } } });
   const byKey = new Map(rows.map((r) => [r.settingKey, r.settingValue ?? ""]));
 
   return KNOWN_KEYS.reduce(
@@ -41,7 +41,11 @@ export async function getSettings(): Promise<Record<SettingKey, string>> {
 export type UpdateSettingsInput = Partial<Record<SettingKey, string>>;
 
 /** PATCH /api/v1/settings (API Spec Chapter 30.2). */
-export async function updateSettings(input: UpdateSettingsInput, updatedById: string): Promise<Record<SettingKey, string>> {
+export async function updateSettings(
+  shopId: string,
+  input: UpdateSettingsInput,
+  updatedById: string,
+): Promise<Record<SettingKey, string>> {
   const entries = Object.entries(input).filter(([key]) => (KNOWN_KEYS as readonly string[]).includes(key)) as [
     SettingKey,
     string,
@@ -50,12 +54,12 @@ export async function updateSettings(input: UpdateSettingsInput, updatedById: st
   await Promise.all(
     entries.map(([key, value]) =>
       prisma.setting.upsert({
-        where: { settingKey: key },
+        where: { shopId_settingKey: { shopId, settingKey: key } },
         update: { settingValue: value, updatedById },
-        create: { settingKey: key, settingValue: value, updatedById },
+        create: { shopId, settingKey: key, settingValue: value, updatedById },
       }),
     ),
   );
 
-  return getSettings();
+  return getSettings(shopId);
 }

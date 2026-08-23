@@ -2,6 +2,7 @@ import { Router } from "express";
 import { validate } from "../../common/middleware/validate.js";
 import { authenticate } from "../../common/middleware/authenticate.js";
 import { requirePermission } from "../../common/middleware/authorize.js";
+import { requireOperationalAccess } from "../../common/middleware/operationalAccess.js";
 import * as salesReturnController from "./salesReturn.controller.js";
 import { createSalesReturnSchema, listSalesReturnsQuerySchema } from "./salesReturn.validation.js";
 
@@ -20,6 +21,7 @@ salesReturnRouter.get(
 salesReturnRouter.post(
   "/",
   requirePermission("SALE_CANCEL"),
+  requireOperationalAccess,
   validate({ body: createSalesReturnSchema }),
   salesReturnController.createSalesReturn,
 );

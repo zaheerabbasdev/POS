@@ -24,9 +24,10 @@ export interface ListPaymentsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/payments (API Spec Chapter 36.1). */
-export async function listPayments(input: ListPaymentsInput) {
+export async function listPayments(shopId: string, input: ListPaymentsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.PaymentWhereInput = {
+    shopId,
     ...(input.type ? { paymentType: input.type === "customer" ? "SALE_PAYMENT" : "PURCHASE_PAYMENT" } : {}),
     ...(input.method ? { paymentMethod: PAYMENT_METHOD_INPUT_MAP[input.method] } : {}),
     ...(input.startDate || input.endDate
@@ -63,12 +64,18 @@ export interface CreatePaymentInput {
  * sync. The *first* payment on a sale/purchase is instead recorded inline
  * by Create Sale/Create Purchase (API Spec 31.3 / 34.3) — this endpoint is
  * for everything after that.
+ *
+ * `referenceId` is a polymorphic pointer (Sale.id or Purchase.id depending on
+ * `type`) and deliberately not a Prisma relation — see the Payment model's
+ * schema comment — so the referenced Sale/Purchase is explicitly looked up
+ * shop-scoped (`findFirst`, never `findUnique`) before the Payment row is
+ * ever created.
  */
-export async function createPayment(input: CreatePaymentInput, receivedById: string) {
+export async function createPayment(shopId: string, input: CreatePaymentInput, receivedById: string) {
   const method = PAYMENT_METHOD_INPUT_MAP[input.method]!;
 
   if (input.type === "customer") {
-    const sale = await prisma.sale.findUnique({ where: { id: input.referenceId } });
+    const sale = await prisma.sale.findFirst({ where: { id: input.referenceId, shopId } });
     if (!sale) throw new NotFoundError("Sale not found.");
     if (input.amount > sale.dueAmount.toNumber()) {
       throw new BadRequestError(`Amount exceeds the remaining due amount of ${sale.dueAmount}.`);
@@ -77,6 +84,7 @@ export async function createPayment(input: CreatePaymentInput, receivedById: str
     const payment = await prisma.$transaction(async (tx) => {
       const created = await tx.payment.create({
         data: {
+          shopId,
           paymentType: "SALE_PAYMENT",
           referenceId: input.referenceId,
           paymentMethod: method,
@@ -111,11 +119,11 @@ export async function createPayment(input: CreatePaymentInput, receivedById: str
     return toPaymentDto(payment);
   }
 
-  const purchase = await prisma.purchase.findUnique({ where: { id: input.referenceId } });
+  const purchase = await prisma.purchase.findFirst({ where: { id: input.referenceId, shopId } });
   if (!purchase) throw new NotFoundError("Purchase not found.");
 
   const paidSoFarAgg = await prisma.payment.aggregate({
-    where: { paymentType: "PURCHASE_PAYMENT", referenceId: input.referenceId },
+    where: { paymentType: "PURCHASE_PAYMENT", referenceId: input.referenceId, shopId },
     _sum: { amount: true },
   });
   const paidSoFar = paidSoFarAgg._sum.amount ?? 0;
@@ -127,6 +135,7 @@ export async function createPayment(input: CreatePaymentInput, receivedById: str
   const payment = await prisma.$transaction(async (tx) => {
     const created = await tx.payment.create({
       data: {
+        shopId,
         paymentType: "PURCHASE_PAYMENT",
         referenceId: input.referenceId,
         paymentMethod: method,
@@ -155,23 +164,23 @@ export async function createPayment(input: CreatePaymentInput, receivedById: str
 }
 
 /** GET /api/v1/payments/history/{id} (API Spec Chapter 36.3). */
-export async function getPaymentHistory(referenceId: string) {
+export async function getPaymentHistory(shopId: string, referenceId: string) {
   const [sale, purchase] = await Promise.all([
-    prisma.sale.findUnique({ where: { id: referenceId } }),
-    prisma.purchase.findUnique({ where: { id: referenceId } }),
+    prisma.sale.findFirst({ where: { id: referenceId, shopId } }),
+    prisma.purchase.findFirst({ where: { id: referenceId, shopId } }),
   ]);
 
   if (!sale && !purchase) throw new NotFoundError("No sale or purchase found for this id.");
 
   const payments = await prisma.payment.findMany({
-    where: { referenceId },
+    where: { referenceId, shopId },
     orderBy: { paymentDate: "desc" },
   });
 
   let remainingBalance = sale?.dueAmount;
   if (!sale && purchase) {
     const paidAgg = await prisma.payment.aggregate({
-      where: { paymentType: "PURCHASE_PAYMENT", referenceId },
+      where: { paymentType: "PURCHASE_PAYMENT", referenceId, shopId },
       _sum: { amount: true },
     });
     remainingBalance = purchase.totalAmount.minus(paidAgg._sum.amount ?? 0);

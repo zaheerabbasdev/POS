@@ -29,9 +29,10 @@ export interface ListCategoriesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/categories (API Spec Chapter 24.1). */
-export async function listCategories(input: ListCategoriesInput) {
+export async function listCategories(shopId: string, input: ListCategoriesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.CategoryWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.search ? { categoryName: { contains: input.search, mode: "insensitive" } } : {}),
   };
@@ -44,8 +45,8 @@ export async function listCategories(input: ListCategoriesInput) {
   return { data: categories.map(toCategoryDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getCategoryById(id: string) {
-  const category = await prisma.category.findUnique({ where: { id }, select: categorySelect });
+export async function getCategoryById(shopId: string, id: string) {
+  const category = await prisma.category.findFirst({ where: { id, shopId }, select: categorySelect });
   if (!category) throw new NotFoundError("Category not found.");
   return toCategoryDto(category);
 }
@@ -57,9 +58,10 @@ export interface CreateCategoryInput {
 }
 
 /** POST /api/v1/categories (API Spec Chapter 24.2). */
-export async function createCategory(input: CreateCategoryInput) {
+export async function createCategory(shopId: string, input: CreateCategoryInput) {
   const category = await prisma.category.create({
     data: {
+      shopId,
       categoryName: input.name,
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.status !== undefined ? { isActive: input.status === "active" } : {}),
@@ -76,8 +78,8 @@ export interface UpdateCategoryInput {
 }
 
 /** PATCH /api/v1/categories/{id} (API Spec Chapter 24.3). */
-export async function updateCategory(id: string, input: UpdateCategoryInput) {
-  const existing = await prisma.category.findUnique({ where: { id } });
+export async function updateCategory(shopId: string, id: string, input: UpdateCategoryInput) {
+  const existing = await prisma.category.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Category not found.");
 
   const category = await prisma.category.update({
@@ -98,11 +100,11 @@ export async function updateCategory(id: string, input: UpdateCategoryInput) {
  * the brand rule the doc states explicitly — a category still in use can't
  * be hard-deleted without orphaning those products; deactivate instead.
  */
-export async function deleteCategory(id: string): Promise<void> {
-  const category = await prisma.category.findUnique({ where: { id } });
+export async function deleteCategory(shopId: string, id: string): Promise<void> {
+  const category = await prisma.category.findFirst({ where: { id, shopId } });
   if (!category) throw new NotFoundError("Category not found.");
 
-  const productCount = await prisma.product.count({ where: { categoryId: id } });
+  const productCount = await prisma.product.count({ where: { categoryId: id, shopId } });
   if (productCount > 0) {
     throw new ConflictError("Cannot delete a category linked to products. Deactivate it instead.");
   }

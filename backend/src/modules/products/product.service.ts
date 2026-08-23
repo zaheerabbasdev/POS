@@ -59,10 +59,14 @@ function toProductListItem(product: ProductListRow) {
 }
 
 /** Purchase/Sales History (API Spec Chapter 26.2) — one row per purchase/sale this product appeared in. */
-async function getProductTransactionHistory(productId: string) {
+async function getProductTransactionHistory(shopId: string, productId: string) {
+  // productId is already confirmed to belong to this shop by every caller
+  // below (getProductById always looks the product up shop-scoped first);
+  // the `purchase`/`sale` relation filters here are defense-in-depth so
+  // this helper is never wrong to call on its own.
   const [purchaseItems, saleItems] = await Promise.all([
     prisma.purchaseItem.findMany({
-      where: { productId },
+      where: { productId, purchase: { shopId } },
       orderBy: { purchase: { purchaseDate: "desc" } },
       select: {
         quantity: true,
@@ -72,7 +76,7 @@ async function getProductTransactionHistory(productId: string) {
       },
     }),
     prisma.saleItem.findMany({
-      where: { productId },
+      where: { productId, sale: { shopId } },
       orderBy: { sale: { saleDate: "desc" } },
       select: {
         quantity: true,
@@ -105,8 +109,8 @@ async function getProductTransactionHistory(productId: string) {
   };
 }
 
-async function toProductDetailDto(product: ProductDetailRow) {
-  const { purchaseHistory, salesHistory } = await getProductTransactionHistory(product.id);
+async function toProductDetailDto(shopId: string, product: ProductDetailRow) {
+  const { purchaseHistory, salesHistory } = await getProductTransactionHistory(shopId, product.id);
   return {
     ...toProductListItem(product),
     purchasePrice: product.purchasePrice,
@@ -147,10 +151,11 @@ export interface ListProductsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/products (API Spec Chapter 26.1). */
-export async function listProducts(input: ListProductsInput) {
+export async function listProducts(shopId: string, input: ListProductsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
 
   const where: Prisma.ProductWhereInput = {
+    shopId,
     ...(input.status ? { isActive: input.status === "active" } : {}),
     ...(input.categoryId ? { categoryId: input.categoryId } : {}),
     ...(input.brandId ? { brandId: input.brandId } : {}),
@@ -196,11 +201,16 @@ export async function listProducts(input: ListProductsInput) {
   return { data: paged.map(toProductListItem), pagination: buildPaginationMeta(page, limit, filtered.length) };
 }
 
-/** GET /api/v1/products/{id} (API Spec Chapter 26.2). */
-export async function getProductById(id: string) {
-  const product = await prisma.product.findUnique({ where: { id }, select: productDetailSelect });
+/**
+ * GET /api/v1/products/{id} (API Spec Chapter 26.2). Uses `findFirst` with
+ * both `id` and `shopId` in the `where` (not `findUnique({ where: { id } })`)
+ * so a valid UUID belonging to another shop 404s exactly like a
+ * nonexistent one — never reveals that a record exists in another tenant.
+ */
+export async function getProductById(shopId: string, id: string) {
+  const product = await prisma.product.findFirst({ where: { id, shopId }, select: productDetailSelect });
   if (!product) throw new NotFoundError("Product not found.");
-  return await toProductDetailDto(product);
+  return await toProductDetailDto(shopId, product);
 }
 
 export interface CreateProductInput {
@@ -228,15 +238,15 @@ export interface CreateProductInput {
  * a Product with no Inventory row is a state the rest of the schema doesn't
  * expect (sales, stock adjustments, etc. all key off Inventory).
  */
-export async function createProduct(input: CreateProductInput) {
-  const category = await prisma.category.findUnique({ where: { id: input.categoryId } });
+export async function createProduct(shopId: string, input: CreateProductInput) {
+  const category = await prisma.category.findFirst({ where: { id: input.categoryId, shopId } });
   if (!category) throw new NotFoundError("Category not found.");
   if (input.brandId) {
-    const brand = await prisma.brand.findUnique({ where: { id: input.brandId } });
+    const brand = await prisma.brand.findFirst({ where: { id: input.brandId, shopId } });
     if (!brand) throw new NotFoundError("Brand not found.");
   }
   if (input.modelId) {
-    const model = await prisma.productModel.findUnique({ where: { id: input.modelId } });
+    const model = await prisma.productModel.findFirst({ where: { id: input.modelId, shopId } });
     if (!model) throw new NotFoundError("Product model not found.");
   }
 
@@ -246,6 +256,7 @@ export async function createProduct(input: CreateProductInput) {
   const productId = await prisma.$transaction(async (tx) => {
     const created = await tx.product.create({
       data: {
+        shopId,
         sku,
         productName: input.name,
         categoryId: input.categoryId,
@@ -265,6 +276,7 @@ export async function createProduct(input: CreateProductInput) {
 
     const inventory = await tx.inventory.create({
       data: {
+        shopId,
         productId: created.id,
         quantity: openingStock,
         availableQuantity: openingStock,
@@ -275,6 +287,7 @@ export async function createProduct(input: CreateProductInput) {
     if (openingStock > 0) {
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId: created.id,
           transactionType: "ADJUSTMENT",
@@ -287,7 +300,7 @@ export async function createProduct(input: CreateProductInput) {
     return created.id;
   });
 
-  return getProductById(productId);
+  return getProductById(shopId, productId);
 }
 
 export interface UpdateProductInput {
@@ -308,20 +321,20 @@ export interface UpdateProductInput {
 }
 
 /** PATCH /api/v1/products/{id} (API Spec Chapter 26.5). */
-export async function updateProduct(id: string, input: UpdateProductInput) {
-  const existing = await prisma.product.findUnique({ where: { id } });
+export async function updateProduct(shopId: string, id: string, input: UpdateProductInput) {
+  const existing = await prisma.product.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Product not found.");
 
   if (input.categoryId) {
-    const category = await prisma.category.findUnique({ where: { id: input.categoryId } });
+    const category = await prisma.category.findFirst({ where: { id: input.categoryId, shopId } });
     if (!category) throw new NotFoundError("Category not found.");
   }
   if (input.brandId) {
-    const brand = await prisma.brand.findUnique({ where: { id: input.brandId } });
+    const brand = await prisma.brand.findFirst({ where: { id: input.brandId, shopId } });
     if (!brand) throw new NotFoundError("Brand not found.");
   }
   if (input.modelId) {
-    const model = await prisma.productModel.findUnique({ where: { id: input.modelId } });
+    const model = await prisma.productModel.findFirst({ where: { id: input.modelId, shopId } });
     if (!model) throw new NotFoundError("Product model not found.");
   }
 
@@ -350,7 +363,7 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
     }
   });
 
-  return getProductById(id);
+  return getProductById(shopId, id);
 }
 
 /**
@@ -361,24 +374,26 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
  * violation anyway; this always soft-deletes instead of trying to detect
  * the one case where a hard delete might succeed.
  */
-export async function deleteProduct(id: string): Promise<void> {
-  const product = await prisma.product.findUnique({ where: { id } });
+export async function deleteProduct(shopId: string, id: string): Promise<void> {
+  const product = await prisma.product.findFirst({ where: { id, shopId } });
   if (!product) throw new NotFoundError("Product not found.");
   await prisma.product.update({ where: { id }, data: { isActive: false } });
 }
 
 /** POST /api/v1/products/{id}/image (API Spec Chapter 26.4). */
-export async function uploadProductImage(id: string, file: Express.Multer.File) {
+export async function uploadProductImage(shopId: string, id: string, file: Express.Multer.File) {
   if (!isCloudinaryConfigured) {
     throw new BadRequestError("Image storage is not configured on this server.");
   }
 
-  const product = await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findFirst({ where: { id, shopId } });
   if (!product) throw new NotFoundError("Product not found.");
 
   const dataUri = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
   const result = await cloudinary.uploader.upload(dataUri, {
-    folder: "products",
+    // Multi-tenancy: shop-namespaced folder so one tenant can never overwrite
+    // or enumerate another's Cloudinary assets (spec §53).
+    folder: `pos/shops/${shopId}/products`,
     resource_type: "image",
   });
 

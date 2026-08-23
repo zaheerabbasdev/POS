@@ -42,9 +42,10 @@ export interface ListPurchaseReturnsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/purchase-returns (API Spec Chapter 33.1). */
-export async function listPurchaseReturns(input: ListPurchaseReturnsInput) {
+export async function listPurchaseReturns(shopId: string, input: ListPurchaseReturnsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.PurchaseReturnWhereInput = {
+    shopId,
     ...(input.purchaseId ? { purchaseId: input.purchaseId } : {}),
     ...(input.supplierId ? { supplierId: input.supplierId } : {}),
     ...(input.startDate || input.endDate
@@ -78,9 +79,9 @@ export interface CreatePurchaseReturnInput {
  * process flow: reduce stock → update supplier balance → create return
  * record — all inside one transaction (SAD Chapter 22).
  */
-export async function createPurchaseReturn(input: CreatePurchaseReturnInput, createdById: string) {
-  const purchase = await prisma.purchase.findUnique({
-    where: { id: input.purchaseId },
+export async function createPurchaseReturn(shopId: string, input: CreatePurchaseReturnInput, createdById: string) {
+  const purchase = await prisma.purchase.findFirst({
+    where: { id: input.purchaseId, shopId },
     include: { items: { include: { product: true } } },
   });
   if (!purchase) throw new NotFoundError("Purchase not found.");
@@ -90,7 +91,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
 
   const alreadyReturned = await prisma.purchaseReturnItem.groupBy({
     by: ["productId"],
-    where: { purchaseReturn: { purchaseId: input.purchaseId } },
+    where: { shopId, purchaseReturn: { purchaseId: input.purchaseId } },
     _sum: { quantity: true },
   });
   const alreadyReturnedByProduct = new Map(alreadyReturned.map((r) => [r.productId, r._sum.quantity ?? 0]));
@@ -114,7 +115,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
 
     if (purchasedLines[0]!.product.tracksImei) {
       const availableImeis = await prisma.imeiNumber.findMany({
-        where: { productId: item.productId, purchaseId: input.purchaseId, status: "AVAILABLE" },
+        where: { productId: item.productId, purchaseId: input.purchaseId, status: "AVAILABLE", shopId },
         take: item.quantity,
       });
       if (availableImeis.length < item.quantity) {
@@ -131,6 +132,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
   const returnId = await prisma.$transaction(async (tx) => {
     const purchaseReturn = await tx.purchaseReturn.create({
       data: {
+        shopId,
         purchaseId: input.purchaseId,
         supplierId: input.supplierId,
         returnDate: new Date(),
@@ -142,6 +144,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
 
     await tx.purchaseReturnItem.createMany({
       data: input.items.map((item) => ({
+        shopId,
         purchaseReturnId: purchaseReturn.id,
         productId: item.productId,
         quantity: item.quantity,
@@ -156,6 +159,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
       });
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId: item.productId,
           transactionType: "PURCHASE_RETURN",
@@ -169,7 +173,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
     // The physical devices left with the supplier — they're no longer part
     // of our inventory, same treatment as deletePurchase's IMEI reversal.
     if (imeisToRelease.length > 0) {
-      await tx.imeiNumber.deleteMany({ where: { id: { in: imeisToRelease } } });
+      await tx.imeiNumber.deleteMany({ where: { id: { in: imeisToRelease }, shopId } });
     }
 
     // Returning stock reduces what we owe the supplier (or creates a credit
@@ -182,6 +186,6 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput, cre
     return purchaseReturn.id;
   });
 
-  const created = await prisma.purchaseReturn.findUniqueOrThrow({ where: { id: returnId }, include: returnListInclude });
+  const created = await prisma.purchaseReturn.findFirstOrThrow({ where: { id: returnId, shopId }, include: returnListInclude });
   return toPurchaseReturnDto(created);
 }

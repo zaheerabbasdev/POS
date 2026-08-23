@@ -26,6 +26,7 @@ import {
   History,
   Undo2,
   RotateCcw,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sidebar,
@@ -54,6 +55,7 @@ interface NavItem {
 const MAIN_NAV_ITEMS: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "New Sale (POS)", href: "/dashboard/pos", icon: ShoppingCart, permissions: ["SALE_CREATE"] },
+  { title: "Subscription", href: "/dashboard/subscription", icon: CalendarClock },
 ];
 
 const TRANSACTION_NAV_ITEMS: NavItem[] = [

@@ -45,9 +45,10 @@ export interface ListSalesReturnsInput extends PaginationQuery {
 }
 
 /** GET /api/v1/sales-returns (API Spec Chapter 35.1). */
-export async function listSalesReturns(input: ListSalesReturnsInput) {
+export async function listSalesReturns(shopId: string, input: ListSalesReturnsInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.SalesReturnWhereInput = {
+    shopId,
     ...(input.saleId ? { saleId: input.saleId } : {}),
     ...(input.customerId ? { customerId: input.customerId } : {}),
     ...(input.startDate || input.endDate
@@ -80,9 +81,9 @@ export interface CreateSalesReturnInput {
  * Return Workflow: verify invoice → receive product → increase stock →
  * process refund — all inside one transaction (SAD Chapter 22).
  */
-export async function createSalesReturn(input: CreateSalesReturnInput, approvedById: string) {
-  const sale = await prisma.sale.findUnique({
-    where: { id: input.saleId },
+export async function createSalesReturn(shopId: string, input: CreateSalesReturnInput, approvedById: string) {
+  const sale = await prisma.sale.findFirst({
+    where: { id: input.saleId, shopId },
     include: { items: { include: { product: true, imeiNumber: true, warranty: true } } },
   });
   if (!sale) throw new NotFoundError("Sale not found.");
@@ -90,7 +91,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
 
   const alreadyReturned = await prisma.salesReturnItem.groupBy({
     by: ["productId"],
-    where: { salesReturn: { saleId: input.saleId } },
+    where: { shopId, salesReturn: { saleId: input.saleId } },
     _sum: { quantity: true },
   });
   const alreadyReturnedByProduct = new Map(alreadyReturned.map((r) => [r.productId, r._sum.quantity ?? 0]));
@@ -129,6 +130,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
   const returnId = await prisma.$transaction(async (tx) => {
     const salesReturn = await tx.salesReturn.create({
       data: {
+        shopId,
         saleId: input.saleId,
         customerId: sale.customerId,
         returnDate: new Date(),
@@ -140,6 +142,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
 
     await tx.salesReturnItem.createMany({
       data: input.items.map((item) => ({
+        shopId,
         salesReturnId: salesReturn.id,
         productId: item.productId,
         quantity: item.quantity,
@@ -156,6 +159,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
       });
       await tx.inventoryTransaction.create({
         data: {
+          shopId,
           inventoryId: inventory.id,
           productId,
           transactionType: "SALES_RETURN",
@@ -186,6 +190,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
 
     await tx.payment.create({
       data: {
+        shopId,
         paymentType: "REFUND",
         referenceId: sale.id,
         paymentMethod: method,
@@ -197,7 +202,7 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
     });
 
     if (method === "CASH") {
-      await recordDrawerMovement(tx, approvedById, "REFUND", refundAmount, sale.invoiceNumber);
+      await recordDrawerMovement(tx, shopId, approvedById, "REFUND", refundAmount, sale.invoiceNumber);
     }
 
     if (sale.customerId) {
@@ -210,6 +215,6 @@ export async function createSalesReturn(input: CreateSalesReturnInput, approvedB
     return salesReturn.id;
   });
 
-  const created = await prisma.salesReturn.findUniqueOrThrow({ where: { id: returnId }, include: returnListInclude });
+  const created = await prisma.salesReturn.findFirstOrThrow({ where: { id: returnId, shopId }, include: returnListInclude });
   return toSalesReturnDto(created);
 }

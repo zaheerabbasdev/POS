@@ -46,9 +46,10 @@ export interface ListEmployeesInput extends PaginationQuery {
 }
 
 /** GET /api/v1/employees (API Spec Chapter 29.1). */
-export async function listEmployees(input: ListEmployeesInput) {
+export async function listEmployees(shopId: string, input: ListEmployeesInput) {
   const { skip, take, page, limit } = getPaginationParams(input);
   const where: Prisma.EmployeeWhereInput = {
+    shopId,
     ...(input.status ? { status: input.status } : {}),
     ...(input.search
       ? {
@@ -70,8 +71,8 @@ export async function listEmployees(input: ListEmployeesInput) {
   return { data: employees.map(toEmployeeDto), pagination: buildPaginationMeta(page, limit, total) };
 }
 
-export async function getEmployeeById(id: string) {
-  const employee = await prisma.employee.findUnique({ where: { id }, select: employeeSelect });
+export async function getEmployeeById(shopId: string, id: string) {
+  const employee = await prisma.employee.findFirst({ where: { id, shopId }, select: employeeSelect });
   if (!employee) throw new NotFoundError("Employee not found.");
   return toEmployeeDto(employee);
 }
@@ -87,11 +88,12 @@ export interface CreateEmployeeInput {
 }
 
 /** POST /api/v1/employees (API Spec Chapter 29.2). */
-export async function createEmployee(input: CreateEmployeeInput) {
+export async function createEmployee(shopId: string, input: CreateEmployeeInput) {
   const { firstName, lastName } = splitName(input.name);
 
   const employee = await prisma.employee.create({
     data: {
+      shopId,
       employeeCode: generateCode("EMP"),
       firstName,
       lastName,
@@ -119,8 +121,8 @@ export interface UpdateEmployeeInput {
 }
 
 /** PATCH /api/v1/employees/{id} (API Spec Chapter 29.3). */
-export async function updateEmployee(id: string, input: UpdateEmployeeInput) {
-  const existing = await prisma.employee.findUnique({ where: { id } });
+export async function updateEmployee(shopId: string, id: string, input: UpdateEmployeeInput) {
+  const existing = await prisma.employee.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Employee not found.");
 
   const nameUpdate = input.name ? splitName(input.name) : null;
@@ -147,8 +149,8 @@ export async function updateEmployee(id: string, input: UpdateEmployeeInput) {
  * remain available even if inactive," so this deactivates rather than
  * deletes, same as Users' soft-delete.
  */
-export async function deactivateEmployee(id: string): Promise<void> {
-  const existing = await prisma.employee.findUnique({ where: { id } });
+export async function deactivateEmployee(shopId: string, id: string): Promise<void> {
+  const existing = await prisma.employee.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Employee not found.");
   await prisma.employee.update({ where: { id }, data: { status: "INACTIVE" } });
 }

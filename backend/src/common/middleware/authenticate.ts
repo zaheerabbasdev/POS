@@ -44,6 +44,7 @@ export const authenticate = asyncHandler(async (req: Request, _res: Response, ne
       id: true,
       username: true,
       employeeId: true,
+      shopId: true,
       isActive: true,
       roles: {
         select: {
@@ -69,6 +70,13 @@ export const authenticate = asyncHandler(async (req: Request, _res: Response, ne
     ),
   ];
 
-  req.user = { id: user.id, username: user.username, employeeId: user.employeeId, roles, permissions };
+  req.user = {
+    id: user.id,
+    username: user.username,
+    employeeId: user.employeeId,
+    shopId: user.shopId,
+    roles,
+    permissions,
+  };
   next();
 });

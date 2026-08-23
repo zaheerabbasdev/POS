@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
 // by hand rather than imported.
 const AUTH_COOKIE_NAME = "pos_token";
 
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
 
 /**
  * Route protection (SAD Chapter 30). This only checks whether the auth
