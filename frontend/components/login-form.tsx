@@ -66,8 +66,8 @@ export function LoginForm({ variant = "shop" }: LoginFormProps) {
         await logout();
         setFormError(
           variant === "platform"
-            ? "This login is for platform staff only. Shop accounts sign in at the regular login page."
-            : "This account is a platform admin account. Use the platform admin login instead.",
+            ? "This is a shop account, not a platform admin account. Sign in at the regular login page instead."
+            : "This is a platform admin account. Sign in at the Platform Admin login instead.",
         );
         return;
       }
