@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login } from "@/lib/api/auth";
+import { login, logout } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { currentUserQueryKey } from "@/hooks/use-current-user";
 
@@ -54,12 +54,27 @@ export function LoginForm({ variant = "shop" }: LoginFormProps) {
 
   const loginMutation = useMutation({
     mutationFn: (values: LoginFormValues) => login(values.username, values.password),
-    onSuccess: (user) => {
+    onSuccess: async (user) => {
+      // Each login page is only meant for one kind of account — /login for
+      // real shop owners/staff, /admin/login for platform staff. The
+      // credentials just checked out, but for the wrong surface: log back
+      // out (the backend already set the auth cookie by this point) and
+      // reject, rather than silently letting either account type in through
+      // either door and just routing around the mismatch.
+      const isPlatformAdmin = user.shopId === null;
+      if ((variant === "platform") !== isPlatformAdmin) {
+        await logout();
+        setFormError(
+          variant === "platform"
+            ? "This login is for platform staff only. Shop accounts sign in at the regular login page."
+            : "This account is a platform admin account. Use the platform admin login instead.",
+        );
+        return;
+      }
+
       void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       toast.success(`Welcome back, ${user.name}.`);
-      // Platform Admins (shopId: null) have their own area — never /dashboard,
-      // which is shop-scoped and would 403 every API call for them.
-      if (user.shopId === null) {
+      if (isPlatformAdmin) {
         router.push("/admin");
       } else {
         const next = searchParams.get("next");
