@@ -5,4 +5,4 @@ Recovery: 	shahhussainf@gmail.com
 Phone:		03015103165
 
 
-deploy
+depl
