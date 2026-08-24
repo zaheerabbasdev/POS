@@ -24,7 +24,20 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-export function LoginForm() {
+interface LoginFormProps {
+  /**
+   * "shop" (default): the public login at /login used by real shop
+   * owners/staff — shows the "Register Shop" self-signup link. "platform":
+   * the dedicated /admin/login used only by platform staff — no self-signup
+   * link, since registering a shop isn't something platform staff do from
+   * here. Post-login redirect itself is unaffected by this — it's already
+   * driven by the logged-in account's own `shopId` below, regardless of
+   * which page they logged in from.
+   */
+  variant?: "shop" | "platform";
+}
+
+export function LoginForm({ variant = "shop" }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -67,7 +80,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-xl">Mobile Shop POS</CardTitle>
+        <CardTitle className="text-xl">{variant === "platform" ? "Platform Admin" : "Mobile Shop POS"}</CardTitle>
         <CardDescription>Sign in with your username and password.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -116,12 +129,14 @@ export function LoginForm() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="underline underline-offset-2 hover:text-foreground">
-            Register Shop
-          </Link>
-        </p>
+        {variant === "shop" ? (
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link href="/register" className="underline underline-offset-2 hover:text-foreground">
+              Register Shop
+            </Link>
+          </p>
+        ) : null}
       </CardContent>
     </Card>
   );

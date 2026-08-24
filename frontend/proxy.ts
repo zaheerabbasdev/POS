@@ -6,7 +6,7 @@ import type { NextRequest } from "next/server";
 // by hand rather than imported.
 const AUTH_COOKIE_NAME = "pos_token";
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/login", "/admin/login", "/register", "/forgot-password", "/reset-password"];
 
 /**
  * Route protection (SAD Chapter 30). This only checks whether the auth
@@ -23,13 +23,18 @@ export function proxy(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   if (!isAuthenticated && !isPublicPath) {
-    const loginUrl = new URL("/login", request.url);
+    // /admin/* has its own dedicated login (no public "Register Shop" link)
+    // — separate from /login, which is the public entry point for real shop
+    // owners/staff.
+    const loginPath = pathname.startsWith("/admin") ? "/admin/login" : "/login";
+    const loginUrl = new URL(loginPath, request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthenticated && isPublicPath) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const destination = pathname.startsWith("/admin") ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return NextResponse.next();
