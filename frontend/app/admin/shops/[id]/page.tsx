@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ShopStatusBadge } from "@/components/shop-status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RequirePermission } from "@/components/require-permission";
-import { fetchShop, suspendShop, activateShop, extendTrial } from "@/lib/api/shops";
+import { fetchShop, suspendShop, activateShop, archiveShop, extendTrial } from "@/lib/api/shops";
 import { getApiErrorMessage } from "@/lib/api-client";
 
 const DAY_PRESETS = [7, 15, 30];
@@ -109,6 +109,7 @@ function ShopDetailPageContent({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const [extendOpen, setExtendOpen] = useState(false);
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
 
   const { data: shop, isLoading } = useQuery({
     queryKey: ["admin", "shops", id],
@@ -126,6 +127,17 @@ function ShopDetailPageContent({ id }: { id: string }) {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveShop(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "shops", id] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "shops"] });
+      toast.success("Shop archived.");
+      setArchiveConfirmOpen(false);
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+
   if (isLoading || !shop) {
     return (
       <div className="flex flex-col gap-4">
@@ -136,6 +148,7 @@ function ShopDetailPageContent({ id }: { id: string }) {
   }
 
   const isSuspended = shop.status === "SUSPENDED";
+  const isArchived = shop.status === "CANCELLED";
 
   return (
     <div className="flex flex-col gap-4">
@@ -146,14 +159,19 @@ function ShopDetailPageContent({ id }: { id: string }) {
           </h1>
           <p className="text-muted-foreground">Created {new Date(shop.createdAt).toLocaleDateString()}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setExtendOpen(true)} disabled={!shop.subscription}>
-            Extend Trial
-          </Button>
-          <Button variant={isSuspended ? "default" : "destructive"} onClick={() => setStatusConfirmOpen(true)}>
-            {isSuspended ? "Activate" : "Suspend"}
-          </Button>
-        </div>
+        {!isArchived ? (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setExtendOpen(true)} disabled={!shop.subscription}>
+              Extend Trial
+            </Button>
+            <Button variant={isSuspended ? "default" : "destructive"} onClick={() => setStatusConfirmOpen(true)}>
+              {isSuspended ? "Activate" : "Suspend"}
+            </Button>
+            <Button variant="destructive" onClick={() => setArchiveConfirmOpen(true)}>
+              Archive Shop
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -217,6 +235,15 @@ function ShopDetailPageContent({ id }: { id: string }) {
         confirmLabel={isSuspended ? "Activate" : "Suspend"}
         isPending={statusMutation.isPending}
         onConfirm={() => statusMutation.mutate()}
+      />
+      <ConfirmDialog
+        open={archiveConfirmOpen}
+        onOpenChange={setArchiveConfirmOpen}
+        title="Archive shop"
+        description={`This permanently closes "${shop.name}" — it cannot be undone or reactivated. The owner will lose operational access; their data is kept, not deleted.`}
+        confirmLabel="Archive Shop"
+        isPending={archiveMutation.isPending}
+        onConfirm={() => archiveMutation.mutate()}
       />
     </div>
   );

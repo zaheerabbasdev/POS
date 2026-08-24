@@ -6,6 +6,7 @@ import { splitName } from "../../common/utils/name.js";
 import { getDisplayName, getPrimaryRoleId, getPrimaryRoleName } from "../../common/utils/userDisplay.js";
 import { getPaginationParams, buildPaginationMeta, type PaginationQuery } from "../../common/utils/pagination.js";
 import { BadRequestError, NotFoundError } from "../../common/errors/AppError.js";
+import { checkPlanLimit } from "../../common/services/planLimits.js";
 
 const userListSelect = {
   id: true,
@@ -101,6 +102,8 @@ export interface CreateUserInput {
  * record from the single "name" field the API contract accepts.
  */
 export async function createUser(shopId: string, input: CreateUserInput) {
+  await checkPlanLimit(shopId, "users");
+
   const role = await prisma.role.findFirst({ where: { id: input.roleId, shopId } });
   if (!role) throw new NotFoundError("Role not found.");
 

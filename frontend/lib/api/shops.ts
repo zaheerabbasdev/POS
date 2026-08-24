@@ -122,6 +122,12 @@ export async function activateShop(id: string): Promise<ShopDetail> {
   return data.data;
 }
 
+// PATCH /api/v1/admin/shops/{id}/archive — a permanent close, not reversible.
+export async function archiveShop(id: string): Promise<ShopDetail> {
+  const { data } = await apiClient.patch<ApiSuccess<ShopDetail>>(`/admin/shops/${id}/archive`);
+  return data.data;
+}
+
 // POST /api/v1/admin/shops/{id}/extend-trial
 export async function extendTrial(id: string, input: ExtendTrialInput): Promise<ShopDetail> {
   const { data } = await apiClient.post<ApiSuccess<ShopDetail>>(`/admin/shops/${id}/extend-trial`, input);

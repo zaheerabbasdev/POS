@@ -175,6 +175,7 @@ export async function updateShop(id: string, actorUserId: string, input: UpdateS
 export async function suspendShop(id: string, actorUserId: string) {
   const shop = await prisma.shop.findUnique({ where: { id } });
   if (!shop) throw new NotFoundError("Shop not found.");
+  if (shop.status === "CANCELLED") throw new BadRequestError("This shop has been archived and cannot be suspended.");
   if (shop.status === "SUSPENDED") throw new BadRequestError("Shop is already suspended.");
 
   await prisma.$transaction([
@@ -196,6 +197,39 @@ export async function suspendShop(id: string, actorUserId: string) {
   return getShopById(id);
 }
 
+/**
+ * PATCH /api/v1/admin/shops/{id}/archive (spec §26 action). A permanent close,
+ * not a hard delete — matches this app's soft-delete-only convention
+ * elsewhere (Product/Employee/User all deactivate rather than remove a row,
+ * since a hard delete would violate FK constraints the moment any related
+ * row exists — see product.service.ts#deleteProduct's own comment). One-way:
+ * `activateShop` never restores from `CANCELLED`, only from `SUSPENDED`/
+ * `EXPIRED` — an archived shop stays archived.
+ */
+export async function archiveShop(id: string, actorUserId: string) {
+  const shop = await prisma.shop.findUnique({ where: { id } });
+  if (!shop) throw new NotFoundError("Shop not found.");
+  if (shop.status === "CANCELLED") throw new BadRequestError("Shop is already archived.");
+
+  await prisma.$transaction([
+    prisma.shop.update({ where: { id }, data: { status: "CANCELLED" } }),
+    prisma.subscription.updateMany({
+      where: { shopId: id, status: { in: ["TRIAL", "ACTIVE", "EXPIRED", "SUSPENDED"] } },
+      data: { status: "CANCELLED" },
+    }),
+  ]);
+
+  void logAudit({
+    shopId: null,
+    userId: actorUserId,
+    module: "Platform",
+    action: "SHOP_ARCHIVED",
+    description: `Shop "${shop.name}" archived by a Platform Admin.`,
+  });
+
+  return getShopById(id);
+}
+
 /** PATCH /api/v1/admin/shops/{id}/activate. */
 export async function activateShop(id: string, actorUserId: string) {
   const shop = await prisma.shop.findUnique({
@@ -203,6 +237,9 @@ export async function activateShop(id: string, actorUserId: string) {
     include: { subscriptions: { orderBy: { createdAt: "desc" }, take: 1 } },
   });
   if (!shop) throw new NotFoundError("Shop not found.");
+  if (shop.status === "CANCELLED") {
+    throw new BadRequestError("This shop has been archived and cannot be reactivated.");
+  }
 
   const subscription = shop.subscriptions[0] ?? null;
   const stillWithinTerm = subscription?.endDate ? subscription.endDate.getTime() > Date.now() : false;

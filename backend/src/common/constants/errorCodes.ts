@@ -23,6 +23,7 @@ export const ErrorCode = {
   PLAN_NOT_FOUND: "PLAN_NOT_FOUND",
   PLAN_INACTIVE: "PLAN_INACTIVE",
   TRIAL_EXTENSION_INVALID: "TRIAL_EXTENSION_INVALID",
+  PLAN_LIMIT_EXCEEDED: "PLAN_LIMIT_EXCEEDED",
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];

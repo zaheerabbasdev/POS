@@ -12,6 +12,9 @@ export interface SubscriptionPlan {
   durationDays: number;
   isTrial: boolean;
   isActive: boolean;
+  // null = unlimited.
+  maxUsers: number | null;
+  maxProducts: number | null;
   createdAt: string;
 }
 
@@ -22,6 +25,8 @@ export interface CreatePlanInput {
   currency: string;
   billingInterval: BillingInterval;
   durationDays: number;
+  maxUsers?: number | null;
+  maxProducts?: number | null;
 }
 
 export interface UpdatePlanInput {
@@ -32,6 +37,8 @@ export interface UpdatePlanInput {
   billingInterval?: BillingInterval;
   durationDays?: number;
   isActive?: boolean;
+  maxUsers?: number | null;
+  maxProducts?: number | null;
 }
 
 interface ApiSuccess<T> {

@@ -353,11 +353,26 @@ All endpoints are mounted under `/api/v1`. Every route requires authentication
 
 ### Admin Subscription Plans — `/api/v1/admin/subscription-plans` (multi-tenancy, Platform Admin only)
 `PLATFORM_PLAN_VIEW`/`PLATFORM_PLAN_MANAGE`. Platform-level reference data (not
-shop-scoped). `GET /`, `POST /` (create — commercial fields only: name,
-description, price, currency, billing interval, duration; the schema's plan-limit
-fields like `maxUsers`/feature toggles keep their defaults, no admin UI for them
-yet — see §11.9), `PATCH /:id` (edit, including the `isActive` toggle). No delete —
-same soft-delete-only convention as Brand/Category.
+shop-scoped). `GET /`, `POST /` (create — commercial fields: name, description,
+price, currency, billing interval, duration, plus `maxUsers`/`maxProducts`,
+each `number | null` with `null` meaning unlimited), `PATCH /:id` (edit,
+including `isActive` and the two limit fields). No delete — same
+soft-delete-only convention as Brand/Category. The schema's other seven
+plan-limit fields (`maxMonthlySales`, `maxBranches`, `maxStorageMb`,
+`advancedReports`, `imeiTracking`, `repairsEnabled`, `warrantyEnabled`,
+`multiBranch`) still keep their defaults with no admin UI or enforcement —
+see §11.9.
+
+**Plan-limit enforcement** (`common/services/planLimits.ts#checkPlanLimit`):
+called as the first line of `createUser`/`createProduct` — loads the shop's
+current subscription's plan, and if `maxUsers`/`maxProducts` is non-null,
+counts the shop's current active users/products
+(`prisma.user.count({where:{shopId, isActive:true}})` / same for `Product`)
+and throws `PlanLimitExceededError` (403, `ErrorCode.PLAN_LIMIT_EXCEEDED`) if
+the count has already reached the limit. A `null` limit (the seeded default)
+never blocks. Only guards creation — editing or deactivating an existing
+user/product is never blocked, even once a shop is already over a
+newly-lowered limit.
 
 ### Admin Shops — `/api/v1/admin/shops` (multi-tenancy, Platform Admin only)
 Gated by `requirePlatformContext` (rejects any caller whose token resolves to a real
@@ -370,11 +385,21 @@ shop) + `PLATFORM_SHOP_*`/`PLATFORM_TRIAL_EXTEND` permissions.
 | PATCH | `/:id` | Edit shop info. |
 | PATCH | `/:id/suspend` , `/:id/activate` | Flips `Shop.status` and the current `Subscription.status` together; activating a still-within-term subscription restores `TRIAL`, otherwise falls back to `ACTIVE`. |
 | POST | `/:id/extend-trial` | `{ days, reason }`, reason required. Extends from the current end date if still active, from *now* if already expired (never an already-expired extension) — writes a `SubscriptionHistory` row and an `AuditLog` entry with the before/after end date. |
+| PATCH | `/:id/archive` | `PLATFORM_SHOP_DELETE`. A permanent close, not a hard delete — sets `Shop.status`/current `Subscription.status` to `CANCELLED` (same soft-delete-only convention as Product/Employee/User). One-way: `activate`/`suspend` both reject an already-`CANCELLED` shop. |
 
 ### Admin Dashboard — `/api/v1/admin/dashboard` (multi-tenancy, Platform Admin only)
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/summary` | `PLATFORM_DASHBOARD_VIEW`. Shop status-bucket counts (Total/Active/Trial/Expiring-within-7-days/Expired/Suspended — computed from `Shop.status`, the one-row-per-shop cached column, **not** raw `Subscription` rows, which accumulate one per plan change and would double-count a shop that's switched plans), total platform users (excludes Platform Admin accounts), new-subscriptions-this-month revenue (labeled precisely — no billing-cycle automation exists, so this isn't collected/recurring revenue), and the 5 most recently created shops. No charts yet (see §11.9). |
+
+### Admin Reports — `/api/v1/admin/reports` (multi-tenancy, Platform Admin only)
+`PLATFORM_REPORT_VIEW`. View-only — no PDF/Excel/CSV export yet (deliberate scope
+cut, see §11.9), unlike the shop-level `reports`/`export` apparatus.
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/shops-performance` | Every shop's lifetime sales/purchase totals + current plan name, joined in Node from separate `groupBy` aggregates (small result set, same acceptable pattern as the platform dashboard's own recent-shops join). |
+| GET | `/subscription-overview` | Per-plan breakdown: shops *currently* on each plan (via the same `distinct: ["shopId"]` "newest subscription row" pattern the platform dashboard uses, for the same double-counting reason) and lifetime revenue per plan (a plain sum across all `Subscription` rows for that plan — revenue is additive across a shop's whole history, so no `distinct` needed there). |
 
 ### Operational access enforcement (multi-tenancy)
 `common/middleware/operationalAccess.ts#requireOperationalAccess` sits on the write
@@ -520,6 +545,7 @@ and vice versa — `components/tenant-redirect-guard.tsx`):
 | `/admin/shops` | List + search/filter by status. |
 | `/admin/shops/new` | Create-shop form — always grants a free trial. |
 | `/admin/subscription-plans` | Plan list + create/edit dialog. |
+| `/admin/reports` | Shop Performance + Subscription Overview tables (view-only). |
 | `/admin/shops/[id]` | Detail + Suspend/Activate + Extend Trial dialog. |
 
 **Authenticated** (all under `/dashboard`):
@@ -859,8 +885,13 @@ and "Trial Conversion Rate" (spec §35) were deliberately skipped this pass — 
 
 **Not yet built** (follow-up increments, same rollout this one used — schema
 groundwork first, then endpoints):
-- Plan-limit enforcement UI (`maxUsers`/`maxProducts`/feature toggles exist in the
-  schema with sensible defaults but have no admin UI and nothing reads them yet).
+- Enforcement for the other seven plan-limit fields (`maxMonthlySales`,
+  `maxBranches`, `maxStorageMb`, `advancedReports`, `imeiTracking`,
+  `repairsEnabled`, `warrantyEnabled`, `multiBranch`) — `maxUsers`/`maxProducts`
+  shipped in increment 8 (see below); the rest are deferred, several because
+  there's nothing yet to enforce them against (no branch concept, no storage
+  tracking) or because gating an entire existing module behind a feature flag
+  is a bigger change than "block the Nth create".
 - Any real payment gateway/checkout — "selecting" a paid plan today only records
   intent (`paymentStatus: PENDING`); there's no follow-up flow that collects money
   or flips it to `PAID` yet (would need an admin action or gateway webhook).
@@ -868,11 +899,58 @@ groundwork first, then endpoints):
   deferred until there's enough shop volume for a chart to mean anything) and
   Trial Conversion Rate (needs proper historical cohort tracking to compute
   correctly, not a fragile approximation).
-- Platform-wide cross-shop *reports* (sales-by-shop, revenue-by-plan — a bigger
-  lift reusing the existing 17-report-type `reports`/`export` apparatus).
-- Hard delete/archive of a shop.
-- Trial-expiry warning banners (14/7/3/1-day countdowns) — `TrialStatus` shows the
-  current count but doesn't escalate visually as it gets close.
+- PDF/Excel/CSV export for the platform reports (increment 7 shipped the reports
+  themselves, view-only — export reusing `export.registry.ts`'s pattern is its
+  own follow-up), and additional report types (trial registrations over time).
+
+**Increment 6 (trial warnings + shop archiving) is done** — two small,
+self-contained loose ends: `TrialStatus` now escalates to the `destructive` Alert
+variant with more urgent phrasing ("ends tomorrow" / "ending soon") once
+`daysRemaining` ≤ 3 or the trial has expired (two-tier, not the full 14/7/3/1-day
+ladder spec §34 sketches — `Alert` only has two variants); and
+`PATCH /api/v1/admin/shops/{id}/archive` (§7) permanently closes a shop
+(`Shop.status`/current `Subscription.status` → `CANCELLED`, an `AuditLog` entry,
+`activate`/`suspend` both now reject an already-archived shop) with a
+destructive, `ConfirmDialog`-gated "Archive Shop" button on the shop detail page
+(hidden once already archived). Verified end-to-end: archived a shop, confirmed
+double-archive and post-archive activate/suspend are all correctly rejected, the
+owner's writes now 403 with the cancelled-subscription message while reads and
+`/subscription` still 200.
+
+**Increment 7 (platform reports) is done** — the platform-level counterpart to
+the shop-level `reports` module, at a fraction of its size: `GET
+/api/v1/admin/reports/shops-performance` (every shop's lifetime sales/purchase
+totals + current plan) and `GET /api/v1/admin/reports/subscription-overview`
+(shops-per-plan + lifetime revenue-per-plan), both on a new `/admin/reports`
+page (§7/§8). Deliberately view-only — no PDF/Excel/CSV export yet, unlike the
+17-report-type shop-level apparatus (a much bigger lift than 2 reports justify
+today). Verified against the real API: shop-per-plan counts summed to the exact
+total shop count (no double-counting), a real shop's lifetime sales/purchase
+totals matched its own dashboard figures, revenue-per-plan reflected the actual
+paid-plan selection from increment 4, and a shop user still 403s.
+
+**Increment 8 (plan-limit enforcement: users + products) is done** — the first
+two of `SubscriptionPlan`'s nine limit/feature fields actually mean something
+now, end to end: `common/services/planLimits.ts#checkPlanLimit(shopId,
+resource)` (§7) is called as the first line of `createUser`/`createProduct`,
+loads the shop's current subscription's plan, and if `maxUsers`/`maxProducts`
+is non-null and the shop's current active-row count has already reached it,
+throws a new `PlanLimitExceededError` (403, `ErrorCode.PLAN_LIMIT_EXCEEDED`)
+naming the plan and the limit and pointing at the Subscription page — a `null`
+limit (the seeded default for every existing plan) never blocks, and the check
+only guards creation, never editing/deactivating an existing row. Admin can now
+set both limits from the plan create/edit form (blank = unlimited, matching the
+schema's own convention). The other seven limit/feature fields on
+`SubscriptionPlan` are a deliberate, explained deferral — see "Not yet built"
+above. Verified end-to-end against the real running API: set `maxUsers: 2`,
+`maxProducts: 5` on the Free Trial plan, registered a fresh trial shop,
+confirmed the 2nd user and 5th product each succeed and the 3rd
+user/6th product each get a clean `PLAN_LIMIT_EXCEEDED` 403; confirmed editing
+an existing product and an existing user both still succeed at the limit;
+confirmed a shop on a `null`-limit plan (the original single-tenant shop, with
+21 products/8 users) is never blocked. Existing test suite stayed green (one
+known-flaky connection-drop test, same signature documented since increment 1,
+unrelated to this change).
 
 ### 11.10 Still out of scope
 

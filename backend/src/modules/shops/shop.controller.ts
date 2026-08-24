@@ -45,6 +45,12 @@ export const activateShop = asyncHandler(async (req: Request, res: Response) => 
   sendSuccess(res, shop, "Shop activated.");
 });
 
+export const archiveShop = asyncHandler(async (req: Request, res: Response) => {
+  const actorId = requireActorId(req);
+  const shop = await shopService.archiveShop(req.params.id as string, actorId);
+  sendSuccess(res, shop, "Shop archived.");
+});
+
 export const extendTrial = asyncHandler(async (req: Request, res: Response) => {
   const actorId = requireActorId(req);
   const shop = await shopService.extendTrial(req.params.id as string, actorId, req.body);

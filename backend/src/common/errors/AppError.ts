@@ -91,6 +91,18 @@ export class SubscriptionInactiveError extends AppError {
 }
 
 /**
+ * 403 — a shop has hit its subscription plan's resource limit
+ * (common/services/planLimits.ts) — e.g. `maxUsers`/`maxProducts`. Distinct
+ * code so the frontend can point the user at `/dashboard/subscription`
+ * specifically, rather than a generic "forbidden."
+ */
+export class PlanLimitExceededError extends AppError {
+  constructor(message: string) {
+    super(message, HttpStatus.FORBIDDEN, ErrorCode.PLAN_LIMIT_EXCEEDED);
+  }
+}
+
+/**
  * 403 — multi-tenancy guard rail (common/middleware/tenant.ts). Thrown when
  * a Platform Admin (shopId = null) calls a shop-scoped route without
  * impersonation, or — in principle — a shop user's token somehow resolves

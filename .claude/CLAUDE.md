@@ -392,8 +392,18 @@ Same `requirePlatformContext` gate as Admin Shops below.
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/` | PLATFORM_PLAN_VIEW, PLATFORM_PLAN_MANAGE |
-| POST | `/` | PLATFORM_PLAN_MANAGE |
-| PATCH | `/:id` | PLATFORM_PLAN_MANAGE — includes the `isActive` toggle; no delete |
+| POST | `/` | PLATFORM_PLAN_MANAGE — `maxUsers`/`maxProducts` optional, `null`/omitted = unlimited |
+| PATCH | `/:id` | PLATFORM_PLAN_MANAGE — includes the `isActive` toggle and `maxUsers`/`maxProducts`; no delete |
+
+Plan limits (`maxUsers`/`maxProducts`, `null` = unlimited) are enforced by
+`common/services/planLimits.ts#checkPlanLimit`, called first thing in
+`createUser`/`createProduct` — throws `PlanLimitExceededError` (403,
+`PLAN_LIMIT_EXCEEDED`) once a shop's active-row count reaches its plan's
+limit. Only guards creation, never editing/deactivating an existing row. The
+other seven limit/feature fields on `SubscriptionPlan` (`maxMonthlySales`,
+`maxBranches`, `maxStorageMb`, `advancedReports`, `imeiTracking`,
+`repairsEnabled`, `warrantyEnabled`, `multiBranch`) are schema-only — nothing
+reads them yet.
 
 ### Admin Shops — `/admin/shops` (multi-tenancy, Platform Admin only)
 Router-level `requirePlatformContext` (rejects any caller whose token resolves to a
@@ -407,11 +417,18 @@ real shop) on top of the per-route permission below.
 | PATCH | `/:id/suspend` | PLATFORM_SHOP_SUSPEND |
 | PATCH | `/:id/activate` | PLATFORM_SHOP_ACTIVATE |
 | POST | `/:id/extend-trial` | PLATFORM_TRIAL_EXTEND — `{ days, reason }`, reason required |
+| PATCH | `/:id/archive` | PLATFORM_SHOP_DELETE — permanent close (`status: CANCELLED`), not a hard delete; one-way, `activate`/`suspend` reject it afterward |
 
 ### Admin Dashboard — `/admin/dashboard` (multi-tenancy, Platform Admin only)
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/summary` | PLATFORM_DASHBOARD_VIEW — shop status-bucket counts (from `Shop.status`, not raw `Subscription` rows), expiring-trial count, total users, this-month new-subscription revenue, 5 most recent shops. No charts yet. |
+
+### Admin Reports — `/admin/reports` (multi-tenancy, Platform Admin only)
+| Method | Path | Permission |
+|---|---|---|
+| GET | `/shops-performance` | PLATFORM_REPORT_VIEW — every shop's lifetime sales/purchase totals + current plan |
+| GET | `/subscription-overview` | PLATFORM_REPORT_VIEW — shops-per-plan (current, `distinct`-deduped) + lifetime revenue-per-plan (plain sum). View-only, no export yet. |
 
 ### Users — `/users`
 | Method | Path | Permission |
@@ -600,7 +617,7 @@ payment-method split.
 **Platform Admin** (`shopId: null`, own layout/sidebar — `components/tenant-redirect-guard.tsx`
 bounces a shop user out of these and a Platform Admin out of `/dashboard`):
 `/admin` (dashboard — stat tiles + recent shops), `/admin/shops`, `/admin/shops/new`,
-`/admin/shops/[id]`, `/admin/subscription-plans`
+`/admin/shops/[id]`, `/admin/subscription-plans`, `/admin/reports`
 
 **Authenticated**, under `/dashboard`:
 

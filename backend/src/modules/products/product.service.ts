@@ -5,6 +5,7 @@ import type { Prisma } from "../../generated/prisma/client.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
 import { BadRequestError, NotFoundError } from "../../common/errors/AppError.js";
 import { generateCode } from "../../common/utils/code.js";
+import { checkPlanLimit } from "../../common/services/planLimits.js";
 
 const productListSelect = {
   id: true,
@@ -239,6 +240,8 @@ export interface CreateProductInput {
  * expect (sales, stock adjustments, etc. all key off Inventory).
  */
 export async function createProduct(shopId: string, input: CreateProductInput) {
+  await checkPlanLimit(shopId, "products");
+
   const category = await prisma.category.findFirst({ where: { id: input.categoryId, shopId } });
   if (!category) throw new NotFoundError("Category not found.");
   if (input.brandId) {

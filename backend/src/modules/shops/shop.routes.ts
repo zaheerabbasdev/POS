@@ -55,6 +55,12 @@ shopRouter.patch(
   validate({ params: shopIdParamSchema }),
   shopController.activateShop,
 );
+shopRouter.patch(
+  "/:id/archive",
+  requirePermission("PLATFORM_SHOP_DELETE"),
+  validate({ params: shopIdParamSchema }),
+  shopController.archiveShop,
+);
 shopRouter.post(
   "/:id/extend-trial",
   requirePermission("PLATFORM_TRIAL_EXTEND"),

@@ -11,6 +11,8 @@ const planSelect = {
   durationDays: true,
   isTrial: true,
   isActive: true,
+  maxUsers: true,
+  maxProducts: true,
   createdAt: true,
 } as const;
 
@@ -26,6 +28,8 @@ export interface CreatePlanInput {
   currency: string;
   billingInterval: "MONTHLY" | "YEARLY" | "CUSTOM";
   durationDays: number;
+  maxUsers?: number | null;
+  maxProducts?: number | null;
 }
 
 /** POST /api/v1/admin/subscription-plans. */
@@ -39,6 +43,8 @@ export async function createPlan(input: CreatePlanInput) {
       billingInterval: input.billingInterval,
       durationDays: input.durationDays,
       isTrial: false,
+      ...(input.maxUsers !== undefined ? { maxUsers: input.maxUsers } : {}),
+      ...(input.maxProducts !== undefined ? { maxProducts: input.maxProducts } : {}),
     },
     select: planSelect,
   });
@@ -52,6 +58,8 @@ export interface UpdatePlanInput {
   billingInterval?: "MONTHLY" | "YEARLY" | "CUSTOM";
   durationDays?: number;
   isActive?: boolean;
+  maxUsers?: number | null;
+  maxProducts?: number | null;
 }
 
 /** PATCH /api/v1/admin/subscription-plans/{id}. */
@@ -69,6 +77,8 @@ export async function updatePlan(id: string, input: UpdatePlanInput) {
       ...(input.billingInterval !== undefined ? { billingInterval: input.billingInterval } : {}),
       ...(input.durationDays !== undefined ? { durationDays: input.durationDays } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      ...(input.maxUsers !== undefined ? { maxUsers: input.maxUsers } : {}),
+      ...(input.maxProducts !== undefined ? { maxProducts: input.maxProducts } : {}),
     },
     select: planSelect,
   });

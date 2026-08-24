@@ -47,7 +47,14 @@ const planFormSchema = z.object({
     .min(1, "Duration is required.")
     .refine((v) => Number.isInteger(Number(v)) && Number(v) >= 0, "Duration must be zero or more days."),
   isActive: z.boolean(),
+  // Blank = unlimited (matches the backend's null-means-unlimited convention).
+  maxUsers: z.string().trim().refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) > 0), "Must be a positive whole number, or blank for unlimited."),
+  maxProducts: z.string().trim().refine((v) => v === "" || (Number.isInteger(Number(v)) && Number(v) > 0), "Must be a positive whole number, or blank for unlimited."),
 });
+
+function limitFieldToPayload(value: string): number | null {
+  return value.trim() === "" ? null : Number(value);
+}
 
 type PlanFormValues = z.infer<typeof planFormSchema>;
 
@@ -87,12 +94,20 @@ function PlanFormDialogBody({ plan, onOpenChange }: { plan?: SubscriptionPlan; o
       billingInterval: plan?.billingInterval ?? "MONTHLY",
       durationDays: plan ? String(plan.durationDays) : "30",
       isActive: plan?.isActive ?? true,
+      maxUsers: plan?.maxUsers != null ? String(plan.maxUsers) : "",
+      maxProducts: plan?.maxProducts != null ? String(plan.maxProducts) : "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: (values: PlanFormValues) => {
-      const payload = { ...values, price: Number(values.price), durationDays: Number(values.durationDays) };
+      const payload = {
+        ...values,
+        price: Number(values.price),
+        durationDays: Number(values.durationDays),
+        maxUsers: limitFieldToPayload(values.maxUsers),
+        maxProducts: limitFieldToPayload(values.maxProducts),
+      };
       return isEditing ? updateSubscriptionPlan(plan!.id, payload) : createSubscriptionPlan(payload);
     },
     onSuccess: () => {
@@ -176,6 +191,45 @@ function PlanFormDialogBody({ plan, onOpenChange }: { plan?: SubscriptionPlan; o
               {...register("durationDays")}
             />
             {errors.durationDays ? <p className="text-sm text-destructive">{errors.durationDays.message}</p> : null}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="plan-max-users" className="text-sm font-medium">
+              Max users
+            </label>
+            <Input
+              id="plan-max-users"
+              type="number"
+              min="1"
+              placeholder="Unlimited"
+              aria-invalid={Boolean(errors.maxUsers)}
+              {...register("maxUsers")}
+            />
+            {errors.maxUsers ? (
+              <p className="text-sm text-destructive">{errors.maxUsers.message}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Blank = unlimited.</p>
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="plan-max-products" className="text-sm font-medium">
+              Max products
+            </label>
+            <Input
+              id="plan-max-products"
+              type="number"
+              min="1"
+              placeholder="Unlimited"
+              aria-invalid={Boolean(errors.maxProducts)}
+              {...register("maxProducts")}
+            />
+            {errors.maxProducts ? (
+              <p className="text-sm text-destructive">{errors.maxProducts.message}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Blank = unlimited.</p>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutDashboard, Store, ShieldCheck, CreditCard } from "lucide-react";
+import { LayoutDashboard, Store, ShieldCheck, CreditCard, BarChart3 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { title: "Shops", href: "/admin/shops", icon: Store },
   { title: "Subscription Plans", href: "/admin/subscription-plans", icon: CreditCard },
+  { title: "Reports", href: "/admin/reports", icon: BarChart3 },
 ];
 
 export function AdminSidebar() {
