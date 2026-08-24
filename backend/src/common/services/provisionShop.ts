@@ -57,9 +57,24 @@ async function ensureFreeTrialPlan() {
  * that script deliberately avoids importing the app's Prisma client — but
  * both now read the same role/permission data from
  * common/constants/defaultRoles.ts). Returns the created "Owner" role's id.
+ *
+ * Fetches every permission this shop's roles could need in one query up
+ * front, and creates every role→permission link in one batched call at the
+ * end — instead of one `permission.findMany` + one `rolePermission.createMany`
+ * per role (was 12 extra round trips for 6 roles). Each interactive
+ * transaction only gets 5s by default (`P2028` if exceeded), and every round
+ * trip here goes over the network to Postgres — cutting the count matters
+ * more than the timeout bump below.
  */
 async function provisionShopRoles(tx: Prisma.TransactionClient, shopId: string): Promise<string> {
+  const allPermissionNames = [...new Set(DEFAULT_SHOP_ROLES.flatMap((roleDef) => roleDef.permissions))];
+  const permissions = await tx.permission.findMany({
+    where: { permissionName: { in: allPermissionNames } },
+  });
+  const permissionIdsByName = new Map(permissions.map((p) => [p.permissionName, p.id]));
+
   let ownerRoleId: string | null = null;
+  const rolePermissionRows: { roleId: string; permissionId: string }[] = [];
 
   for (const roleDef of DEFAULT_SHOP_ROLES) {
     const role = await tx.role.create({
@@ -67,15 +82,14 @@ async function provisionShopRoles(tx: Prisma.TransactionClient, shopId: string):
     });
     if (roleDef.name === "Owner") ownerRoleId = role.id;
 
-    const permissions = await tx.permission.findMany({
-      where: { permissionName: { in: roleDef.permissions } },
-    });
-    if (permissions.length > 0) {
-      await tx.rolePermission.createMany({
-        data: permissions.map((p) => ({ roleId: role.id, permissionId: p.id })),
-        skipDuplicates: true,
-      });
+    for (const permissionName of roleDef.permissions) {
+      const permissionId = permissionIdsByName.get(permissionName);
+      if (permissionId) rolePermissionRows.push({ roleId: role.id, permissionId });
     }
+  }
+
+  if (rolePermissionRows.length > 0) {
+    await tx.rolePermission.createMany({ data: rolePermissionRows, skipDuplicates: true });
   }
 
   if (!ownerRoleId) {
@@ -180,5 +194,5 @@ export async function provisionShop(input: ProvisionShopInput, context: Provisio
     });
 
     return { shop, user, subscription, employee, ownerRoleId };
-  });
+  }, { timeout: 10_000 }); // 5s default is tight for ~15 sequential round trips over a real network (Neon, not localhost) — see provisionShopRoles' own comment for the bigger fix (fewer round trips).
 }
