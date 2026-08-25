@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -27,6 +28,7 @@ import {
   Undo2,
   RotateCcw,
   CalendarClock,
+  ChevronRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,6 +41,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { fetchSettings } from "@/lib/api/settings";
@@ -109,6 +112,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
 ];
 
 export function AppSidebar() {
+  const pathname = usePathname();
   const { data: user } = useCurrentUser();
   // Until the user loads, show nothing gated (avoids a flash of every link
   // followed by most of them disappearing) — just the always-visible ones.
@@ -147,23 +151,54 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {visibleGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton tooltip={item.title} render={<Link href={item.href} />}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {visibleGroups.map((group) => {
+          const items = (
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton tooltip={item.title} render={<Link href={item.href} />}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          );
+
+          // "Menu" (Dashboard / New Sale / Subscription) stays flat and
+          // always visible — everything else collapses into a dropdown,
+          // defaulting open only if the current page lives in that group,
+          // so navigating deep into e.g. Catalog doesn't hide the active link.
+          if (group.label === "Menu") {
+            return (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>{items}</SidebarGroupContent>
+              </SidebarGroup>
+            );
+          }
+
+          const isGroupActive = group.items.some(
+            (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+          );
+
+          return (
+            <Collapsible key={group.label} defaultOpen={isGroupActive}>
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  render={<CollapsibleTrigger />}
+                  className="flex cursor-pointer items-center justify-between hover:text-sidebar-foreground [&[data-panel-open]>svg]:rotate-90"
+                >
+                  {group.label}
+                  <ChevronRight className="size-4 shrink-0 transition-transform duration-200" />
+                </SidebarGroupLabel>
+                <CollapsiblePanel>
+                  <SidebarGroupContent>{items}</SidebarGroupContent>
+                </CollapsiblePanel>
+              </SidebarGroup>
+            </Collapsible>
+          );
+        })}
       </SidebarContent>
     </Sidebar>
   );
