@@ -14,6 +14,22 @@ export interface DashboardSummary {
   totalSuppliers: number;
   pendingPayments: number;
   pendingRepairs: number;
+  totalRepairs: number;
+  completedRepairs: number;
+  totalWarranties: number;
+  activeWarranties: number;
+  expiringWarranties: number;
+  monthlyExpenses: number;
+  monthlyPayments: string;
+  openCashDrawers: number;
+  customersServed: number;
+  recentRepairs: {
+    id: string;
+    repairTicketNumber: string;
+    customer: string;
+    status: string;
+    date: string;
+  }[];
   recentSales: {
     id: string;
     invoiceNumber: string;

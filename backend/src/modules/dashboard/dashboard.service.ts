@@ -29,6 +29,16 @@ export async function getDashboardSummary(shopId: string) {
     inventoryLevels,
     totalExpensesAgg,
     pendingRepairs,
+    totalRepairs,
+    completedRepairs,
+    recentRepairs,
+    totalWarranties,
+    activeWarranties,
+    expiringWarranties,
+    monthlyExpensesAgg,
+    monthlyPaymentsAgg,
+    openCashDrawers,
+    repairCustomerIds,
   ] = await Promise.all([
     prisma.sale.aggregate({
       where: { shopId, saleDate: { gte: today }, isCancelled: false },
@@ -73,6 +83,36 @@ export async function getDashboardSummary(shopId: string) {
     prisma.inventory.findMany({ where: { shopId }, select: { quantity: true, reorderLevel: true } }),
     prisma.expense.aggregate({ where: { shopId }, _sum: { amount: true } }),
     prisma.repair.count({ where: { shopId, repairStatus: { notIn: ["DELIVERED", "CANCELLED"] } } }),
+    prisma.repair.count({ where: { shopId } }),
+    prisma.repair.count({ where: { shopId, repairStatus: "DELIVERED" } }),
+    prisma.repair.findMany({
+      where: { shopId },
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        repairTicketNumber: true,
+        repairStatus: true,
+        receivedDate: true,
+        customer: { select: { firstName: true, lastName: true } },
+      },
+    }),
+    prisma.warranty.count({ where: { shopId } }),
+    prisma.warranty.count({ where: { shopId, warrantyStatus: "ACTIVE" } }),
+    prisma.warranty.count({
+      where: {
+        shopId,
+        warrantyStatus: "ACTIVE",
+        expiryDate: { gte: today, lte: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.expense.aggregate({ where: { shopId, expenseDate: { gte: monthStart } }, _sum: { amount: true } }),
+    prisma.payment.aggregate({ where: { shopId, paymentDate: { gte: monthStart } }, _sum: { amount: true } }),
+    prisma.cashDrawer.count({ where: { shopId, status: "OPEN" } }),
+    // Distinct customers a Technician has actually serviced — a Technician
+    // role has no CUSTOMER_VIEW permission by default, so this is computed
+    // straight from repairs rather than needing the general customer list.
+    prisma.repair.findMany({ where: { shopId }, select: { customerId: true }, distinct: ["customerId"] }),
   ]);
 
   const lowStockProducts = inventoryLevels.filter((inv) => inv.quantity > 0 && inv.quantity <= inv.reorderLevel).length;
@@ -98,6 +138,22 @@ export async function getDashboardSummary(shopId: string) {
     totalSuppliers,
     pendingPayments,
     pendingRepairs,
+    totalRepairs,
+    completedRepairs,
+    totalWarranties,
+    activeWarranties,
+    expiringWarranties,
+    monthlyExpenses: monthlyExpensesAgg._sum.amount ?? 0,
+    monthlyPayments: monthlyPaymentsAgg._sum.amount ?? 0,
+    openCashDrawers,
+    customersServed: repairCustomerIds.length,
+    recentRepairs: recentRepairs.map((repair) => ({
+      id: repair.id,
+      repairTicketNumber: repair.repairTicketNumber,
+      customer: [repair.customer.firstName, repair.customer.lastName].filter(Boolean).join(" "),
+      status: repair.repairStatus,
+      date: repair.receivedDate,
+    })),
     recentSales: recentSales.map((sale) => ({
       id: sale.id,
       invoiceNumber: sale.invoiceNumber,
