@@ -33,7 +33,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (isAuthenticated && isPublicPath) {
-    const destination = pathname.startsWith("/admin") ? "/admin" : "/dashboard";
+    const destination = pathname.startsWith("/admin") ? "/admin/dashboard" : "/dashboard";
     return NextResponse.redirect(new URL(destination, request.url));
   }
 

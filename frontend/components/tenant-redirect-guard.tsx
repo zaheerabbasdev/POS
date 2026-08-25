@@ -20,7 +20,7 @@ export function TenantRedirectGuard({ expect }: { expect: "platform" | "shop" })
     if (!user) return;
     const isPlatformAdmin = user.shopId === null;
     if (expect === "platform" && !isPlatformAdmin) router.replace("/dashboard");
-    if (expect === "shop" && isPlatformAdmin) router.replace("/admin");
+    if (expect === "shop" && isPlatformAdmin) router.replace("/admin/dashboard");
   }, [user, expect, router]);
 
   return null;

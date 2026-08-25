@@ -75,7 +75,7 @@ export function LoginForm({ variant = "shop" }: LoginFormProps) {
       void queryClient.invalidateQueries({ queryKey: currentUserQueryKey });
       toast.success(`Welcome back, ${user.name}.`);
       if (isPlatformAdmin) {
-        router.push("/admin");
+        router.push("/admin/dashboard");
       } else {
         const next = searchParams.get("next");
         router.push(next && next.startsWith("/") ? next : "/dashboard");

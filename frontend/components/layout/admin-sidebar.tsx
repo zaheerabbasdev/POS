@@ -25,7 +25,7 @@ interface NavItem {
 // one entry at a time as more of the admin panel gets built (Subscriptions,
 // Users, Reports, Audit Logs, Settings).
 const NAV_ITEMS: NavItem[] = [
-  { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Shops", href: "/admin/shops", icon: Store },
   { title: "Subscription Plans", href: "/admin/subscription-plans", icon: CreditCard },
   { title: "Reports", href: "/admin/reports", icon: BarChart3 },
@@ -37,7 +37,7 @@ export function AdminSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/admin" />}>
+            <SidebarMenuButton size="lg" render={<Link href="/admin/dashboard" />}>
               <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <ShieldCheck className="size-4" />
               </div>
