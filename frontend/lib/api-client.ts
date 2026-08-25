@@ -8,6 +8,8 @@ export interface ApiErrorBody {
   errors?: { field?: string; message: string }[];
 }
 
+
+
 // The backend's httpOnly auth cookie is scoped to whichever host answers the
 // request — so the API must be called on the SAME host the browser loaded
 // this app from (localhost, a LAN IP, ...), or the cookie becomes invisible
