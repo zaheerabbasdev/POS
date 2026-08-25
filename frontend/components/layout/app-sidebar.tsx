@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -40,6 +41,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible";
 import { useQuery } from "@tanstack/react-query";
@@ -183,23 +185,50 @@ export function AppSidebar() {
           );
 
           return (
-            <Collapsible key={group.label} defaultOpen={isGroupActive}>
-              <SidebarGroup>
-                <SidebarGroupLabel
-                  render={<CollapsibleTrigger />}
-                  className="flex cursor-pointer items-center justify-between hover:text-sidebar-foreground [&[data-panel-open]>svg]:rotate-90"
-                >
-                  {group.label}
-                  <ChevronRight className="size-4 shrink-0 transition-transform duration-200" />
-                </SidebarGroupLabel>
-                <CollapsiblePanel>
-                  <SidebarGroupContent>{items}</SidebarGroupContent>
-                </CollapsiblePanel>
-              </SidebarGroup>
-            </Collapsible>
+            <CollapsibleNavGroup key={group.label} label={group.label} defaultOpen={isGroupActive}>
+              {items}
+            </CollapsibleNavGroup>
           );
         })}
       </SidebarContent>
     </Sidebar>
+  );
+}
+
+/**
+ * A dropdown-style nav section. When the whole sidebar is collapsed to its
+ * icon-only rail (no room for a label or a chevron to click), it forces the
+ * panel open so the icons still render flat — same as "Menu" already
+ * behaves — instead of the group silently vanishing with no way to expand
+ * it, which is what a defaultOpen-only Collapsible did before this fix.
+ */
+function CollapsibleNavGroup({
+  label,
+  defaultOpen,
+  children,
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: ReactNode;
+}) {
+  const { state: sidebarState } = useSidebar();
+  const [open, setOpen] = useState(defaultOpen);
+  const isIconOnly = sidebarState === "collapsed";
+
+  return (
+    <Collapsible open={isIconOnly ? true : open} onOpenChange={setOpen}>
+      <SidebarGroup>
+        <SidebarGroupLabel
+          render={<CollapsibleTrigger />}
+          className="flex cursor-pointer items-center justify-between hover:text-sidebar-foreground [&[data-panel-open]>svg]:rotate-90"
+        >
+          {label}
+          <ChevronRight className="size-4 shrink-0 transition-transform duration-200" />
+        </SidebarGroupLabel>
+        <CollapsiblePanel>
+          <SidebarGroupContent>{children}</SidebarGroupContent>
+        </CollapsiblePanel>
+      </SidebarGroup>
+    </Collapsible>
   );
 }
