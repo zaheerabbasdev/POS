@@ -170,7 +170,7 @@ export default function PosPage() {
         const selectedImeis = new Set(
           prev.filter((line) => line.productId === product.id).map((line) => line.imei),
         );
-        const availableImei = product.availableImeis.find((imei) => !selectedImeis.has(imei)) ?? "";
+        const availableImei = (product.availableImeis ?? []).find((imei) => !selectedImeis.has(imei)) ?? "";
         return [
           ...prev,
           {
