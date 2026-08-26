@@ -588,6 +588,10 @@ and vice versa — `components/tenant-redirect-guard.tsx`):
 - **Stat tiles** (`components/stat-tile.tsx`) carry status via a text-token color +
   icon, never color alone (warning/critical tones), per the project's dataviz
   guidance.
+- **Sidebar dropdown groups** share one open-group state. In the expanded
+  sidebar, opening a group closes the previously open group; in the collapsed
+  icon rail, each group opens its links in a side menu and opening another group
+  closes the first.
 
 ### 8.3 Shared components worth knowing
 
@@ -770,9 +774,10 @@ native print button printed the full app chrome, sidebar included.
 
 **Now:** Two standalone routes outside `/dashboard` — `/print/sales/[id]` and
 `/print/repairs/[id]` — render a clean, chrome-free invoice/receipt (shop
-header pulled from Settings, itemized table, totals, a `print:hidden` Print
-button). "Print Invoice" / "Print Receipt" buttons on the Sale and Repair detail
-pages open them in a new tab.
+header pulled from Settings, itemized table, totals, and `print:hidden` Print
+and Cancel buttons). The Cancel button returns to the sale detail page without
+printing. "Print Invoice" / "Print Receipt" buttons on the Sale and Repair
+detail pages open them in a new tab.
 
 ### 11.6 Closed — purchase edit UI
 

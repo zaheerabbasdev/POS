@@ -226,6 +226,12 @@ can't return more of a product than was actually sold minus what's already been
 returned. Stock goes back up, the specific IMEI units come back as `AVAILABLE`, and
 a refund is recorded (and logged to the cash drawer if paid in cash).
 
+**Printing an invoice**: from a sale, choose "Print Invoice". The invoice opens in
+a separate, print-friendly tab with a Cancel button that returns to the sale
+detail without printing. The sidebar's navigation groups behave as an accordion:
+opening Transactions, Service, or another group closes the previously open group;
+when collapsed, the selected group's links appear in a side menu.
+
 ---
 
 ## 10. Payments
