@@ -130,7 +130,12 @@ export function AppSidebar() {
     ...group,
     items: group.items.filter((item) => !item.permissions || item.permissions.some((p) => permissions.includes(p))),
   })).filter((group) => group.items.length > 0);
-  const [openCollapsedGroup, setOpenCollapsedGroup] = useState<string | null>(null);
+  const activeGroup = visibleGroups.find(
+    (group) =>
+      group.label !== "Menu" &&
+      group.items.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`)),
+  )?.label;
+  const [openGroup, setOpenGroup] = useState<string | null>(activeGroup ?? null);
 
   return (
     <Sidebar collapsible="icon">
@@ -182,17 +187,12 @@ export function AppSidebar() {
             );
           }
 
-          const isGroupActive = group.items.some(
-            (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-          );
-
           return (
             <CollapsibleNavGroup
               key={group.label}
               label={group.label}
-              defaultOpen={isGroupActive}
-              collapsedOpen={openCollapsedGroup === group.label}
-              onCollapsedOpenChange={(open) => setOpenCollapsedGroup(open ? group.label : null)}
+              open={openGroup === group.label}
+              onOpenChange={(open) => setOpenGroup(open ? group.label : null)}
               icon={group.items[0].icon}
             >
               {items}
@@ -213,26 +213,23 @@ export function AppSidebar() {
  */
 function CollapsibleNavGroup({
   label,
-  defaultOpen,
-  collapsedOpen,
-  onCollapsedOpenChange,
+  open,
+  onOpenChange,
   icon: GroupIcon,
   children,
 }: {
   label: string;
-  defaultOpen: boolean;
-  collapsedOpen: boolean;
-  onCollapsedOpenChange: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   icon: typeof LayoutDashboard;
   children: ReactNode;
 }) {
   const { state: sidebarState } = useSidebar();
-  const [open, setOpen] = useState(defaultOpen);
   const isIconOnly = sidebarState === "collapsed";
 
   if (isIconOnly) {
     return (
-      <DropdownMenu open={collapsedOpen} onOpenChange={onCollapsedOpenChange}>
+      <DropdownMenu open={open} onOpenChange={onOpenChange}>
         <SidebarGroup>
           <DropdownMenuTrigger
             render={
@@ -253,7 +250,7 @@ function CollapsibleNavGroup({
   }
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={onOpenChange}>
       <SidebarGroup>
         <SidebarGroupLabel
           render={<CollapsibleTrigger />}
