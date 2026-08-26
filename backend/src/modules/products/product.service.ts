@@ -3,7 +3,7 @@ import { cloudinary } from "../../config/cloudinary.js";
 import { isCloudinaryConfigured } from "../../config/env.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
-import { BadRequestError, NotFoundError } from "../../common/errors/AppError.js";
+import { BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
 import { generateCode } from "../../common/utils/code.js";
 import { checkPlanLimit } from "../../common/services/planLimits.js";
 
@@ -230,6 +230,7 @@ export interface CreateProductInput {
   barcode?: string;
   description?: string;
   stock?: number;
+  imeis?: string[];
   reorderLevel?: number;
   status?: "active" | "inactive";
   tracksImei?: boolean;
@@ -257,6 +258,18 @@ export async function createProduct(shopId: string, input: CreateProductInput) {
 
   const sku = input.sku ?? generateCode("SKU");
   const openingStock = input.stock ?? 0;
+  if (input.tracksImei && (input.imeis?.length ?? 0) !== openingStock) {
+    throw new BadRequestError(`IMEI-tracked products require exactly ${openingStock} IMEI number(s) for opening stock.`);
+  }
+  if (!input.tracksImei && input.imeis?.length) {
+    throw new BadRequestError("IMEI numbers can only be added to IMEI-tracked products.");
+  }
+  if (input.imeis?.length) {
+    const existing = await prisma.imeiNumber.findMany({ where: { imeiNumber: { in: input.imeis } } });
+    if (existing.length > 0) {
+      throw new ConflictError(`IMEI already registered: ${existing.map((imei) => imei.imeiNumber).join(", ")}`);
+    }
+  }
 
   const productId = await prisma.$transaction(async (tx) => {
     const created = await tx.product.create({
@@ -299,6 +312,17 @@ export async function createProduct(shopId: string, input: CreateProductInput) {
           quantity: openingStock,
           remarks: "Opening stock",
         },
+      });
+    }
+
+    if (input.imeis?.length) {
+      await tx.imeiNumber.createMany({
+        data: input.imeis.map((imeiNumber) => ({
+          shopId,
+          productId: created.id,
+          imeiNumber,
+          status: "AVAILABLE" as const,
+        })),
       });
     }
 

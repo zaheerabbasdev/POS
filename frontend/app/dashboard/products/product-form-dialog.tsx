@@ -47,6 +47,7 @@ const productFormSchema = z.object({
   barcode: z.string().trim().optional(),
   description: z.string().trim().optional(),
   stock: numberField({ min: 0 }),
+  imeis: z.string().optional(),
   reorderLevel: numberField({ min: 0 }),
   status: z.enum(["active", "inactive"]),
   tracksImei: z.boolean(),
@@ -73,6 +74,7 @@ const EMPTY_DEFAULTS: ProductFormValues = {
   barcode: "",
   description: "",
   stock: "",
+  imeis: "",
   reorderLevel: "",
   status: "active",
   tracksImei: false,
@@ -111,6 +113,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     reset,
     setValue,
     watch,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -139,6 +142,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
         barcode: product.barcode ?? "",
         description: product.description ?? "",
         stock: "",
+        imeis: "",
         reorderLevel: String(product.reorderLevel),
         status: product.status,
         tracksImei: product.tracksImei,
@@ -168,7 +172,15 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
       };
 
       if (isEditing) return updateProduct(product!.id, shared);
-      return createProduct({ ...shared, ...(values.stock ? { stock: Number(values.stock) } : {}) });
+      const imeis = values.imeis
+        ?.split(/[\n,]/)
+        .map((imei) => imei.trim())
+        .filter(Boolean);
+      return createProduct({
+        ...shared,
+        ...(values.stock ? { stock: Number(values.stock) } : {}),
+        ...(imeis?.length ? { imeis } : {}),
+      });
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -178,6 +190,25 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
+
+  const handleFormSubmit = (values: ProductFormValues) => {
+    if (!isEditing && values.tracksImei) {
+      const imeis = (values.imeis ?? "")
+        .split(/[\n,]/)
+        .map((imei) => imei.trim())
+        .filter(Boolean);
+      const stock = Number(values.stock || 0);
+      if (imeis.length !== stock) {
+        setError("imeis", { message: `Enter exactly ${stock} IMEI number(s) for opening stock.` });
+        return;
+      }
+      if (imeis.some((imei) => !/^\d{15}$/.test(imei))) {
+        setError("imeis", { message: "Each IMEI must contain exactly 15 digits." });
+        return;
+      }
+    }
+    mutation.mutate(values);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,7 +222,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
 
         <form
           className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1"
-          onSubmit={handleSubmit((values) => mutation.mutate(values))}
+          onSubmit={handleSubmit(handleFormSubmit)}
           noValidate
         >
           {isEditing ? (
@@ -328,6 +359,31 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                   Opening stock
                 </label>
                 <Input id="product-stock" inputMode="numeric" {...register("stock")} />
+              </div>
+            ) : null}
+            {!isEditing && watch("tracksImei") ? (
+              <div className="col-span-2 flex flex-col gap-1.5">
+                <label htmlFor="product-imeis" className="text-sm font-medium">
+                  Opening IMEI numbers (one per line, matching opening stock)
+                </label>
+                <Textarea
+                  id="product-imeis"
+                  rows={3}
+                  placeholder="One 15-digit IMEI per line"
+                  inputMode="numeric"
+                  {...register("imeis")}
+                  onChange={(event) =>
+                    setValue(
+                      "imeis",
+                      event.target.value
+                        .split("\n")
+                        .map((line) => line.replace(/\D/g, "").slice(0, 15))
+                        .join("\n"),
+                      { shouldDirty: true, shouldValidate: true },
+                    )
+                  }
+                />
+                {errors.imeis ? <p className="text-sm text-destructive">{errors.imeis.message}</p> : null}
               </div>
             ) : null}
             <div className="flex flex-col gap-1.5">

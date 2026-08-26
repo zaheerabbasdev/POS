@@ -38,6 +38,7 @@ export const createProductSchema = z.object({
   description: z.string().trim().optional(),
   // Opening stock — creates the linked Inventory row (SRS Module 9).
   stock: z.coerce.number().int().nonnegative().optional(),
+  imeis: z.array(z.string().trim().regex(/^\d{15}$/, "Each IMEI must contain exactly 15 digits.")).optional(),
   reorderLevel: z.coerce.number().int().nonnegative().optional(),
   status: z.enum(["active", "inactive"]).optional(),
   // Not in the API Spec's example body — drives IMEI validation in

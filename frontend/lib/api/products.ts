@@ -75,6 +75,7 @@ export interface ProductInput {
   barcode?: string;
   description?: string;
   stock?: number;
+  imeis?: string[];
   reorderLevel?: number;
   status?: "active" | "inactive";
   tracksImei?: boolean;
