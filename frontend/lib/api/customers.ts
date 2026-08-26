@@ -36,6 +36,12 @@ export interface CustomerInput {
   notes?: string;
 }
 
+export interface CustomerHistory {
+  sales: { id: string; invoiceNumber: string; saleDate: string; totalAmount: string; paymentStatus: string }[];
+  payments: { id: string; referenceId: string; amount: string; paymentMethod: string; paymentDate: string; notes: string | null }[];
+  outstandingBalance: string;
+}
+
 interface Paginated<T> {
   data: T[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
@@ -50,6 +56,11 @@ export async function fetchCustomers(params: CustomerListParams = {}): Promise<P
 // GET /api/v1/customers/{id}.
 export async function fetchCustomer(id: string): Promise<Customer> {
   const { data } = await apiClient.get<{ data: Customer }>(`/customers/${id}`);
+  return data.data;
+}
+
+export async function fetchCustomerHistory(id: string): Promise<CustomerHistory> {
+  const { data } = await apiClient.get<{ data: CustomerHistory }>(`/customers/${id}/history`);
   return data.data;
 }
 

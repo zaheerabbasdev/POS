@@ -22,7 +22,7 @@ const purchaseItemSchema = z.object({
   tax: z.coerce.number().nonnegative().optional(),
   // Required (and length-checked against quantity) for products with
   // tracksImei=true; ignored for accessory-like products.
-  imeis: z.array(z.string().trim().min(1)).optional(),
+  imeis: z.array(z.string().trim().regex(/^\d{15}$/, "Each IMEI must contain exactly 15 digits.")).optional(),
 });
 
 // POST /api/v1/purchases (API Spec Chapter 31.3).

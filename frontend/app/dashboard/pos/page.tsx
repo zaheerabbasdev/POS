@@ -166,21 +166,27 @@ export default function PosPage() {
     }
 
     if (product.tracksImei) {
-      setCart((prev) => [
-        ...prev,
-        {
-          key: crypto.randomUUID(),
-          productId: product.id,
-          name: product.name,
-          sku: product.sku,
-          tracksImei: true,
-          price: Number(product.price),
-          quantity: 1,
-          discount: 0,
-          imei: "",
-          maxStock: product.stock,
-        },
-      ]);
+      setCart((prev) => {
+        const selectedImeis = new Set(
+          prev.filter((line) => line.productId === product.id).map((line) => line.imei),
+        );
+        const availableImei = product.availableImeis.find((imei) => !selectedImeis.has(imei)) ?? "";
+        return [
+          ...prev,
+          {
+            key: crypto.randomUUID(),
+            productId: product.id,
+            name: product.name,
+            sku: product.sku,
+            tracksImei: true,
+            price: Number(product.price),
+            quantity: 1,
+            discount: 0,
+            imei: availableImei,
+            maxStock: product.stock,
+          },
+        ];
+      });
     } else {
       setCart((prev) => {
         const existing = prev.find((line) => line.productId === product.id && !line.tracksImei);
@@ -329,6 +335,7 @@ export default function PosPage() {
       toast.success(`Sale ${sale.invoiceNumber} completed.`);
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
       void queryClient.invalidateQueries({ queryKey: ["products"] });
+      void queryClient.invalidateQueries({ queryKey: ["customers"] });
       // Auto-open the printable invoice in a new tab so the cashier doesn't
       // have to find and click "Print Invoice" from the sale detail page.
       window.open(`/print/sales/${sale.id}`, "_blank");
@@ -541,8 +548,10 @@ export default function PosPage() {
                           <Input
                             className="h-8 w-36"
                             placeholder="Enter IMEI"
+                            inputMode="numeric"
+                            maxLength={15}
                             value={line.imei}
-                            onChange={(e) => updateLine(line.key, { imei: e.target.value })}
+                            onChange={(e) => updateLine(line.key, { imei: e.target.value.replace(/\D/g, "").slice(0, 15) })}
                           />
                         ) : (
                           "—"

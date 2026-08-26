@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
-import { fetchCustomers, type Customer } from "@/lib/api/customers";
+import { fetchCustomerHistory, fetchCustomers, type Customer, type CustomerHistory } from "@/lib/api/customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 
 const PAGE_SIZE = 50;
@@ -20,6 +21,7 @@ export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined);
+  const [historyCustomer, setHistoryCustomer] = useState<Customer | undefined>(undefined);
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", { search, page }],
@@ -102,6 +104,9 @@ export default function CustomersPage() {
                       <StatusBadge status={customer.status} />
                     </TableCell>
                     <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => setHistoryCustomer(customer)}>
+                        View
+                      </Button>
                       <Button variant="ghost" size="sm" onClick={() => openEdit(customer)}>
                         Edit
                       </Button>
@@ -131,6 +136,59 @@ export default function CustomersPage() {
       ) : null}
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} customer={editingCustomer} />
+      <CustomerHistoryDialog customer={historyCustomer} onOpenChange={(open) => !open && setHistoryCustomer(undefined)} />
     </div>
+  );
+}
+
+function CustomerHistoryDialog({
+  customer,
+  onOpenChange,
+}: {
+  customer?: Customer;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data, isLoading } = useQuery<CustomerHistory>({
+    queryKey: ["customers", customer?.id, "history"],
+    queryFn: () => fetchCustomerHistory(customer!.id),
+    enabled: Boolean(customer),
+  });
+
+  return (
+    <Dialog open={Boolean(customer)} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{customer?.name} - Purchase History</DialogTitle>
+          <DialogDescription>Sales and payments recorded for this customer.</DialogDescription>
+        </DialogHeader>
+        {isLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Loading history...</p>
+        ) : data && data.sales.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Invoice</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.sales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell className="font-mono text-xs">{sale.invoiceNumber}</TableCell>
+                  <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
+                  <TableCell>{sale.paymentStatus}</TableCell>
+                  <TableCell className="text-right">{sale.totalAmount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground">No purchases found for this customer.</p>
+        )}
+        {data ? <p className="text-right text-sm font-medium">Outstanding: {data.outstandingBalance}</p> : null}
+      </DialogContent>
+    </Dialog>
   );
 }

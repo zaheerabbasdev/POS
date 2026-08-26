@@ -46,6 +46,10 @@ function parseImeis(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function hasValidImeis(imeis: string[]): boolean {
+  return imeis.every((imei) => /^\d{15}$/.test(imei));
+}
+
 export default function NewPurchasePage() {
   const router = useRouter();
 
@@ -121,6 +125,10 @@ export default function NewPurchasePage() {
         setError(`items.${index}.imeis`, {
           message: `"${product.name}" tracks IMEI — enter exactly ${item.quantity} IMEI number(s), one per line.`,
         });
+        return;
+      }
+      if (product?.tracksImei && !hasValidImeis(imeis)) {
+        setError(`items.${index}.imeis`, { message: "Each IMEI must contain exactly 15 digits." });
         return;
       }
     }
@@ -240,7 +248,22 @@ export default function NewPurchasePage() {
                       <label className="text-sm font-medium">
                         IMEI numbers ({watchedItems[index]?.quantity ?? 0} required — one per line)
                       </label>
-                      <Textarea rows={3} {...register(`items.${index}.imeis`)} />
+                      <Textarea
+                        rows={3}
+                        placeholder="One 15-digit IMEI per line"
+                        inputMode="numeric"
+                        {...register(`items.${index}.imeis`)}
+                        onChange={(event) =>
+                          setValue(
+                            `items.${index}.imeis`,
+                            event.target.value
+                              .split("\n")
+                              .map((line) => line.replace(/\D/g, "").slice(0, 15))
+                              .join("\n"),
+                            { shouldDirty: true, shouldValidate: true },
+                          )
+                        }
+                      />
                       {errors.items?.[index]?.imeis ? (
                         <p className="text-sm text-destructive">{errors.items[index]?.imeis?.message}</p>
                       ) : null}

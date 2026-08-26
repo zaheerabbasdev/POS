@@ -24,7 +24,7 @@ const saleItemSchema = z.object({
   tax: z.coerce.number().nonnegative().optional(),
   // Singular per API Spec 34.3 — IMEI-tracked items are always quantity 1
   // (DDD Table 22 note on sale_items).
-  imei: z.string().trim().optional(),
+  imei: z.string().trim().regex(/^\d{15}$/, "IMEI must contain exactly 15 digits.").optional(),
 });
 
 // A sale can be paid with more than one method in one go (e.g. part cash,

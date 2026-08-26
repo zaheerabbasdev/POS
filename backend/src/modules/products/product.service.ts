@@ -26,6 +26,7 @@ const productListSelect = {
   category: { select: { id: true, categoryName: true } },
   productModel: { select: { id: true, modelName: true } },
   inventory: { select: { quantity: true, availableQuantity: true, reorderLevel: true } },
+  imeiNumbers: { where: { status: "AVAILABLE" }, select: { imeiNumber: true } },
 } satisfies Prisma.ProductSelect;
 
 type ProductListRow = Prisma.ProductGetPayload<{ select: typeof productListSelect }>;
@@ -56,6 +57,7 @@ function toProductListItem(product: ProductListRow) {
     stock: product.inventory?.quantity ?? 0,
     status: product.isActive ? "active" : ("inactive" as const),
     tracksImei: product.tracksImei,
+    availableImeis: product.imeiNumbers.map((imei) => imei.imeiNumber),
   };
 }
 

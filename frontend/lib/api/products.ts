@@ -15,6 +15,7 @@ export interface ProductListItem {
   stock: number;
   status: "active" | "inactive";
   tracksImei: boolean;
+  availableImeis: string[];
 }
 
 export interface ProductImage {
