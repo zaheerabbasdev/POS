@@ -44,6 +44,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { fetchSettings } from "@/lib/api/settings";
@@ -129,6 +130,7 @@ export function AppSidebar() {
     ...group,
     items: group.items.filter((item) => !item.permissions || item.permissions.some((p) => permissions.includes(p))),
   })).filter((group) => group.items.length > 0);
+  const [openCollapsedGroup, setOpenCollapsedGroup] = useState<string | null>(null);
 
   return (
     <Sidebar collapsible="icon">
@@ -185,7 +187,14 @@ export function AppSidebar() {
           );
 
           return (
-            <CollapsibleNavGroup key={group.label} label={group.label} defaultOpen={isGroupActive}>
+            <CollapsibleNavGroup
+              key={group.label}
+              label={group.label}
+              defaultOpen={isGroupActive}
+              collapsedOpen={openCollapsedGroup === group.label}
+              onCollapsedOpenChange={(open) => setOpenCollapsedGroup(open ? group.label : null)}
+              icon={group.items[0].icon}
+            >
               {items}
             </CollapsibleNavGroup>
           );
@@ -205,18 +214,46 @@ export function AppSidebar() {
 function CollapsibleNavGroup({
   label,
   defaultOpen,
+  collapsedOpen,
+  onCollapsedOpenChange,
+  icon: GroupIcon,
   children,
 }: {
   label: string;
   defaultOpen: boolean;
+  collapsedOpen: boolean;
+  onCollapsedOpenChange: (open: boolean) => void;
+  icon: typeof LayoutDashboard;
   children: ReactNode;
 }) {
   const { state: sidebarState } = useSidebar();
   const [open, setOpen] = useState(defaultOpen);
   const isIconOnly = sidebarState === "collapsed";
 
+  if (isIconOnly) {
+    return (
+      <DropdownMenu open={collapsedOpen} onOpenChange={onCollapsedOpenChange}>
+        <SidebarGroup>
+          <DropdownMenuTrigger
+            render={
+              <SidebarGroupLabel
+                className="group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:opacity-100"
+              />
+            }
+          >
+            <GroupIcon className="hidden group-data-[collapsible=icon]:block" />
+            <span className="group-data-[collapsible=icon]:sr-only">{label}</span>
+          </DropdownMenuTrigger>
+        </SidebarGroup>
+        <DropdownMenuContent side="right" align="start" className="w-52">
+          {children}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
-    <Collapsible open={isIconOnly ? true : open} onOpenChange={setOpen}>
+    <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarGroup>
         <SidebarGroupLabel
           render={<CollapsibleTrigger />}
