@@ -4,7 +4,7 @@ import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@mantine/core";
 import { fetchSale } from "@/lib/api/sales";
 import { fetchSettings } from "@/lib/api/settings";
 
@@ -110,11 +110,11 @@ export default function PrintSalePage(props: PageProps<"/print/sales/[id]">) {
       <p className="mt-8 text-center text-xs text-muted-foreground">Thank you for your business.</p>
 
       <div className="mt-6 flex justify-center gap-2 print:hidden">
-        <Button variant="outline" nativeButton={false} render={<Link href={`/dashboard/sales/${sale.id}`} />}>
+        <Button variant="default" component={Link} href={`/dashboard/sales/${sale.id}`}>
           Cancel
         </Button>
-        <Button onClick={() => window.print()}>
-          <Printer /> Print
+        <Button color="indigo" onClick={() => window.print()} leftSection={<Printer size={16} />}>
+          Print
         </Button>
       </div>
     </div>

@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Modal,
+  Stack,
+  TextInput,
+  Badge,
+  Text,
+  UnstyledButton,
+  Group,
+  ScrollArea,
+} from "@mantine/core";
 import { fetchSales, type SaleListItem } from "@/lib/api/sales";
 
 interface PickSaleDialogProps {
@@ -14,14 +21,6 @@ interface PickSaleDialogProps {
   onPicked: (sale: SaleListItem) => void;
 }
 
-/**
- * Step 1 of "+ New Return" from the Sales Returns page — find the original
- * sale before the actual SalesReturnDialog (which needs full line-item
- * detail) can open. Fetches a batch of recent sales and filters client-side
- * by invoice #/customer, same pattern as the Sales list page's own search —
- * the backend's /sales list endpoint only supports an exact-ish invoiceNumber
- * filter, not a combined invoice-or-customer search.
- */
 export function PickSaleDialog({ open, onOpenChange, onPicked }: PickSaleDialogProps) {
   const [query, setQuery] = useState("");
 
@@ -40,50 +39,58 @@ export function PickSaleDialog({ open, onOpenChange, onPicked }: PickSaleDialogP
     : data?.data;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Start a Return</DialogTitle>
-          <DialogDescription>Find the original sale by invoice number or customer name.</DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>Start a Return</Text>}
+      size="md"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">Find the original sale by invoice number or customer name.</Text>
 
-        <div className="relative">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            autoFocus
-            placeholder="Invoice # or customer..."
-            className="pl-8"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
+        <TextInput
+          autoFocus
+          placeholder="Invoice # or customer..."
+          leftSection={<Search size={16} />}
+          value={query}
+          onChange={(e) => setQuery(e.currentTarget.value)}
+        />
 
-        <div className="max-h-72 overflow-y-auto rounded-lg border">
+        <ScrollArea h={300} type="always" offsetScrollbars style={{ border: "1px solid var(--mantine-color-gray-3)", borderRadius: "var(--mantine-radius-md)" }}>
           {isLoading ? (
-            <p className="p-4 text-center text-sm text-muted-foreground">Loading...</p>
+            <Text p="md" ta="center" size="sm" c="dimmed">Loading...</Text>
           ) : filtered && filtered.length > 0 ? (
-            filtered.map((sale) => (
-              <button
-                key={sale.id}
-                type="button"
-                className="flex w-full items-center justify-between border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted"
-                onClick={() => onPicked(sale)}
-              >
-                <span className="flex flex-col">
-                  <span className="font-mono text-xs">{sale.invoiceNumber}</span>
-                  <span className="font-medium">{sale.customer}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span>{sale.totalAmount}</span>
-                  {sale.isCancelled ? <Badge variant="destructive">Cancelled</Badge> : null}
-                </span>
-              </button>
-            ))
+            <Stack gap={0}>
+              {filtered.map((sale) => (
+                <UnstyledButton
+                  key={sale.id}
+                  onClick={() => onPicked(sale)}
+                  style={{
+                    padding: "var(--mantine-spacing-sm) var(--mantine-spacing-md)",
+                    borderBottom: "1px solid var(--mantine-color-gray-2)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--mantine-color-gray-0)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                >
+                  <Stack gap={0}>
+                    <Text ff="monospace" size="xs" c="dimmed">{sale.invoiceNumber}</Text>
+                    <Text fw={500} size="sm">{sale.customer}</Text>
+                  </Stack>
+                  <Group gap="sm">
+                    <Text size="sm" fw={500}>{sale.totalAmount}</Text>
+                    {sale.isCancelled ? <Badge color="red" variant="light">Cancelled</Badge> : null}
+                  </Group>
+                </UnstyledButton>
+              ))}
+            </Stack>
           ) : (
-            <p className="p-4 text-center text-sm text-muted-foreground">No matching sales.</p>
+            <Text p="md" ta="center" size="sm" c="dimmed">No matching sales.</Text>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </ScrollArea>
+      </Stack>
+    </Modal>
   );
 }

@@ -4,9 +4,15 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Stack,
+  Card,
+  Text,
+  Button,
+  SimpleGrid,
+  Skeleton,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { TrialStatus } from "@/components/trial-status";
 import { fetchCurrentSubscription, fetchSelectablePlans, selectPlan } from "@/lib/api/subscription";
@@ -40,82 +46,81 @@ export default function SubscriptionPage() {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Subscription</h1>
-        <p className="text-sm text-muted-foreground">Your shop's current plan and trial status.</p>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Subscription"
+        description="Your shop's current plan and trial status."
+      />
 
       <TrialStatus />
 
-      <Card className="max-w-md">
-        <CardHeader>
-          <CardTitle className="text-base">Current plan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-5 w-56" />
-            </div>
-          ) : subscription ? (
-            <dl className="grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Plan</dt>
-              <dd className="font-medium">{subscription.plan.name}</dd>
+      <Card shadow="sm" radius="md" withBorder maw={500}>
+        <Text fw={600} size="lg" mb="md">Current plan</Text>
+        
+        {isLoading ? (
+          <Stack gap="sm">
+            <Skeleton height={20} width="40%" />
+            <Skeleton height={20} width="60%" />
+          </Stack>
+        ) : subscription ? (
+          <dl className="grid grid-cols-2 gap-y-2 text-sm">
+            <dt className="text-muted-foreground">Plan</dt>
+            <dd className="font-medium">{subscription.plan.name}</dd>
 
-              <dt className="text-muted-foreground">Status</dt>
-              <dd className="font-medium">{subscription.status}</dd>
+            <dt className="text-muted-foreground">Status</dt>
+            <dd className="font-medium">{subscription.status}</dd>
 
-              <dt className="text-muted-foreground">Started</dt>
-              <dd>{format(new Date(subscription.startDate), "d MMM yyyy")}</dd>
+            <dt className="text-muted-foreground">Started</dt>
+            <dd>{format(new Date(subscription.startDate), "d MMM yyyy")}</dd>
 
-              <dt className="text-muted-foreground">{subscription.plan.isTrial ? "Trial ends" : "Renews / ends"}</dt>
-              <dd>{subscription.endDate ? format(new Date(subscription.endDate), "d MMM yyyy") : "No end date"}</dd>
-            </dl>
-          ) : (
-            <p className="text-sm text-muted-foreground">No subscription found.</p>
-          )}
-        </CardContent>
+            <dt className="text-muted-foreground">{subscription.plan.isTrial ? "Trial ends" : "Renews / ends"}</dt>
+            <dd>{subscription.endDate ? format(new Date(subscription.endDate), "d MMM yyyy") : "No end date"}</dd>
+          </dl>
+        ) : (
+          <Text size="sm" c="dimmed">No subscription found.</Text>
+        )}
       </Card>
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Available Plans</h2>
+      <Stack gap="sm">
+        <Text size="lg" fw={600}>Available Plans</Text>
+        
         {plansLoading ? (
-          <Skeleton className="h-32 w-full max-w-3xl" />
+          <Skeleton height={200} radius="md" />
         ) : plans && plans.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg">
             {plans.map((plan) => {
               const isCurrent = subscription?.plan.id === plan.id;
               return (
-                <Card key={plan.id}>
-                  <CardHeader>
-                    <CardTitle className="text-base">{plan.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-3">
-                    <p className="text-2xl font-semibold">
+                <Card key={plan.id} shadow="sm" radius="md" withBorder>
+                  <Text fw={600} size="lg" mb="sm">{plan.name}</Text>
+                  
+                  <Stack gap="sm">
+                    <Text size="xl" fw={600}>
                       {Number(plan.price) > 0 ? `${plan.currency} ${plan.price}` : "Free"}
                       {Number(plan.price) > 0 ? (
-                        <span className="text-sm font-normal text-muted-foreground"> / {plan.billingInterval.toLowerCase()}</span>
+                        <Text component="span" size="sm" fw={400} c="dimmed"> / {plan.billingInterval.toLowerCase()}</Text>
                       ) : null}
-                    </p>
-                    {plan.description ? <p className="text-sm text-muted-foreground">{plan.description}</p> : null}
+                    </Text>
+                    {plan.description ? <Text size="sm" c="dimmed">{plan.description}</Text> : null}
                     <Button
-                      className="mt-2 w-full"
-                      variant={isCurrent ? "outline" : "default"}
+                      mt="md"
+                      fullWidth
+                      variant={isCurrent ? "outline" : "filled"}
+                      color={isCurrent ? "gray" : "indigo"}
                       disabled={isCurrent}
                       onClick={() => setSelectedPlan(plan)}
                     >
                       {isCurrent ? "Current Plan" : "Switch to this plan"}
                     </Button>
-                  </CardContent>
+                  </Stack>
                 </Card>
               );
             })}
-          </div>
+          </SimpleGrid>
         ) : (
-          <p className="text-sm text-muted-foreground">No plans are available right now.</p>
+          <Text size="sm" c="dimmed">No plans are available right now.</Text>
         )}
-      </div>
+      </Stack>
 
       <ConfirmDialog
         open={selectedPlan !== null}
@@ -136,6 +141,6 @@ export default function SubscriptionPage() {
         isPending={mutation.isPending}
         onConfirm={() => selectedPlan && mutation.mutate(selectedPlan.id)}
       />
-    </div>
+    </Stack>
   );
 }

@@ -1,9 +1,10 @@
+import { Center } from "@mantine/core";
 import { ForgotPasswordForm } from "@/components/forgot-password-form";
 
 export default function ForgotPasswordPage() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-muted/40 p-6">
+    <Center style={{ flex: 1, backgroundColor: "var(--mantine-color-gray-0)", padding: "1.5rem" }}>
       <ForgotPasswordForm />
-    </div>
+    </Center>
   );
 }

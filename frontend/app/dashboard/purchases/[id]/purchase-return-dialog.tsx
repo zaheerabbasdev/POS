@@ -3,17 +3,15 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+  Modal,
+  Stack,
+  Group,
+  Button,
+  Table,
+  TextInput,
+  Text,
+} from "@mantine/core";
 import { createPurchaseReturn } from "@/lib/api/purchase-returns";
 import type { PurchaseDetail } from "@/lib/api/purchases";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -26,11 +24,14 @@ interface PurchaseReturnDialogProps {
 
 export function PurchaseReturnDialog({ open, onOpenChange, purchase }: PurchaseReturnDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        {open ? <PurchaseReturnDialogBody key={purchase.id} purchase={purchase} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={`Return Items — ${purchase.invoiceNo}`}
+      size="xl"
+    >
+      {open && <PurchaseReturnDialogBody key={purchase.id} purchase={purchase} onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -45,9 +46,6 @@ function PurchaseReturnDialogBody({
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
-  // Group line items by product — a purchase can have multiple lines for
-  // the same product (e.g. separate IMEI units), but the return API takes
-  // at most one entry per product.
   const productGroups = useMemo(() => {
     const map = new Map<string, { productId: string; sku: string; name: string; purchasedQty: number }>();
     for (const item of purchase.items) {
@@ -81,60 +79,59 @@ function PurchaseReturnDialogBody({
 
   const hasAnyQuantity = productGroups.some((g) => Number(quantities[g.productId] || 0) > 0);
 
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Return Items — {purchase.invoiceNo}</DialogTitle>
-        <DialogDescription>Choose how many units of each product are going back to the supplier.</DialogDescription>
-      </DialogHeader>
+  const rows = productGroups.map((group) => (
+    <Table.Tr key={group.productId}>
+      <Table.Td fw={500}>{group.name}</Table.Td>
+      <Table.Td ta="right">{group.purchasedQty}</Table.Td>
+      <Table.Td>
+        <TextInput
+          inputMode="numeric"
+          w={80}
+          placeholder="0"
+          value={quantities[group.productId] ?? ""}
+          onChange={(e) => setQuantities((prev) => ({ ...prev, [group.productId]: e.currentTarget.value }))}
+        />
+      </Table.Td>
+      <Table.Td>
+        <TextInput
+          placeholder="Optional"
+          value={reasons[group.productId] ?? ""}
+          onChange={(e) => setReasons((prev) => ({ ...prev, [group.productId]: e.currentTarget.value }))}
+        />
+      </Table.Td>
+    </Table.Tr>
+  ));
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Product</TableHead>
-            <TableHead className="w-24 text-right">Purchased</TableHead>
-            <TableHead className="w-28">Return Qty</TableHead>
-            <TableHead>Reason</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {productGroups.map((group) => (
-            <TableRow key={group.productId}>
-              <TableCell className="font-medium">{group.name}</TableCell>
-              <TableCell className="text-right">{group.purchasedQty}</TableCell>
-              <TableCell>
-                <Input
-                  inputMode="numeric"
-                  className="w-20"
-                  placeholder="0"
-                  value={quantities[group.productId] ?? ""}
-                  onChange={(e) => setQuantities((prev) => ({ ...prev, [group.productId]: e.target.value }))}
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  placeholder="Optional"
-                  value={reasons[group.productId] ?? ""}
-                  onChange={(e) => setReasons((prev) => ({ ...prev, [group.productId]: e.target.value }))}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
+  return (
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">Choose how many units of each product are going back to the supplier.</Text>
+
+      <Table striped highlightOnHover withTableBorder withColumnBorders>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Product</Table.Th>
+            <Table.Th w={100} ta="right">Purchased</Table.Th>
+            <Table.Th w={120}>Return Qty</Table.Th>
+            <Table.Th>Reason</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows}
+        </Table.Tbody>
       </Table>
 
-      <p className="text-xs text-muted-foreground">
+      <Text size="xs" c="dimmed">
         IMEI-tracked units already sold can&apos;t be returned to the supplier — only unsold stock is eligible.
-      </p>
+      </Text>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+      <Group justify="flex-end" mt="md">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
-        <Button disabled={!hasAnyQuantity || mutation.isPending} onClick={() => mutation.mutate()}>
-          {mutation.isPending ? "Processing..." : "Process Return"}
+        <Button disabled={!hasAnyQuantity || mutation.isPending} loading={mutation.isPending} onClick={() => mutation.mutate()} color="indigo">
+          Process Return
         </Button>
-      </DialogFooter>
-    </>
+      </Group>
+    </Stack>
   );
 }

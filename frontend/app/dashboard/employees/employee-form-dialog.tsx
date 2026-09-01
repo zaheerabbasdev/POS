@@ -1,26 +1,27 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Select,
+  SimpleGrid,
+} from "@mantine/core";
 import { ImageUploadField } from "@/components/image-upload-field";
 import { createEmployee, fetchEmployee, updateEmployee, type Employee } from "@/lib/api/employees";
 import { getApiErrorMessage } from "@/lib/api-client";
 
-const EMPLOYEE_STATUS_ITEMS = { ACTIVE: "Active", INACTIVE: "Inactive" };
+const EMPLOYEE_STATUS_OPTIONS = [
+  { value: "ACTIVE", label: "Active" },
+  { value: "INACTIVE", label: "Inactive" },
+];
 
 const employeeFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
@@ -42,16 +43,16 @@ interface EmployeeFormDialogProps {
 
 export function EmployeeFormDialog({ open, onOpenChange, employee }: EmployeeFormDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {/* Mounted only while open, keyed on the employee identity — form
-            state initializes fresh via defaultValues instead of a
-            reset()-in-effect that could re-fire mid-fill. */}
-        {open ? (
-          <EmployeeFormDialogBody key={employee?.id ?? "new"} employee={employee} onOpenChange={onOpenChange} />
-        ) : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={employee ? "Edit Employee" : "Add Employee"}
+      size="md"
+    >
+      {open && (
+        <EmployeeFormDialogBody key={employee?.id ?? "new"} employee={employee} onOpenChange={onOpenChange} />
+      )}
+    </Modal>
   );
 }
 
@@ -65,9 +66,6 @@ function EmployeeFormDialogBody({
   const isEditing = Boolean(employee);
   const queryClient = useQueryClient();
 
-  // Sourced live (not just the snapshot the list row passed in) so the
-  // photo control reflects an upload/remove immediately instead of only
-  // after the dialog is closed and reopened.
   const { data: liveEmployee } = useQuery({
     queryKey: ["employees", employee?.id],
     queryFn: () => fetchEmployee(employee!.id),
@@ -78,8 +76,7 @@ function EmployeeFormDialogBody({
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
@@ -116,16 +113,9 @@ function EmployeeFormDialogBody({
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{isEditing ? "Edit Employee" : "Add Employee"}</DialogTitle>
-        <DialogDescription>
-          {isEditing ? "Update this employee's details." : "Add a new shop employee."}
-        </DialogDescription>
-      </DialogHeader>
-
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-        {isEditing ? (
+    <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+      <Stack gap="md">
+        {isEditing && (
           <ImageUploadField
             type="employee"
             entityId={employee!.id}
@@ -133,82 +123,72 @@ function EmployeeFormDialogBody({
             label="Photo"
             invalidateQueryKeys={[["employees"], ["employees", employee!.id]]}
           />
-        ) : null}
+        )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="employee-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input id="employee-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="employee-phone" className="text-sm font-medium">
-              Phone
-            </label>
-            <Input id="employee-phone" aria-invalid={Boolean(errors.phone)} {...register("phone")} />
-            {errors.phone ? <p className="text-sm text-destructive">{errors.phone.message}</p> : null}
-          </div>
-        </div>
+        <SimpleGrid cols={2}>
+          <TextInput
+            label="Name"
+            withAsterisk
+            {...register("name")}
+            error={errors.name?.message}
+          />
+          <TextInput
+            label="Phone"
+            withAsterisk
+            {...register("phone")}
+            error={errors.phone?.message}
+          />
+        </SimpleGrid>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="employee-email" className="text-sm font-medium">
-            Email
-          </label>
-          <Input id="employee-email" type="email" {...register("email")} />
-        </div>
+        <TextInput
+          label="Email"
+          type="email"
+          {...register("email")}
+          error={errors.email?.message}
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="employee-designation" className="text-sm font-medium">
-              Designation
-            </label>
-            <Input id="employee-designation" placeholder="e.g. Technician" {...register("designation")} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="employee-salary" className="text-sm font-medium">
-              Salary
-            </label>
-            <Input id="employee-salary" inputMode="decimal" {...register("salary")} />
-          </div>
-        </div>
+        <SimpleGrid cols={2}>
+          <TextInput
+            label="Designation"
+            placeholder="e.g. Technician"
+            {...register("designation")}
+          />
+          <TextInput
+            label="Salary"
+            inputMode="decimal"
+            {...register("salary")}
+          />
+        </SimpleGrid>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="employee-address" className="text-sm font-medium">
-            Address
-          </label>
-          <Input id="employee-address" {...register("address")} />
-        </div>
+        <TextInput
+          label="Address"
+          {...register("address")}
+        />
 
-        {isEditing ? (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
-            <Select
-              items={EMPLOYEE_STATUS_ITEMS}
-              value={watch("status")}
-              onValueChange={(v) => setValue("status", v as "ACTIVE" | "INACTIVE")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
+        {isEditing && (
+          <Controller
+            name="status"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Status"
+                data={EMPLOYEE_STATUS_OPTIONS}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        )}
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create employee"}
+          <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+            {isEditing ? "Save changes" : "Create employee"}
           </Button>
-        </DialogFooter>
-      </form>
-    </>
+        </Group>
+      </Stack>
+    </form>
   );
 }

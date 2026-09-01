@@ -6,22 +6,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 import { ImageUploadField } from "@/components/image-upload-field";
 import { createCustomer, fetchCustomer, updateCustomer, type Customer } from "@/lib/api/customers";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { CUSTOMER_TYPE_ITEMS, STATUS_ITEMS } from "@/lib/select-items";
+
+const CUSTOMER_TYPE_ITEMS = [
+  { value: "REGULAR", label: "Regular" },
+  { value: "WHOLESALE", label: "Wholesale" },
+  { value: "VIP", label: "VIP" },
+  { value: "CORPORATE", label: "Corporate" },
+];
 
 const customerFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
@@ -47,8 +52,6 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
   const isEditing = Boolean(customer);
   const queryClient = useQueryClient();
 
-  // Sourced live so the attachment control reflects an upload/remove
-  // immediately instead of only after the dialog is closed and reopened.
   const { data: liveCustomer } = useQuery({
     queryKey: ["customers", customer?.id],
     queryFn: () => fetchCustomer(customer!.id),
@@ -108,129 +111,103 @@ export function CustomerFormDialog({ open, onOpenChange, customer }: CustomerFor
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Customer" : "Add Customer"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this customer's details." : "Register a new customer."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>{isEditing ? "Edit Customer" : "Add Customer"}</Text>}
+      size="lg"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          {isEditing ? "Update this customer's details." : "Register a new customer."}
+        </Text>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          {isEditing ? (
-            <ImageUploadField
-              type="customer"
-              entityId={customer!.id}
-              imageUrl={liveCustomer?.attachmentUrl ?? null}
-              label="Attachment"
-              invalidateQueryKeys={[["customers"], ["customers", customer!.id]]}
+        <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+          <Stack gap="md">
+            {isEditing ? (
+              <ImageUploadField
+                type="customer"
+                entityId={customer!.id}
+                imageUrl={liveCustomer?.attachmentUrl ?? null}
+                label="Attachment"
+                invalidateQueryKeys={[["customers"], ["customers", customer!.id]]}
+              />
+            ) : null}
+
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Name"
+                {...register("name")}
+                error={errors.name?.message}
+              />
+              <TextInput
+                label="Phone"
+                {...register("phone")}
+                error={errors.phone?.message}
+              />
+            </SimpleGrid>
+
+            <TextInput
+              label="Email"
+              type="email"
+              {...register("email")}
+              error={errors.email?.message}
             />
-          ) : null}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="customer-name" className="text-sm font-medium">
-                Name
-              </label>
-              <Input id="customer-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="customer-phone" className="text-sm font-medium">
-                Phone
-              </label>
-              <Input id="customer-phone" aria-invalid={Boolean(errors.phone)} {...register("phone")} />
-              {errors.phone ? <p className="text-sm text-destructive">{errors.phone.message}</p> : null}
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Address"
+                {...register("address")}
+              />
+              <TextInput
+                label="City"
+                {...register("city")}
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="customer-email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input id="customer-email" type="email" {...register("email")} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="customer-address" className="text-sm font-medium">
-                Address
-              </label>
-              <Input id="customer-address" {...register("address")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="customer-city" className="text-sm font-medium">
-                City
-              </label>
-              <Input id="customer-city" {...register("city")} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Customer type</label>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
               <Select
-                items={CUSTOMER_TYPE_ITEMS}
+                label="Customer type"
+                data={CUSTOMER_TYPE_ITEMS}
                 value={watch("customerType")}
-                onValueChange={(v) => setValue("customerType", v as CustomerFormValues["customerType"])}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CUSTOMER_TYPE_ITEMS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="customer-credit-limit" className="text-sm font-medium">
-                Credit limit
-              </label>
-              <Input id="customer-credit-limit" inputMode="decimal" {...register("creditLimit")} />
-            </div>
-          </div>
+                onChange={(v) => setValue("customerType", v as CustomerFormValues["customerType"])}
+              />
+              <TextInput
+                label="Credit limit"
+                inputMode="decimal"
+                {...register("creditLimit")}
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="customer-notes" className="text-sm font-medium">
-              Notes
-            </label>
-            <Textarea id="customer-notes" rows={2} {...register("notes")} />
-          </div>
+            <Textarea
+              label="Notes"
+              rows={2}
+              {...register("notes")}
+            />
 
-          {isEditing ? (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Status</label>
+            {isEditing ? (
               <Select
-                items={STATUS_ITEMS}
+                label="Status"
+                data={[
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
                 value={watch("status")}
-                onValueChange={(v) => setValue("status", v as "active" | "inactive")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
+                onChange={(v) => setValue("status", v as "active" | "inactive")}
+              />
+            ) : null}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create customer"}
-            </Button>
-          </DialogFooter>
+            <Group justify="flex-end" mt="md">
+              <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+                {isEditing ? "Save changes" : "Create customer"}
+              </Button>
+            </Group>
+          </Stack>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Stack>
+    </Modal>
   );
 }

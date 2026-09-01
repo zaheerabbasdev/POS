@@ -3,14 +3,22 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { fetchCategories, deleteCategory, type Category } from "@/lib/api/categories";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { CategoryFormDialog } from "./category-form-dialog";
@@ -51,103 +59,114 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Categories</h1>
-          <p className="text-muted-foreground">Organize products into categories.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Category
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Categories"
+        description="Organize products into categories."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Category
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search categories..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search categories…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{category.description ?? "—"}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={category.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(category)}>
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => setDeletingCategory(category)}
-                      >
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No categories found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching categories" : "No categories yet"}
+          emptyDescription={
+            search
+              ? "No categories match your search."
+              : "Add your first category."
+          }
+          columns={[
+            {
+              key: "name",
+              header: "Name",
+              render: (c) => (
+                <Text size="sm" fw={500}>
+                  {c.name}
+                </Text>
+              ),
+            },
+            {
+              key: "description",
+              header: "Description",
+              render: (c) => (
+                <Text size="sm" c="dimmed">
+                  {c.description ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (c) => <StatusBadge status={c.status} />,
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (c) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(c),
+                    },
+                    {
+                      label: "Delete",
+                      icon: <Trash2 size={14} />,
+                      onClick: () => setDeletingCategory(c),
+                      destructive: true,
+                      dividerBefore: true,
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <CategoryFormDialog open={formOpen} onOpenChange={setFormOpen} category={editingCategory} />
 
-      <ConfirmDialog
-        open={Boolean(deletingCategory)}
-        onOpenChange={(open) => !open && setDeletingCategory(undefined)}
+      <ConfirmModal
+        opened={Boolean(deletingCategory)}
+        onClose={() => setDeletingCategory(undefined)}
         title="Delete category?"
         description={`This will permanently delete "${deletingCategory?.name}". Categories linked to products can't be deleted — deactivate them instead.`}
+        confirmLabel="Delete Category"
         isPending={deleteMutation.isPending}
         onConfirm={() => deletingCategory && deleteMutation.mutate(deletingCategory.id)}
       />
-    </div>
+    </Stack>
   );
 }

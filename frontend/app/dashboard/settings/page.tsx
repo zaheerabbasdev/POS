@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Card,
+  Text,
+  SimpleGrid,
+  Skeleton,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
 import { ImageUploadField } from "@/components/image-upload-field";
 import { fetchSettings, updateSettings, type ShopSettings } from "@/lib/api/settings";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -28,107 +35,86 @@ export default function SettingsPage() {
   });
 
   if (isLoading || !settings) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton height={256} width="100%" radius="md" />;
   }
 
   const values: ShopSettings = { ...settings, ...form };
   const setField = (key: keyof ShopSettings, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Shop information shown across invoices, receipts, and the sidebar.</p>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Settings"
+        description="Shop information shown across invoices, receipts, and the sidebar."
+      />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Shop Logo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ImageUploadField
-              type="logo"
-              imageUrl={settings.shop_logo || null}
-              label="Logo"
-              invalidateQueryKeys={[["settings"]]}
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <Card shadow="sm" radius="md" withBorder>
+          <Text fw={600} size="lg" mb="md">Shop Logo</Text>
+          <ImageUploadField
+            type="logo"
+            imageUrl={settings.shop_logo || null}
+            label="Logo"
+            invalidateQueryKeys={[["settings"]]}
+          />
+        </Card>
+
+        <Card shadow="sm" radius="md" withBorder>
+          <Text fw={600} size="lg" mb="md">Business Information</Text>
+          
+          <Stack gap="md">
+            <TextInput
+              label="Shop name"
+              value={values.shop_name}
+              onChange={(e) => setField("shop_name", e.currentTarget.value)}
             />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Information</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="settings-shop-name" className="text-sm font-medium">
-                Shop name
-              </label>
-              <Input id="settings-shop-name" value={values.shop_name} onChange={(e) => setField("shop_name", e.target.value)} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="settings-shop-address" className="text-sm font-medium">
-                Address
-              </label>
-              <Input
-                id="settings-shop-address"
-                value={values.shop_address}
-                onChange={(e) => setField("shop_address", e.target.value)}
+            
+            <TextInput
+              label="Address"
+              value={values.shop_address}
+              onChange={(e) => setField("shop_address", e.currentTarget.value)}
+            />
+            
+            <SimpleGrid cols={2} spacing="md">
+              <TextInput
+                label="Contact number"
+                value={values.shop_phone}
+                onChange={(e) => setField("shop_phone", e.currentTarget.value)}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="settings-shop-phone" className="text-sm font-medium">
-                  Contact number
-                </label>
-                <Input
-                  id="settings-shop-phone"
-                  value={values.shop_phone}
-                  onChange={(e) => setField("shop_phone", e.target.value)}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="settings-shop-email" className="text-sm font-medium">
-                  Email
-                </label>
-                <Input
-                  id="settings-shop-email"
-                  type="email"
-                  value={values.shop_email}
-                  onChange={(e) => setField("shop_email", e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="settings-currency" className="text-sm font-medium">
-                  Currency
-                </label>
-                <Input id="settings-currency" value={values.currency} onChange={(e) => setField("currency", e.target.value)} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="settings-timezone" className="text-sm font-medium">
-                  Time zone
-                </label>
-                <Input
-                  id="settings-timezone"
-                  value={values.timezone}
-                  onChange={(e) => setField("timezone", e.target.value)}
-                />
-              </div>
-            </div>
+              <TextInput
+                label="Email"
+                type="email"
+                value={values.shop_email}
+                onChange={(e) => setField("shop_email", e.currentTarget.value)}
+              />
+            </SimpleGrid>
+            
+            <SimpleGrid cols={2} spacing="md">
+              <TextInput
+                label="Currency"
+                value={values.currency}
+                onChange={(e) => setField("currency", e.currentTarget.value)}
+              />
+              <TextInput
+                label="Time zone"
+                value={values.timezone}
+                onChange={(e) => setField("timezone", e.currentTarget.value)}
+              />
+            </SimpleGrid>
 
-            <Button
-              className="self-start"
-              disabled={!form || mutation.isPending}
-              onClick={() => form && mutation.mutate(form)}
-            >
-              {mutation.isPending ? "Saving..." : "Save Settings"}
-            </Button>
-          </CardContent>
+            <Group mt="md">
+              <Button
+                color="indigo"
+                disabled={!form || mutation.isPending}
+                loading={mutation.isPending}
+                onClick={() => form && mutation.mutate(form)}
+              >
+                Save Settings
+              </Button>
+            </Group>
+          </Stack>
         </Card>
-      </div>
-    </div>
+      </SimpleGrid>
+    </Stack>
   );
 }

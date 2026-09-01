@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { Stack, Card, Text, Badge } from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { ShopStatusBadge } from "@/components/shop-status-badge";
 import { RequirePermission } from "@/components/require-permission";
 import { fetchShopsPerformance, fetchSubscriptionOverview } from "@/lib/api/admin-reports";
@@ -20,112 +20,84 @@ function AdminReportsPageContent() {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
-        <p className="text-muted-foreground">Performance across every shop on the platform.</p>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Reports"
+        description="Performance across every shop on the platform."
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Shop Performance</CardTitle>
-          <CardDescription>Lifetime sales and purchase totals per shop.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Shop</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total Sales</TableHead>
-                <TableHead className="text-right">Total Purchases</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shopsLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : shopRows && shopRows.length > 0 ? (
-                shopRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
-                    <TableCell>{row.ownerName ?? "—"}</TableCell>
-                    <TableCell>{row.planName ?? "—"}</TableCell>
-                    <TableCell>
-                      <ShopStatusBadge status={row.status} />
-                    </TableCell>
-                    <TableCell className="text-right">{row.totalSales}</TableCell>
-                    <TableCell className="text-right">{row.totalPurchases}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    No shops yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Stack gap={0}>
+          <Stack gap={4} p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+            <Text fw={600} size="lg">Shop Performance</Text>
+            <Text size="sm" c="dimmed">Lifetime sales and purchase totals per shop.</Text>
+          </Stack>
+          
+          <DataTable
+            data={shopRows ?? []}
+            isLoading={shopsLoading}
+            keyExtractor={(row) => row.id}
+            emptyTitle="No shops yet."
+            columns={[
+              { key: "shop", header: "Shop", render: (r) => <Text size="sm" fw={500}>{r.name}</Text> },
+              { key: "owner", header: "Owner", render: (r) => <Text size="sm">{r.ownerName ?? "—"}</Text> },
+              { key: "plan", header: "Plan", render: (r) => <Text size="sm">{r.planName ?? "—"}</Text> },
+              { key: "status", header: "Status", render: (r) => <ShopStatusBadge status={r.status} /> },
+              { key: "sales", header: "Total Sales", align: "right", render: (r) => <Text size="sm">{r.totalSales}</Text> },
+              { key: "purchases", header: "Total Purchases", align: "right", render: (r) => <Text size="sm">{r.totalPurchases}</Text> },
+            ]}
+          />
+        </Stack>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription Overview</CardTitle>
-          <CardDescription>How shops are distributed across plans, and lifetime revenue per plan.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Plan</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Shops on Plan</TableHead>
-                <TableHead className="text-right">Lifetime Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plansLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : planRows && planRows.length > 0 ? (
-                planRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
-                    <TableCell>
-                      {row.isTrial ? <Badge variant="outline">Trial</Badge> : <Badge variant="secondary">Paid</Badge>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={row.isActive ? "default" : "secondary"}>{row.isActive ? "Active" : "Inactive"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{row.shopsCurrentlyOnPlan}</TableCell>
-                    <TableCell className="text-right">
-                      {row.currency} {row.lifetimeRevenue}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    No plans yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Stack gap={0}>
+          <Stack gap={4} p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+            <Text fw={600} size="lg">Subscription Overview</Text>
+            <Text size="sm" c="dimmed">How shops are distributed across plans, and lifetime revenue per plan.</Text>
+          </Stack>
+
+          <DataTable
+            data={planRows ?? []}
+            isLoading={plansLoading}
+            keyExtractor={(row) => row.id}
+            emptyTitle="No plans yet."
+            columns={[
+              { key: "plan", header: "Plan", render: (r) => <Text size="sm" fw={500}>{r.name}</Text> },
+              {
+                key: "type",
+                header: "Type",
+                render: (r) => (
+                  <Badge variant={r.isTrial ? "outline" : "light"} color={r.isTrial ? "indigo" : "gray"}>
+                    {r.isTrial ? "Trial" : "Paid"}
+                  </Badge>
+                ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                render: (r) => (
+                  <Badge variant="light" color={r.isActive ? "green" : "gray"}>
+                    {r.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                ),
+              },
+              { key: "shops", header: "Shops on Plan", align: "right", render: (r) => <Text size="sm">{r.shopsCurrentlyOnPlan}</Text> },
+              {
+                key: "revenue",
+                header: "Lifetime Revenue",
+                align: "right",
+                render: (r) => (
+                  <Text size="sm">
+                    {r.currency} {r.lifetimeRevenue}
+                  </Text>
+                ),
+              },
+            ]}
+          />
+        </Stack>
       </Card>
-    </div>
+    </Stack>
   );
 }
 

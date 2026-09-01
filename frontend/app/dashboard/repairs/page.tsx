@@ -4,29 +4,26 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Paper,
+  Stack,
+  Group,
+  Select,
+  Button,
+  Text,
+  Anchor,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
+import { StatusBadge } from "@/components/status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { MoneyText } from "@/components/currency-display";
 import { fetchRepairs, type RepairStatus } from "@/lib/api/repairs";
 import { REPAIR_STATUS_ITEMS } from "@/lib/select-items";
 import { RepairFormDialog } from "./repair-form-dialog";
 
 const PAGE_SIZE = 50;
-
-const STATUS_VARIANT: Record<RepairStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  RECEIVED: "outline",
-  UNDER_INSPECTION: "secondary",
-  WAITING_FOR_PARTS: "secondary",
-  IN_PROGRESS: "secondary",
-  READY_FOR_DELIVERY: "default",
-  DELIVERED: "default",
-  CANCELLED: "destructive",
-};
-
-const STATUS_FILTER_ITEMS = { all: "All statuses", ...REPAIR_STATUS_ITEMS };
 
 export default function RepairsPage() {
   const [status, setStatus] = useState("all");
@@ -35,105 +32,137 @@ export default function RepairsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["repairs", { status, page }],
-    queryFn: () => fetchRepairs({ status: status === "all" ? undefined : (status as RepairStatus), page, limit: PAGE_SIZE }),
+    queryFn: () =>
+      fetchRepairs({
+        status: status === "all" ? undefined : (status as RepairStatus),
+        page,
+        limit: PAGE_SIZE,
+      }),
   });
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Repairs</h1>
-          <p className="text-muted-foreground">Track customer repair tickets from intake to delivery.</p>
-        </div>
-        <Button onClick={() => setFormOpen(true)}>
-          <Plus /> New Repair Ticket
-        </Button>
-      </div>
+  const statusSelectItems = [
+    { value: "all", label: "All statuses" },
+    ...Object.entries(REPAIR_STATUS_ITEMS).map(([value, label]) => ({
+      value,
+      label,
+    })),
+  ];
 
-      <div className="max-w-xs">
+  return (
+    <Stack gap="lg">
+      <PageHeader
+        title="Repairs"
+        description="Track customer repair tickets from intake to delivery."
+        actions={
+          <Button onClick={() => setFormOpen(true)} leftSection={<Plus size={16} />} color="indigo">
+            New Repair Ticket
+          </Button>
+        }
+      />
+
+      <Group gap="sm">
         <Select
-          items={STATUS_FILTER_ITEMS}
+          placeholder="All statuses"
+          data={statusSelectItems}
           value={status}
-          onValueChange={(v) => {
+          onChange={(v) => {
             setStatus(v ?? "all");
             setPage(1);
           }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(STATUS_FILTER_ITEMS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ticket</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Technician</TableHead>
-                <TableHead className="text-right">Est. Cost</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Received</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((repair) => (
-                  <TableRow key={repair.id}>
-                    <TableCell>
-                      <Link href={`/dashboard/repairs/${repair.id}`} className="font-mono text-xs hover:underline">
-                        {repair.repairTicketNumber}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-medium">{repair.customer}</TableCell>
-                    <TableCell>{repair.device ?? "—"}</TableCell>
-                    <TableCell>{repair.technician ?? "Unassigned"}</TableCell>
-                    <TableCell className="text-right">{repair.estimatedCost}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[repair.status]}>{REPAIR_STATUS_ITEMS[repair.status]}</Badge>
-                    </TableCell>
-                    <TableCell>{new Date(repair.receivedDate).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No repair tickets found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+          style={{ width: 220 }}
         />
-      ) : null}
+      </Group>
+
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={status !== "all" ? "No matching repair tickets" : "No repair tickets yet"}
+          emptyDescription={
+            status !== "all"
+              ? "No repair tickets match the selected status."
+              : "Create your first repair ticket."
+          }
+          columns={[
+            {
+              key: "ticket",
+              header: "Ticket",
+              render: (r) => (
+                <Anchor
+                  component={Link}
+                  href={`/dashboard/repairs/${r.id}`}
+                  size="sm"
+                  style={{ fontFamily: "var(--mantine-font-family-monospace)", fontWeight: 500 }}
+                >
+                  {r.repairTicketNumber}
+                </Anchor>
+              ),
+            },
+            {
+              key: "customer",
+              header: "Customer",
+              render: (r) => (
+                <Text size="sm" fw={500}>
+                  {r.customer}
+                </Text>
+              ),
+            },
+            {
+              key: "device",
+              header: "Device",
+              render: (r) => (
+                <Text size="sm">
+                  {r.device ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "technician",
+              header: "Technician",
+              render: (r) => (
+                <Text size="sm" c="dimmed">
+                  {r.technician ?? "Unassigned"}
+                </Text>
+              ),
+            },
+            {
+              key: "estCost",
+              header: "Est. Cost",
+              align: "right",
+              render: (r) => <MoneyText value={r.estimatedCost} />,
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => <StatusBadge status={r.status} type="repair" />,
+            },
+            {
+              key: "received",
+              header: "Received",
+              render: (r) => (
+                <Text size="sm">
+                  {new Date(r.receivedDate).toLocaleDateString()}
+                </Text>
+              ),
+            },
+          ]}
+        />
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <RepairFormDialog open={formOpen} onOpenChange={setFormOpen} />
-    </div>
+    </Stack>
   );
 }

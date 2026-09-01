@@ -5,18 +5,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Textarea,
+  Select,
+  NumberInput,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 import {
   createSubscriptionPlan,
   updateSubscriptionPlan,
@@ -25,11 +25,11 @@ import {
 } from "@/lib/api/subscription-plans";
 import { getApiErrorMessage } from "@/lib/api-client";
 
-const BILLING_INTERVAL_ITEMS: Record<BillingInterval, string> = {
-  MONTHLY: "Monthly",
-  YEARLY: "Yearly",
-  CUSTOM: "Custom",
-};
+const BILLING_INTERVAL_ITEMS = [
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "YEARLY", label: "Yearly" },
+  { value: "CUSTOM", label: "Custom" },
+];
 
 const planFormSchema = z.object({
   name: z.string().trim().min(1, "Plan name is required."),
@@ -66,11 +66,14 @@ interface PlanFormDialogProps {
 
 export function PlanFormDialog({ open, onOpenChange, plan }: PlanFormDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {open ? <PlanFormDialogBody key={plan?.id ?? "new"} plan={plan} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>{plan ? "Edit Plan" : "Create Plan"}</Text>}
+      size="lg"
+    >
+      {open ? <PlanFormDialogBody key={plan?.id ?? "new"} plan={plan} onOpenChange={onOpenChange} /> : null}
+    </Modal>
   );
 }
 
@@ -119,148 +122,99 @@ function PlanFormDialogBody({ plan, onOpenChange }: { plan?: SubscriptionPlan; o
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{isEditing ? "Edit Plan" : "Create Plan"}</DialogTitle>
-        <DialogDescription>
-          {isEditing ? "Update this subscription plan." : "Add a new plan shops can subscribe to."}
-        </DialogDescription>
-      </DialogHeader>
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">
+        {isEditing ? "Update this subscription plan." : "Add a new plan shops can subscribe to."}
+      </Text>
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="plan-name" className="text-sm font-medium">
-            Name
-          </label>
-          <Input id="plan-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-          {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-        </div>
+      <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <Stack gap="md">
+          <TextInput
+            label="Name"
+            {...register("name")}
+            error={errors.name?.message}
+          />
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="plan-description" className="text-sm font-medium">
-            Description
-          </label>
-          <Textarea id="plan-description" rows={2} {...register("description")} />
-        </div>
+          <Textarea
+            label="Description"
+            rows={2}
+            {...register("description")}
+            error={errors.description?.message}
+          />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="plan-price" className="text-sm font-medium">
-              Price
-            </label>
-            <Input id="plan-price" type="number" step="0.01" min="0" aria-invalid={Boolean(errors.price)} {...register("price")} />
-            {errors.price ? <p className="text-sm text-destructive">{errors.price.message}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="plan-currency" className="text-sm font-medium">
-              Currency
-            </label>
-            <Input id="plan-currency" {...register("currency")} />
-          </div>
-        </div>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <TextInput
+              label="Price"
+              type="number"
+              step="0.01"
+              min="0"
+              {...register("price")}
+              error={errors.price?.message}
+            />
+            <TextInput
+              label="Currency"
+              {...register("currency")}
+              error={errors.currency?.message}
+            />
+          </SimpleGrid>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Billing interval</label>
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <Select
-              items={BILLING_INTERVAL_ITEMS}
+              label="Billing interval"
+              data={BILLING_INTERVAL_ITEMS}
               value={watch("billingInterval")}
-              onValueChange={(v) => setValue("billingInterval", (v as BillingInterval) ?? "MONTHLY")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(BILLING_INTERVAL_ITEMS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="plan-duration" className="text-sm font-medium">
-              Duration (days)
-            </label>
-            <Input
-              id="plan-duration"
+              onChange={(v) => setValue("billingInterval", (v as BillingInterval) ?? "MONTHLY")}
+            />
+            <TextInput
+              label="Duration (days)"
               type="number"
               min="0"
-              aria-invalid={Boolean(errors.durationDays)}
               {...register("durationDays")}
+              error={errors.durationDays?.message}
             />
-            {errors.durationDays ? <p className="text-sm text-destructive">{errors.durationDays.message}</p> : null}
-          </div>
-        </div>
+          </SimpleGrid>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="plan-max-users" className="text-sm font-medium">
-              Max users
-            </label>
-            <Input
-              id="plan-max-users"
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <TextInput
+              label="Max users"
               type="number"
               min="1"
               placeholder="Unlimited"
-              aria-invalid={Boolean(errors.maxUsers)}
               {...register("maxUsers")}
+              error={errors.maxUsers?.message || "Blank = unlimited."}
             />
-            {errors.maxUsers ? (
-              <p className="text-sm text-destructive">{errors.maxUsers.message}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">Blank = unlimited.</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="plan-max-products" className="text-sm font-medium">
-              Max products
-            </label>
-            <Input
-              id="plan-max-products"
+            <TextInput
+              label="Max products"
               type="number"
               min="1"
               placeholder="Unlimited"
-              aria-invalid={Boolean(errors.maxProducts)}
               {...register("maxProducts")}
+              error={errors.maxProducts?.message || "Blank = unlimited."}
             />
-            {errors.maxProducts ? (
-              <p className="text-sm text-destructive">{errors.maxProducts.message}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">Blank = unlimited.</p>
-            )}
-          </div>
-        </div>
+          </SimpleGrid>
 
-        {isEditing ? (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
+          {isEditing ? (
             <Select
-              items={{ active: "Active", inactive: "Inactive" }}
+              label="Status"
+              data={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
               value={watch("isActive") ? "active" : "inactive"}
-              onValueChange={(v) => setValue("isActive", v === "active")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
+              onChange={(v) => setValue("isActive", v === "active")}
+            />
+          ) : null}
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create plan"}
-          </Button>
-        </DialogFooter>
+          <Group justify="flex-end" mt="md">
+            <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+              {isEditing ? "Save changes" : "Create plan"}
+            </Button>
+          </Group>
+        </Stack>
       </form>
-    </>
+    </Stack>
   );
 }

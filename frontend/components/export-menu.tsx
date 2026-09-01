@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
-import { buttonVariants } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button, Menu } from "@mantine/core";
 import { exportReport, type ExportFormat } from "@/lib/api/export";
 
 interface ExportMenuProps {
@@ -20,7 +13,6 @@ interface ExportMenuProps {
 
 const FORMAT_LABELS: Record<ExportFormat, string> = { pdf: "PDF", excel: "Excel", csv: "CSV" };
 
-/** Export (API Spec Chapter 51) — a small per-report dropdown for downloading it as PDF/Excel/CSV. */
 export function ExportMenu({ reportType, filters }: ExportMenuProps) {
   const [pending, setPending] = useState<ExportFormat | null>(null);
 
@@ -36,23 +28,20 @@ export function ExportMenu({ reportType, filters }: ExportMenuProps) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        className={buttonVariants({ variant: "ghost", size: "sm" })}
-        disabled={pending !== null}
-      >
-        <Download />
-        {pending ? "Exporting..." : "Export"}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          {(Object.keys(FORMAT_LABELS) as ExportFormat[]).map((format) => (
-            <DropdownMenuItem key={format} onClick={() => handleExport(format)}>
-              {FORMAT_LABELS[format]}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Menu position="bottom-end" shadow="md">
+      <Menu.Target>
+        <Button variant="subtle" size="sm" color="gray" leftSection={<Download size={16} />} loading={pending !== null}>
+          {pending ? "Exporting..." : "Export"}
+        </Button>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        {(Object.keys(FORMAT_LABELS) as ExportFormat[]).map((format) => (
+          <Menu.Item key={format} onClick={() => handleExport(format)}>
+            {FORMAT_LABELS[format]}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
   );
 }

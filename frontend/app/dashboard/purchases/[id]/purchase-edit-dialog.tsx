@@ -1,23 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo } from "react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Textarea,
+  Button,
+  Select,
+} from "@mantine/core";
 import { fetchSuppliers } from "@/lib/api/suppliers";
 import { updatePurchase, type PurchaseDetail } from "@/lib/api/purchases";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -36,12 +33,6 @@ interface PurchaseEditDialogProps {
   purchase: PurchaseDetail;
 }
 
-/**
- * PATCH /purchases/{id} (API Spec Chapter 31.4) only allows editing
- * supplier, purchase date, and remarks — line items and payments are
- * immutable once posted, so unlike SupplierFormDialog this has no
- * "create" mode, it only ever edits.
- */
 export function PurchaseEditDialog({ open, onOpenChange, purchase }: PurchaseEditDialogProps) {
   const queryClient = useQueryClient();
 
@@ -50,14 +41,16 @@ export function PurchaseEditDialog({ open, onOpenChange, purchase }: PurchaseEdi
     queryFn: () => fetchSuppliers({ status: "active", limit: 100 }),
     enabled: open,
   });
-  const supplierItems = Object.fromEntries((suppliers?.data ?? []).map((s) => [s.id, s.name]));
+
+  const supplierOptions = useMemo(() => {
+    return (suppliers?.data ?? []).map((s) => ({ value: s.id, label: s.name }));
+  }, [suppliers]);
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<PurchaseEditValues>({
     resolver: zodResolver(purchaseEditSchema),
@@ -91,58 +84,54 @@ export function PurchaseEditDialog({ open, onOpenChange, purchase }: PurchaseEdi
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Purchase</DialogTitle>
-          <DialogDescription>
-            Update the supplier, date, or remarks. Line items and payments can&apos;t be changed here.
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title="Edit Purchase"
+      size="md"
+    >
+      <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <Stack gap="md">
+          <Controller
+            name="supplierId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Supplier"
+                placeholder="Select a supplier"
+                data={supplierOptions}
+                value={field.value}
+                onChange={(v) => field.onChange(v ?? "")}
+                error={errors.supplierId?.message}
+                withAsterisk
+              />
+            )}
+          />
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Supplier</label>
-            <Select items={supplierItems} value={watch("supplierId")} onValueChange={(v) => setValue("supplierId", v ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers?.data.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.supplierId ? <p className="text-sm text-destructive">{errors.supplierId.message}</p> : null}
-          </div>
+          <TextInput
+            label="Purchase date"
+            type="date"
+            withAsterisk
+            {...register("purchaseDate")}
+            error={errors.purchaseDate?.message}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="purchase-date" className="text-sm font-medium">
-              Purchase date
-            </label>
-            <Input id="purchase-date" type="date" aria-invalid={Boolean(errors.purchaseDate)} {...register("purchaseDate")} />
-            {errors.purchaseDate ? <p className="text-sm text-destructive">{errors.purchaseDate.message}</p> : null}
-          </div>
+          <Textarea
+            label="Remarks"
+            minRows={2}
+            {...register("remarks")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="purchase-remarks" className="text-sm font-medium">
-              Remarks
-            </label>
-            <Textarea id="purchase-remarks" rows={2} {...register("remarks")} />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Group justify="flex-end" mt="md">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : "Save changes"}
+            <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+              Save changes
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

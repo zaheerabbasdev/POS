@@ -1,23 +1,20 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Textarea,
+  Button,
+  Select,
+} from "@mantine/core";
 import { createProductModel, updateProductModel, type ProductModel } from "@/lib/api/product-models";
 import { fetchBrands } from "@/lib/api/brands";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -48,17 +45,16 @@ export function ModelFormDialog({ open, onOpenChange, model }: ModelFormDialogPr
     queryFn: () => fetchBrands({ status: "active", limit: 100 }),
     enabled: open,
   });
-  const brandItems = useMemo(
-    () => Object.fromEntries((brands?.data ?? []).map((b) => [b.id, b.name])),
-    [brands],
-  );
+
+  const brandOptions = useMemo(() => {
+    return (brands?.data ?? []).map((b) => ({ value: b.id, label: b.name }));
+  }, [brands]);
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ModelFormValues>({
     resolver: zodResolver(modelFormSchema),
@@ -96,83 +92,80 @@ export function ModelFormDialog({ open, onOpenChange, model }: ModelFormDialogPr
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const statusOptions = Object.entries(STATUS_ITEMS).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Model" : "Add Model"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this phone model's details." : "Create a new phone model or variant."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={isEditing ? "Edit Model" : "Add Model"}
+      size="md"
+    >
+      <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <Stack gap="md">
+          <TextInput
+            label="Name"
+            placeholder="e.g. iPhone 15 Pro"
+            withAsterisk
+            {...register("name")}
+            error={errors.name?.message}
+          />
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="model-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input id="model-name" placeholder="e.g. iPhone 15 Pro" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-          </div>
+          <Controller
+            name="brandId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Brand"
+                placeholder="Select a brand"
+                data={brandOptions}
+                value={field.value}
+                onChange={(v) => field.onChange(v ?? "")}
+                error={errors.brandId?.message}
+                withAsterisk
+              />
+            )}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Brand</label>
-            <Select items={brandItems} value={watch("brandId")} onValueChange={(value) => setValue("brandId", value ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a brand" />
-              </SelectTrigger>
-              <SelectContent>
-                {brands?.data.map((brand) => (
-                  <SelectItem key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.brandId ? <p className="text-sm text-destructive">{errors.brandId.message}</p> : null}
-          </div>
+          <TextInput
+            label="Release year"
+            placeholder="e.g. 2023"
+            inputMode="numeric"
+            {...register("releaseYear")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="model-release-year" className="text-sm font-medium">
-              Release year
-            </label>
-            <Input id="model-release-year" inputMode="numeric" placeholder="e.g. 2023" {...register("releaseYear")} />
-          </div>
+          <Textarea
+            label="Description"
+            minRows={2}
+            {...register("description")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="model-description" className="text-sm font-medium">
-              Description
-            </label>
-            <Textarea id="model-description" rows={2} {...register("description")} />
-          </div>
+          <Controller
+            name="status"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Status"
+                data={statusOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
-            <Select
-              items={STATUS_ITEMS}
-              value={watch("status")}
-              onValueChange={(value) => setValue("status", value as "active" | "inactive")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Group justify="flex-end" mt="md">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create model"}
+            <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+              {isEditing ? "Save changes" : "Create model"}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

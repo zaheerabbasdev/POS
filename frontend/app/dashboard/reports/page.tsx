@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeDollarSign, PackageX, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Stack,
+  Group,
+  TextInput,
+  Select,
+  Card,
+  Text,
+  SimpleGrid,
+  Table,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
 import { StatTile } from "@/components/stat-tile";
 import { ExportMenu } from "@/components/export-menu";
+import { DataTable } from "@/components/data-table";
+import { MoneyText } from "@/components/currency-display";
 import {
   fetchCustomerBalance,
   fetchCustomerPurchases,
@@ -28,14 +37,14 @@ import {
   fetchSupplierPurchases,
 } from "@/lib/api/reports";
 
-const CATEGORY_ITEMS = {
-  sales: "Sales",
-  purchases: "Purchases",
-  inventory: "Inventory",
-  financial: "Financial",
-  customers: "Customers",
-  suppliers: "Suppliers",
-};
+const CATEGORY_OPTIONS = [
+  { value: "sales", label: "Sales" },
+  { value: "purchases", label: "Purchases" },
+  { value: "inventory", label: "Inventory" },
+  { value: "financial", label: "Financial" },
+  { value: "customers", label: "Customers" },
+  { value: "suppliers", label: "Suppliers" },
+];
 
 export default function ReportsPage() {
   const [category, setCategory] = useState("sales");
@@ -44,48 +53,41 @@ export default function ReportsPage() {
   const range = { startDate: startDate || undefined, endDate: endDate || undefined };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
-        <p className="text-muted-foreground">Business insights across sales, purchases, inventory, and finances.</p>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Reports"
+        description="Business insights across sales, purchases, inventory, and finances."
+      />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Select items={CATEGORY_ITEMS} value={category} onValueChange={(v) => setCategory(v ?? "sales")}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(CATEGORY_ITEMS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="report-start-date" className="text-xs text-muted-foreground">
-            From
-          </label>
-          <Input id="report-start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="report-end-date" className="text-xs text-muted-foreground">
-            To
-          </label>
-          <Input id="report-end-date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        </div>
-      </div>
+      <Group align="flex-end" gap="md">
+        <Select
+          label="Category"
+          data={CATEGORY_OPTIONS}
+          value={category}
+          onChange={(v) => setCategory(v ?? "sales")}
+          w={200}
+        />
+        <TextInput
+          label="From"
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.currentTarget.value)}
+        />
+        <TextInput
+          label="To"
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.currentTarget.value)}
+        />
+      </Group>
 
-      {category === "sales" ? <SalesReports range={range} /> : null}
-      {category === "purchases" ? <PurchaseReports range={range} /> : null}
-      {category === "inventory" ? <InventoryReports range={range} /> : null}
-      {category === "financial" ? <FinancialReports range={range} /> : null}
-      {category === "customers" ? <CustomerReports range={range} /> : null}
-      {category === "suppliers" ? <SupplierReports /> : null}
-    </div>
+      {category === "sales" && <SalesReports range={range} />}
+      {category === "purchases" && <PurchaseReports range={range} />}
+      {category === "inventory" && <InventoryReports range={range} />}
+      {category === "financial" && <FinancialReports range={range} />}
+      {category === "customers" && <CustomerReports range={range} />}
+      {category === "suppliers" && <SupplierReports />}
+    </Stack>
   );
 }
 
@@ -107,130 +109,77 @@ function SalesReports({ range }: { range: Range }) {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted-foreground">Sales Summary</h2>
+    <Stack gap="lg">
+      <Group justify="space-between">
+        <Text fw={600} c="dimmed">Sales Summary</Text>
         <ExportMenu reportType="sales/summary" filters={range} />
-      </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      </Group>
+      
+      <SimpleGrid cols={{ base: 2, md: 3 }} spacing="lg">
         <StatTile label="Total Sales" value={summary?.totalSales ?? 0} icon={Wallet} />
         <StatTile label="Total Invoices" value={summary?.totalInvoices ?? 0} icon={ReceiptText} />
         <StatTile label="Average Sale" value={summary?.averageSale ?? 0} icon={TrendingUp} />
-      </div>
+      </SimpleGrid>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Daily Sales</CardTitle>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <Card shadow="sm" radius="md" withBorder padding={0}>
+          <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+            <Text fw={600}>Daily Sales</Text>
             <ExportMenu reportType="sales/daily" filters={range} />
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Invoices</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead className="text-right">Cash</TableHead>
-                  <TableHead className="text-right">Credit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {daily && daily.length > 0 ? (
-                  daily.map((row) => (
-                    <TableRow key={row.date}>
-                      <TableCell>{row.date}</TableCell>
-                      <TableCell className="text-right">{row.invoices}</TableCell>
-                      <TableCell className="text-right">{row.totalSales}</TableCell>
-                      <TableCell className="text-right">{row.cashSales}</TableCell>
-                      <TableCell className="text-right">{row.creditSales}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                      {dailyLoading ? "Loading..." : "No sales in range."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
+          </Group>
+          <DataTable
+            data={daily ?? []}
+            isLoading={dailyLoading}
+            keyExtractor={(row) => row.date}
+            emptyTitle="No sales in range."
+            columns={[
+              { key: "date", header: "Date", render: (r) => <Text size="sm">{r.date}</Text> },
+              { key: "invoices", header: "Invoices", align: "right", render: (r) => <Text size="sm">{r.invoices}</Text> },
+              { key: "total", header: "Total", align: "right", render: (r) => <MoneyText value={r.totalSales} /> },
+              { key: "cash", header: "Cash", align: "right", render: (r) => <MoneyText value={r.cashSales} /> },
+              { key: "credit", header: "Credit", align: "right", render: (r) => <MoneyText value={r.creditSales} /> },
+            ]}
+          />
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Sales by Employee</CardTitle>
+        <Card shadow="sm" radius="md" withBorder padding={0}>
+          <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+            <Text fw={600}>Sales by Employee</Text>
             <ExportMenu reportType="sales/employees" filters={range} />
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead className="text-right">Transactions</TableHead>
-                  <TableHead className="text-right">Total Sales</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees && employees.length > 0 ? (
-                  employees.map((row) => (
-                    <TableRow key={row.employeeId}>
-                      <TableCell className="font-medium">{row.employeeName}</TableCell>
-                      <TableCell className="text-right">{row.transactions}</TableCell>
-                      <TableCell className="text-right">{row.totalSales}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
-                      {employeesLoading ? "Loading..." : "No sales in range."}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
+          </Group>
+          <DataTable
+            data={employees ?? []}
+            isLoading={employeesLoading}
+            keyExtractor={(row) => row.employeeId}
+            emptyTitle="No sales in range."
+            columns={[
+              { key: "employee", header: "Employee", render: (r) => <Text size="sm" fw={500}>{r.employeeName}</Text> },
+              { key: "transactions", header: "Transactions", align: "right", render: (r) => <Text size="sm">{r.transactions}</Text> },
+              { key: "total", header: "Total Sales", align: "right", render: (r) => <MoneyText value={r.totalSales} /> },
+            ]}
+          />
         </Card>
-      </div>
+      </SimpleGrid>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Sales by Product</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Sales by Product</Text>
           <ExportMenu reportType="sales/products" filters={range} />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Qty Sold</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-                <TableHead className="text-right">Profit</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products && products.length > 0 ? (
-                products.map((row) => (
-                  <TableRow key={row.productId}>
-                    <TableCell className="font-medium">{row.productName}</TableCell>
-                    <TableCell className="text-right">{row.quantitySold}</TableCell>
-                    <TableCell className="text-right">{row.revenue}</TableCell>
-                    <TableCell className="text-right">{row.profit}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {productsLoading ? "Loading..." : "No sales in range."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={products ?? []}
+          isLoading={productsLoading}
+          keyExtractor={(row) => row.productId}
+          emptyTitle="No sales in range."
+          columns={[
+            { key: "product", header: "Product", render: (r) => <Text size="sm" fw={500}>{r.productName}</Text> },
+            { key: "qty", header: "Qty Sold", align: "right", render: (r) => <Text size="sm">{r.quantitySold}</Text> },
+            { key: "revenue", header: "Revenue", align: "right", render: (r) => <MoneyText value={r.revenue} /> },
+            { key: "profit", header: "Profit", align: "right", render: (r) => <MoneyText value={r.profit} /> },
+          ]}
+        />
       </Card>
-    </div>
+    </Stack>
   );
 }
 
@@ -242,12 +191,13 @@ function PurchaseReports({ range }: { range: Range }) {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium text-muted-foreground">Purchase Summary</h2>
+    <Stack gap="lg">
+      <Group justify="space-between">
+        <Text fw={600} c="dimmed">Purchase Summary</Text>
         <ExportMenu reportType="purchases/summary" filters={range} />
-      </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      </Group>
+
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg">
         <StatTile label="Total Purchases" value={summary?.totalPurchases ?? 0} icon={ReceiptText} />
         <StatTile label="Total Amount" value={summary?.totalAmount ?? 0} icon={Wallet} />
         <StatTile label="Suppliers" value={summary?.supplierCount ?? 0} icon={TrendingUp} />
@@ -257,47 +207,36 @@ function PurchaseReports({ range }: { range: Range }) {
           icon={TrendingDown}
           tone={(summary?.pendingPayments ?? 0) > 0 ? "warning" : "default"}
         />
-      </div>
+      </SimpleGrid>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Purchases by Supplier</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Purchases by Supplier</Text>
           <ExportMenu reportType="purchases/suppliers" filters={range} />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Purchases</TableHead>
-                <TableHead className="text-right">Total Amount</TableHead>
-                <TableHead className="text-right">Outstanding</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {suppliers && suppliers.length > 0 ? (
-                suppliers.map((row) => (
-                  <TableRow key={row.supplierId}>
-                    <TableCell className="font-medium">{row.supplierName}</TableCell>
-                    <TableCell className="text-right">{row.purchaseCount}</TableCell>
-                    <TableCell className="text-right">{row.totalAmount}</TableCell>
-                    <TableCell className="text-right">
-                      {row.outstandingBalance > 0 ? <span className="text-destructive">{row.outstandingBalance}</span> : row.outstandingBalance}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {suppliersLoading ? "Loading..." : "No purchases in range."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={suppliers ?? []}
+          isLoading={suppliersLoading}
+          keyExtractor={(row) => row.supplierId}
+          emptyTitle="No purchases in range."
+          columns={[
+            { key: "supplier", header: "Supplier", render: (r) => <Text size="sm" fw={500}>{r.supplierName}</Text> },
+            { key: "purchases", header: "Purchases", align: "right", render: (r) => <Text size="sm">{r.purchaseCount}</Text> },
+            { key: "total", header: "Total Amount", align: "right", render: (r) => <MoneyText value={r.totalAmount} /> },
+            {
+              key: "outstanding",
+              header: "Outstanding",
+              align: "right",
+              render: (r) => (
+                <Text size="sm" c={r.outstandingBalance > 0 ? "red" : undefined}>
+                  <MoneyText value={r.outstandingBalance} />
+                </Text>
+              ),
+            },
+          ]}
+        />
       </Card>
-    </div>
+    </Stack>
   );
 }
 
@@ -319,8 +258,8 @@ function InventoryReports({ range }: { range: Range }) {
   const totalStockValue = stock?.reduce((sum, row) => sum + row.stockValue, 0) ?? 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+    <Stack gap="lg">
+      <SimpleGrid cols={{ base: 2, md: 3 }} spacing="lg">
         <StatTile label="Total Stock Value" value={totalStockValue} icon={Wallet} />
         <StatTile label="Products Tracked" value={stock?.length ?? 0} icon={ReceiptText} />
         <StatTile
@@ -329,164 +268,128 @@ function InventoryReports({ range }: { range: Range }) {
           icon={PackageX}
           tone={(lowStock?.length ?? 0) > 0 ? "warning" : "default"}
         />
-      </div>
+      </SimpleGrid>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Low Stock</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Low Stock</Text>
           <ExportMenu reportType="inventory/low-stock" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Current Stock</TableHead>
-                <TableHead className="text-right">Reorder Level</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lowStock && lowStock.length > 0 ? (
-                lowStock.map((row) => (
-                  <TableRow key={row.productId}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{row.sku}</TableCell>
-                    <TableCell className="font-medium">{row.productName}</TableCell>
-                    <TableCell className="text-right text-destructive">{row.currentStock}</TableCell>
-                    <TableCell className="text-right">{row.reorderLevel}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {lowStockLoading ? "Loading..." : "Nothing low on stock."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={lowStock ?? []}
+          isLoading={lowStockLoading}
+          keyExtractor={(row) => row.productId}
+          emptyTitle="Nothing low on stock."
+          columns={[
+            {
+              key: "sku",
+              header: "SKU",
+              render: (r) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.sku}
+                </Text>
+              ),
+            },
+            { key: "product", header: "Product", render: (r) => <Text size="sm" fw={500}>{r.productName}</Text> },
+            { key: "current", header: "Current Stock", align: "right", render: (r) => <Text size="sm" c="red">{r.currentStock}</Text> },
+            { key: "reorder", header: "Reorder Level", align: "right", render: (r) => <Text size="sm">{r.reorderLevel}</Text> },
+          ]}
+        />
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Stock Value</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Stock Value</Text>
           <ExportMenu reportType="inventory/stock" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead className="text-right">Available Qty</TableHead>
-                <TableHead className="text-right">Purchase Price</TableHead>
-                <TableHead className="text-right">Stock Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stock && stock.length > 0 ? (
-                stock.map((row) => (
-                  <TableRow key={row.productId}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{row.sku}</TableCell>
-                    <TableCell className="font-medium">{row.productName}</TableCell>
-                    <TableCell className="text-right">{row.availableQuantity}</TableCell>
-                    <TableCell className="text-right">{row.purchasePrice}</TableCell>
-                    <TableCell className="text-right">{row.stockValue}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    {stockLoading ? "Loading..." : "No inventory records."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={stock ?? []}
+          isLoading={stockLoading}
+          keyExtractor={(row) => row.productId}
+          emptyTitle="No inventory records."
+          columns={[
+            {
+              key: "sku",
+              header: "SKU",
+              render: (r) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.sku}
+                </Text>
+              ),
+            },
+            { key: "product", header: "Product", render: (r) => <Text size="sm" fw={500}>{r.productName}</Text> },
+            { key: "available", header: "Available Qty", align: "right", render: (r) => <Text size="sm">{r.availableQuantity}</Text> },
+            { key: "price", header: "Purchase Price", align: "right", render: (r) => <MoneyText value={r.purchasePrice} /> },
+            { key: "value", header: "Stock Value", align: "right", render: (r) => <MoneyText value={r.stockValue} /> },
+          ]}
+        />
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Stock Movement</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Stock Movement</Text>
           <ExportMenu reportType="inventory/movement" filters={range} />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Qty</TableHead>
-                <TableHead>Reference</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {movement && movement.length > 0 ? (
-                movement.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{row.sku}</TableCell>
-                    <TableCell className="font-medium">{row.productName}</TableCell>
-                    <TableCell>{row.type}</TableCell>
-                    <TableCell className="text-right">{row.quantity}</TableCell>
-                    <TableCell className="font-mono text-xs">{row.referenceNumber ?? "—"}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    {movementLoading ? "Loading..." : "No stock movement in range."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={movement ?? []}
+          isLoading={movementLoading}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No stock movement in range."
+          columns={[
+            { key: "date", header: "Date", render: (r) => <Text size="sm">{new Date(r.date).toLocaleDateString()}</Text> },
+            {
+              key: "sku",
+              header: "SKU",
+              render: (r) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.sku}
+                </Text>
+              ),
+            },
+            { key: "product", header: "Product", render: (r) => <Text size="sm" fw={500}>{r.productName}</Text> },
+            { key: "type", header: "Type", render: (r) => <Text size="sm">{r.type}</Text> },
+            { key: "qty", header: "Qty", align: "right", render: (r) => <Text size="sm">{r.quantity}</Text> },
+            {
+              key: "reference",
+              header: "Reference",
+              render: (r) => (
+                <Text size="xs" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.referenceNumber ?? "—"}
+                </Text>
+              ),
+            },
+          ]}
+        />
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>IMEI Register</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>IMEI Register</Text>
           <ExportMenu reportType="inventory/imei" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>IMEI</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Warranty</TableHead>
-                <TableHead>Purchased</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {imeis && imeis.length > 0 ? (
-                imeis.map((row) => (
-                  <TableRow key={row.imei}>
-                    <TableCell className="font-mono text-xs">{row.imei}</TableCell>
-                    <TableCell className="font-medium">{row.productName}</TableCell>
-                    <TableCell>{row.saleStatus}</TableCell>
-                    <TableCell>{row.warrantyStatus ?? "—"}</TableCell>
-                    <TableCell>{row.purchaseDate ? new Date(row.purchaseDate).toLocaleDateString() : "—"}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    {imeisLoading ? "Loading..." : "No IMEIs recorded."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={imeis ?? []}
+          isLoading={imeisLoading}
+          keyExtractor={(row) => row.imei}
+          emptyTitle="No IMEIs recorded."
+          columns={[
+            {
+              key: "imei",
+              header: "IMEI",
+              render: (r) => (
+                <Text size="xs" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.imei}
+                </Text>
+              ),
+            },
+            { key: "product", header: "Product", render: (r) => <Text size="sm" fw={500}>{r.productName}</Text> },
+            { key: "status", header: "Status", render: (r) => <Text size="sm">{r.saleStatus}</Text> },
+            { key: "warranty", header: "Warranty", render: (r) => <Text size="sm">{r.warrantyStatus ?? "—"}</Text> },
+            { key: "purchased", header: "Purchased", render: (r) => <Text size="sm">{r.purchaseDate ? new Date(r.purchaseDate).toLocaleDateString() : "—"}</Text> },
+          ]}
+        />
       </Card>
-    </div>
+    </Stack>
   );
 }
 
@@ -499,78 +402,56 @@ function FinancialReports({ range }: { range: Range }) {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Profit &amp; Loss</CardTitle>
+    <Stack gap="lg">
+      <Card shadow="sm" radius="md" withBorder>
+        <Group justify="space-between" mb="md">
+          <Text fw={600}>Profit &amp; Loss</Text>
           <ExportMenu reportType="financial/profit-loss" filters={range} />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile label="Total Sales" value={pnl?.totalSales ?? 0} icon={Wallet} />
-            <StatTile label="Cost of Goods Sold" value={pnl?.costOfGoodsSold ?? 0} icon={TrendingDown} />
-            <StatTile label="Expenses" value={pnl?.expenses ?? 0} icon={ReceiptText} />
-            <StatTile
-              label="Net Profit"
-              value={pnl?.netProfit ?? 0}
-              icon={BadgeDollarSign}
-              tone={(pnl?.netProfit ?? 0) < 0 ? "critical" : "default"}
-            />
-          </div>
-        </CardContent>
+        </Group>
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg">
+          <StatTile label="Total Sales" value={pnl?.totalSales ?? 0} icon={Wallet} />
+          <StatTile label="Cost of Goods Sold" value={pnl?.costOfGoodsSold ?? 0} icon={TrendingDown} />
+          <StatTile label="Expenses" value={pnl?.expenses ?? 0} icon={ReceiptText} />
+          <StatTile
+            label="Net Profit"
+            value={pnl?.netProfit ?? 0}
+            icon={BadgeDollarSign}
+            tone={(pnl?.netProfit ?? 0) < 0 ? "critical" : "default"}
+          />
+        </SimpleGrid>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Cash Flow</CardTitle>
+      <Card shadow="sm" radius="md" withBorder>
+        <Group justify="space-between" mb="md">
+          <Text fw={600}>Cash Flow</Text>
           <ExportMenu reportType="financial/cash-flow" filters={range} />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-            <StatTile label="Cash In" value={cashFlow?.cashIn ?? 0} icon={TrendingUp} />
-            <StatTile label="Cash Out" value={cashFlow?.cashOut ?? 0} icon={TrendingDown} />
-            <StatTile label="Net Position" value={cashFlow?.currentBalance ?? 0} icon={Wallet} />
-          </div>
-        </CardContent>
+        </Group>
+        <SimpleGrid cols={{ base: 2, md: 3 }} spacing="lg">
+          <StatTile label="Cash In" value={cashFlow?.cashIn ?? 0} icon={TrendingUp} />
+          <StatTile label="Cash Out" value={cashFlow?.cashOut ?? 0} icon={TrendingDown} />
+          <StatTile label="Net Position" value={cashFlow?.currentBalance ?? 0} icon={Wallet} />
+        </SimpleGrid>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Expenses</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Expenses</Text>
           <ExportMenu reportType="financial/expenses" filters={range} />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Recorded By</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {expenses && expenses.length > 0 ? (
-                expenses.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="font-medium">{row.category}</TableCell>
-                    <TableCell>{row.employee ?? "—"}</TableCell>
-                    <TableCell className="text-right">{row.amount}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {expensesLoading ? "Loading..." : "No expenses in range."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={expenses ?? []}
+          isLoading={expensesLoading}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No expenses in range."
+          columns={[
+            { key: "date", header: "Date", render: (r) => <Text size="sm">{new Date(r.date).toLocaleDateString()}</Text> },
+            { key: "category", header: "Category", render: (r) => <Text size="sm" fw={500}>{r.category}</Text> },
+            { key: "recordedBy", header: "Recorded By", render: (r) => <Text size="sm">{r.employee ?? "—"}</Text> },
+            { key: "amount", header: "Amount", align: "right", render: (r) => <MoneyText value={r.amount} /> },
+          ]}
+        />
       </Card>
-    </div>
+    </Stack>
   );
 }
 
@@ -585,83 +466,54 @@ function CustomerReports({ range }: { range: Range }) {
   });
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Customer Purchases</CardTitle>
+    <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Customer Purchases</Text>
           <ExportMenu reportType="customers/purchases" filters={range} />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead className="text-right">Purchases</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Last Purchase</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchases && purchases.length > 0 ? (
-                purchases.map((row) => (
-                  <TableRow key={row.customerId}>
-                    <TableCell className="font-medium">{row.customerName}</TableCell>
-                    <TableCell className="text-right">{row.totalPurchases}</TableCell>
-                    <TableCell className="text-right">{row.totalAmount}</TableCell>
-                    <TableCell>{new Date(row.lastPurchaseDate).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {purchasesLoading ? "Loading..." : "No purchases in range."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={purchases ?? []}
+          isLoading={purchasesLoading}
+          keyExtractor={(row) => row.customerId}
+          emptyTitle="No purchases in range."
+          columns={[
+            { key: "customer", header: "Customer", render: (r) => <Text size="sm" fw={500}>{r.customerName}</Text> },
+            { key: "purchases", header: "Purchases", align: "right", render: (r) => <Text size="sm">{r.totalPurchases}</Text> },
+            { key: "total", header: "Total", align: "right", render: (r) => <MoneyText value={r.totalAmount} /> },
+            { key: "lastPurchase", header: "Last Purchase", render: (r) => <Text size="sm">{new Date(r.lastPurchaseDate).toLocaleDateString()}</Text> },
+          ]}
+        />
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Customer Balances</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Customer Balances</Text>
           <ExportMenu reportType="customers/balance" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead className="text-right">Credit Limit</TableHead>
-                <TableHead className="text-right">Paid</TableHead>
-                <TableHead className="text-right">Remaining</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {balances && balances.length > 0 ? (
-                balances.map((row) => (
-                  <TableRow key={row.customerId}>
-                    <TableCell className="font-medium">{row.customerName}</TableCell>
-                    <TableCell className="text-right">{row.creditLimit}</TableCell>
-                    <TableCell className="text-right">{row.paidAmount}</TableCell>
-                    <TableCell className="text-right">
-                      {Number(row.remainingBalance) > 0 ? <span className="text-destructive">{row.remainingBalance}</span> : row.remainingBalance}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {balancesLoading ? "Loading..." : "No customers."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={balances ?? []}
+          isLoading={balancesLoading}
+          keyExtractor={(row) => row.customerId}
+          emptyTitle="No customers."
+          columns={[
+            { key: "customer", header: "Customer", render: (r) => <Text size="sm" fw={500}>{r.customerName}</Text> },
+            { key: "creditLimit", header: "Credit Limit", align: "right", render: (r) => <MoneyText value={r.creditLimit} /> },
+            { key: "paid", header: "Paid", align: "right", render: (r) => <MoneyText value={r.paidAmount} /> },
+            {
+              key: "remaining",
+              header: "Remaining",
+              align: "right",
+              render: (r) => (
+                <Text size="sm" c={Number(r.remainingBalance) > 0 ? "red" : undefined}>
+                  <MoneyText value={r.remainingBalance} />
+                </Text>
+              ),
+            },
+          ]}
+        />
       </Card>
-    </div>
+    </SimpleGrid>
   );
 }
 
@@ -676,80 +528,52 @@ function SupplierReports() {
   });
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Supplier Balances</CardTitle>
+    <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Supplier Balances</Text>
           <ExportMenu reportType="suppliers/balance" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Total Purchases</TableHead>
-                <TableHead className="text-right">Paid</TableHead>
-                <TableHead className="text-right">Remaining</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {balances && balances.length > 0 ? (
-                balances.map((row) => (
-                  <TableRow key={row.supplierId}>
-                    <TableCell className="font-medium">{row.supplierName}</TableCell>
-                    <TableCell className="text-right">{row.totalPurchases}</TableCell>
-                    <TableCell className="text-right">{row.paidAmount}</TableCell>
-                    <TableCell className="text-right">
-                      {Number(row.remainingAmount) > 0 ? <span className="text-destructive">{row.remainingAmount}</span> : row.remainingAmount}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    {balancesLoading ? "Loading..." : "No suppliers."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={balances ?? []}
+          isLoading={balancesLoading}
+          keyExtractor={(row) => row.supplierId}
+          emptyTitle="No suppliers."
+          columns={[
+            { key: "supplier", header: "Supplier", render: (r) => <Text size="sm" fw={500}>{r.supplierName}</Text> },
+            { key: "purchases", header: "Total Purchases", align: "right", render: (r) => <Text size="sm">{r.totalPurchases}</Text> },
+            { key: "paid", header: "Paid", align: "right", render: (r) => <MoneyText value={r.paidAmount} /> },
+            {
+              key: "remaining",
+              header: "Remaining",
+              align: "right",
+              render: (r) => (
+                <Text size="sm" c={Number(r.remainingAmount) > 0 ? "red" : undefined}>
+                  <MoneyText value={r.remainingAmount} />
+                </Text>
+              ),
+            },
+          ]}
+        />
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Purchase History</CardTitle>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Group justify="space-between" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          <Text fw={600}>Purchase History</Text>
           <ExportMenu reportType="suppliers/payments" />
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Purchases</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchases && purchases.length > 0 ? (
-                purchases.map((row) => (
-                  <TableRow key={row.supplierId}>
-                    <TableCell className="font-medium">{row.supplierName}</TableCell>
-                    <TableCell className="text-right">{row.purchaseCount}</TableCell>
-                    <TableCell className="text-right">{row.totalAmount}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
-                    {purchasesLoading ? "Loading..." : "No purchase history."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+        </Group>
+        <DataTable
+          data={purchases ?? []}
+          isLoading={purchasesLoading}
+          keyExtractor={(row) => row.supplierId}
+          emptyTitle="No purchase history."
+          columns={[
+            { key: "supplier", header: "Supplier", render: (r) => <Text size="sm" fw={500}>{r.supplierName}</Text> },
+            { key: "purchases", header: "Purchases", align: "right", render: (r) => <Text size="sm">{r.purchaseCount}</Text> },
+            { key: "total", header: "Total", align: "right", render: (r) => <MoneyText value={r.totalAmount} /> },
+          ]}
+        />
       </Card>
-    </div>
+    </SimpleGrid>
   );
 }

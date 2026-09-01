@@ -1,23 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Textarea,
+  Button,
+  Select,
+} from "@mantine/core";
 import { createBrand, updateBrand, type Brand } from "@/lib/api/brands";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { STATUS_ITEMS } from "@/lib/select-items";
@@ -44,8 +41,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: BrandFormDialogPr
     register,
     handleSubmit,
     reset,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<BrandFormValues>({
     resolver: zodResolver(brandFormSchema),
@@ -69,59 +65,56 @@ export function BrandFormDialog({ open, onOpenChange, brand }: BrandFormDialogPr
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const statusOptions = Object.entries(STATUS_ITEMS).map(([value, label]) => ({
+    value,
+    label,
+  }));
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Brand" : "Add Brand"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this brand's details." : "Create a new mobile phone or accessory brand."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={isEditing ? "Edit Brand" : "Add Brand"}
+      size="md"
+    >
+      <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <Stack gap="md">
+          <TextInput
+            label="Name"
+            withAsterisk
+            {...register("name")}
+            error={errors.name?.message}
+          />
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="brand-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input id="brand-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-          </div>
+          <Textarea
+            label="Description"
+            minRows={3}
+            {...register("description")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="brand-description" className="text-sm font-medium">
-              Description
-            </label>
-            <Textarea id="brand-description" rows={3} {...register("description")} />
-          </div>
+          <Controller
+            name="status"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Status"
+                data={statusOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
-            <Select
-              items={STATUS_ITEMS}
-              value={watch("status")}
-              onValueChange={(value) => setValue("status", value as "active" | "inactive")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Group justify="flex-end" mt="md">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create brand"}
+            <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+              {isEditing ? "Save changes" : "Create brand"}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

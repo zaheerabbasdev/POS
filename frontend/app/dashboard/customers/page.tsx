@@ -2,15 +2,24 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil, History as HistoryIcon } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Badge,
+  Box,
+  Modal,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { MoneyText } from "@/components/currency-display";
 import { fetchCustomerHistory, fetchCustomers, type Customer, type CustomerHistory } from "@/lib/api/customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 
@@ -39,107 +48,138 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
-          <p className="text-muted-foreground">Manage customer records and outstanding balances.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Customer
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Customers"
+        description="Manage customer records and outstanding balances."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Customer
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, or code..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search by name, phone, or code…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Outstanding</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{customer.customerCode}</TableCell>
-                    <TableCell className="font-medium">{customer.name}</TableCell>
-                    <TableCell>{customer.phone ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{customer.customerType}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(customer.outstandingBalance) > 0 ? (
-                        <span className="text-destructive">{customer.outstandingBalance}</span>
-                      ) : (
-                        customer.outstandingBalance
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={customer.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setHistoryCustomer(customer)}>
-                        View
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(customer)}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No customers found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching customers" : "No customers yet"}
+          emptyDescription={
+            search
+              ? "No customers match your search."
+              : "Add your first customer to start tracking history and balances."
+          }
+          columns={[
+            {
+              key: "code",
+              header: "Code",
+              render: (c) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {c.customerCode}
+                </Text>
+              ),
+            },
+            {
+              key: "name",
+              header: "Name",
+              render: (c) => (
+                <Text size="sm" fw={500}>
+                  {c.name}
+                </Text>
+              ),
+            },
+            {
+              key: "phone",
+              header: "Phone",
+              render: (c) => (
+                <Text size="sm" c="dimmed">
+                  {c.phone ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "type",
+              header: "Type",
+              render: (c) => (
+                <Badge variant="outline" color="gray" size="sm">
+                  {c.customerType}
+                </Badge>
+              ),
+            },
+            {
+              key: "outstanding",
+              header: "Outstanding",
+              align: "right",
+              render: (c) => (
+                <MoneyText
+                  value={c.outstandingBalance}
+                  c={Number(c.outstandingBalance) > 0 ? "red" : undefined}
+                  fw={Number(c.outstandingBalance) > 0 ? 500 : undefined}
+                />
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (c) => <StatusBadge status={c.status} type="generic" />,
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (c) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "View History",
+                      icon: <HistoryIcon size={14} />,
+                      onClick: () => setHistoryCustomer(c),
+                    },
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(c),
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} customer={editingCustomer} />
       <CustomerHistoryDialog customer={historyCustomer} onOpenChange={(open) => !open && setHistoryCustomer(undefined)} />
-    </div>
+    </Stack>
   );
 }
+
+// ─── Sub-component ────────────────────────────────────────────────────────────
 
 function CustomerHistoryDialog({
   customer,
@@ -155,40 +195,66 @@ function CustomerHistoryDialog({
   });
 
   return (
-    <Dialog open={Boolean(customer)} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{customer?.name} - Purchase History</DialogTitle>
-          <DialogDescription>Sales and payments recorded for this customer.</DialogDescription>
-        </DialogHeader>
-        {isLoading ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Loading history...</p>
-        ) : data && data.sales.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.sales.map((sale) => (
-                <TableRow key={sale.id}>
-                  <TableCell className="font-mono text-xs">{sale.invoiceNumber}</TableCell>
-                  <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
-                  <TableCell>{sale.paymentStatus}</TableCell>
-                  <TableCell className="text-right">{sale.totalAmount}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <p className="py-6 text-center text-sm text-muted-foreground">No purchases found for this customer.</p>
-        )}
-        {data ? <p className="text-right text-sm font-medium">Outstanding: {data.outstandingBalance}</p> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={Boolean(customer)}
+      onClose={() => onOpenChange(false)}
+      title={`${customer?.name} - Purchase History`}
+      size="lg"
+    >
+      <Text size="sm" c="dimmed" mb="md">
+        Sales and payments recorded for this customer.
+      </Text>
+      
+      {isLoading ? (
+        <Text size="sm" c="dimmed" ta="center" py="xl">
+          Loading history...
+        </Text>
+      ) : data && data.sales.length > 0 ? (
+        <Stack gap="md">
+          <DataTable
+            data={data.sales}
+            keyExtractor={(row) => row.id}
+            columns={[
+              {
+                key: "invoice",
+                header: "Invoice",
+                render: (s) => (
+                  <Text size="xs" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                    {s.invoiceNumber}
+                  </Text>
+                ),
+              },
+              {
+                key: "date",
+                header: "Date",
+                render: (s) => (
+                  <Text size="sm">
+                    {new Date(s.saleDate).toLocaleDateString()}
+                  </Text>
+                ),
+              },
+              {
+                key: "status",
+                header: "Status",
+                render: (s) => <StatusBadge status={s.paymentStatus} type="sale" />,
+              },
+              {
+                key: "total",
+                header: "Total",
+                align: "right",
+                render: (s) => <MoneyText value={s.totalAmount} fw={500} />,
+              },
+            ]}
+          />
+          <Text ta="right" size="sm" fw={600}>
+            Outstanding: <MoneyText value={data.outstandingBalance} c={Number(data.outstandingBalance) > 0 ? "red" : undefined} />
+          </Text>
+        </Stack>
+      ) : (
+        <Text size="sm" c="dimmed" ta="center" py="xl">
+          No purchases found for this customer.
+        </Text>
+      )}
+    </Modal>
   );
 }

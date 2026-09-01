@@ -6,19 +6,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Textarea,
+  Checkbox,
+  Select,
+  Button,
+  Group,
+  Text,
+  ScrollArea,
+} from "@mantine/core";
 import { createProduct, updateProduct, type ProductDetail } from "@/lib/api/products";
 import { fetchCategories } from "@/lib/api/categories";
 import { fetchBrands } from "@/lib/api/brands";
@@ -101,11 +101,13 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   });
 
   const categoryItems = useMemo(
-    () => Object.fromEntries((categories?.data ?? []).map((c) => [c.id, c.name])),
+    () => (categories?.data ?? []).map((c) => ({ value: c.id, label: c.name })),
     [categories],
   );
-  const brandItems = useMemo(() => Object.fromEntries((brands?.data ?? []).map((b) => [b.id, b.name])), [brands]);
-  const modelItems = useMemo(() => Object.fromEntries((models?.data ?? []).map((m) => [m.id, m.name])), [models]);
+  const brandItems = useMemo(
+    () => (brands?.data ?? []).map((b) => ({ value: b.id, label: b.name })),
+    [brands],
+  );
 
   const {
     register,
@@ -124,6 +126,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   const filteredModels = useMemo(
     () => (selectedBrandId ? models?.data.filter((m) => m.brandId === selectedBrandId) : models?.data),
     [models, selectedBrandId],
+  );
+  const modelItems = useMemo(
+    () => (filteredModels ?? []).map((m) => ({ value: m.id, label: m.name })),
+    [filteredModels],
   );
 
   useEffect(() => {
@@ -211,167 +217,129 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Product" : "Add Product"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this product's details." : "Add a new product to the catalog."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>{isEditing ? "Edit Product" : "Add Product"}</Text>}
+      size="xl"
+      scrollAreaComponent={ScrollArea.Autosize}
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          {isEditing ? "Update this product's details." : "Add a new product to the catalog."}
+        </Text>
 
-        <form
-          className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-1"
-          onSubmit={handleSubmit(handleFormSubmit)}
-          noValidate
-        >
-          {isEditing ? (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium">SKU</span>
-              <Input value={product!.sku} disabled />
-            </div>
-          ) : null}
+        <form onSubmit={handleSubmit(handleFormSubmit)} noValidate>
+          <Stack gap="md">
+            {isEditing ? (
+              <TextInput label="SKU" value={product!.sku} disabled />
+            ) : null}
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="product-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input id="product-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-          </div>
+            <TextInput
+              label="Name"
+              {...register("name")}
+              error={errors.name?.message}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Category</label>
-              <Select items={categoryItems} value={watch("categoryId")} onValueChange={(v) => setValue("categoryId", v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.data.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.categoryId ? <p className="text-sm text-destructive">{errors.categoryId.message}</p> : null}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Brand</label>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
               <Select
-                items={brandItems}
+                label="Category"
+                data={categoryItems}
+                placeholder="Select category"
+                value={watch("categoryId")}
+                onChange={(v) => setValue("categoryId", v ?? "")}
+                error={errors.categoryId?.message}
+              />
+
+              <Select
+                label="Brand"
+                data={brandItems}
+                placeholder="Select brand"
                 value={watch("brandId")}
-                onValueChange={(v) => {
+                onChange={(v) => {
                   setValue("brandId", v ?? "");
                   setValue("modelId", "");
                 }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brands?.data.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Model</label>
-            <Select items={modelItems} value={watch("modelId")} onValueChange={(v) => setValue("modelId", v ?? "")}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select model (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredModels?.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <Select
+              label="Model"
+              data={modelItems}
+              placeholder="Select model (optional)"
+              value={watch("modelId")}
+              onChange={(v) => setValue("modelId", v ?? "")}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-purchase-price" className="text-sm font-medium">
-                Purchase price
-              </label>
-              <Input id="product-purchase-price" inputMode="decimal" aria-invalid={Boolean(errors.purchasePrice)} {...register("purchasePrice")} />
-              {errors.purchasePrice ? <p className="text-sm text-destructive">{errors.purchasePrice.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-selling-price" className="text-sm font-medium">
-                Selling price
-              </label>
-              <Input id="product-selling-price" inputMode="decimal" aria-invalid={Boolean(errors.sellingPrice)} {...register("sellingPrice")} />
-              {errors.sellingPrice ? <p className="text-sm text-destructive">{errors.sellingPrice.message}</p> : null}
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Purchase price"
+                inputMode="decimal"
+                {...register("purchasePrice")}
+                error={errors.purchasePrice?.message}
+              />
+              <TextInput
+                label="Selling price"
+                inputMode="decimal"
+                {...register("sellingPrice")}
+                error={errors.sellingPrice?.message}
+              />
+            </SimpleGrid>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-wholesale-price" className="text-sm font-medium">
-                Wholesale price
-              </label>
-              <Input id="product-wholesale-price" inputMode="decimal" {...register("wholesalePrice")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-tax" className="text-sm font-medium">
-                Tax %
-              </label>
-              <Input id="product-tax" inputMode="decimal" {...register("taxPercentage")} />
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Wholesale price"
+                inputMode="decimal"
+                {...register("wholesalePrice")}
+                error={errors.wholesalePrice?.message}
+              />
+              <TextInput
+                label="Tax %"
+                inputMode="decimal"
+                {...register("taxPercentage")}
+                error={errors.taxPercentage?.message}
+              />
+            </SimpleGrid>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-warranty" className="text-sm font-medium">
-                Warranty (months)
-              </label>
-              <Input id="product-warranty" inputMode="numeric" {...register("warrantyMonths")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-barcode" className="text-sm font-medium">
-                Barcode
-              </label>
-              <Input id="product-barcode" {...register("barcode")} />
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Warranty (months)"
+                inputMode="numeric"
+                {...register("warrantyMonths")}
+                error={errors.warrantyMonths?.message}
+              />
+              <TextInput
+                label="Barcode"
+                {...register("barcode")}
+                error={errors.barcode?.message}
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="product-description" className="text-sm font-medium">
-              Description
-            </label>
-            <Textarea id="product-description" rows={2} {...register("description")} />
-          </div>
+            <Textarea
+              label="Description"
+              rows={2}
+              {...register("description")}
+              error={errors.description?.message}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
-            {!isEditing ? (
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="product-stock" className="text-sm font-medium">
-                  Opening stock
-                </label>
-                <Input id="product-stock" inputMode="numeric" {...register("stock")} />
-              </div>
-            ) : null}
-            {!isEditing && watch("tracksImei") ? (
-              <div className="col-span-2 flex flex-col gap-1.5">
-                <label htmlFor="product-imeis" className="text-sm font-medium">
-                  Opening IMEI numbers (one per line, matching opening stock)
-                </label>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              {!isEditing ? (
+                <TextInput
+                  label="Opening stock"
+                  inputMode="numeric"
+                  {...register("stock")}
+                  error={errors.stock?.message}
+                />
+              ) : null}
+
+              {!isEditing && watch("tracksImei") ? (
                 <Textarea
-                  id="product-imeis"
+                  label="Opening IMEI numbers"
+                  description="One 15-digit IMEI per line, matching opening stock"
                   rows={3}
-                  placeholder="One 15-digit IMEI per line"
                   inputMode="numeric"
                   {...register("imeis")}
+                  error={errors.imeis?.message}
                   onChange={(event) =>
                     setValue(
                       "imeis",
@@ -383,49 +351,43 @@ export function ProductFormDialog({ open, onOpenChange, product }: ProductFormDi
                     )
                   }
                 />
-                {errors.imeis ? <p className="text-sm text-destructive">{errors.imeis.message}</p> : null}
-              </div>
-            ) : null}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="product-reorder-level" className="text-sm font-medium">
-                Reorder level
-              </label>
-              <Input id="product-reorder-level" inputMode="numeric" {...register("reorderLevel")} />
-            </div>
-          </div>
+              ) : null}
 
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <Checkbox checked={watch("tracksImei")} onCheckedChange={(checked) => setValue("tracksImei", checked === true)} />
-            Tracks IMEI (mobile phones — leave unchecked for quantity-based accessories)
-          </label>
+              <TextInput
+                label="Reorder level"
+                inputMode="numeric"
+                {...register("reorderLevel")}
+                error={errors.reorderLevel?.message}
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
+            <Checkbox
+              label="Tracks IMEI (mobile phones — leave unchecked for quantity-based accessories)"
+              checked={watch("tracksImei")}
+              onChange={(e) => setValue("tracksImei", e.currentTarget.checked)}
+            />
+
             <Select
-              items={STATUS_ITEMS}
+              label="Status"
+              data={[
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
               value={watch("status")}
-              onValueChange={(v) => setValue("status", v as "active" | "inactive")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              onChange={(v) => setValue("status", v as "active" | "inactive")}
+            />
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create product"}
-            </Button>
-          </DialogFooter>
+            <Group justify="flex-end" mt="md">
+              <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+                {isEditing ? "Save changes" : "Create product"}
+              </Button>
+            </Group>
+          </Stack>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Stack>
+    </Modal>
   );
 }

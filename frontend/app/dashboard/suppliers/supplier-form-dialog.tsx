@@ -6,20 +6,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Select,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 import { createSupplier, updateSupplier, type Supplier } from "@/lib/api/suppliers";
 import { getApiErrorMessage } from "@/lib/api-client";
-import { STATUS_ITEMS } from "@/lib/select-items";
 
 const supplierFormSchema = z.object({
   name: z.string().trim().min(1, "Supplier name is required."),
@@ -85,99 +83,85 @@ export function SupplierFormDialog({ open, onOpenChange, supplier }: SupplierFor
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this supplier's details." : "Register a new supplier."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>{isEditing ? "Edit Supplier" : "Add Supplier"}</Text>}
+      size="lg"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          {isEditing ? "Update this supplier's details." : "Register a new supplier."}
+        </Text>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-name" className="text-sm font-medium">
-                Name
-              </label>
-              <Input id="supplier-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-              {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-phone" className="text-sm font-medium">
-                Phone
-              </label>
-              <Input id="supplier-phone" aria-invalid={Boolean(errors.phone)} {...register("phone")} />
-              {errors.phone ? <p className="text-sm text-destructive">{errors.phone.message}</p> : null}
-            </div>
-          </div>
+        <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+          <Stack gap="md">
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Name"
+                {...register("name")}
+                error={errors.name?.message}
+              />
+              <TextInput
+                label="Phone"
+                {...register("phone")}
+                error={errors.phone?.message}
+              />
+            </SimpleGrid>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-contact" className="text-sm font-medium">
-                Contact person
-              </label>
-              <Input id="supplier-contact" {...register("contactPerson")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input id="supplier-email" type="email" {...register("email")} />
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Contact person"
+                {...register("contactPerson")}
+              />
+              <TextInput
+                label="Email"
+                type="email"
+                {...register("email")}
+                error={errors.email?.message}
+              />
+            </SimpleGrid>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="supplier-address" className="text-sm font-medium">
-              Address
-            </label>
-            <Input id="supplier-address" {...register("address")} />
-          </div>
+            <TextInput
+              label="Address"
+              {...register("address")}
+            />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-tax-number" className="text-sm font-medium">
-                Tax number
-              </label>
-              <Input id="supplier-tax-number" {...register("taxNumber")} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="supplier-payment-terms" className="text-sm font-medium">
-                Payment terms
-              </label>
-              <Input id="supplier-payment-terms" placeholder="e.g. Net 30" {...register("paymentTerms")} />
-            </div>
-          </div>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <TextInput
+                label="Tax number"
+                {...register("taxNumber")}
+              />
+              <TextInput
+                label="Payment terms"
+                placeholder="e.g. Net 30"
+                {...register("paymentTerms")}
+              />
+            </SimpleGrid>
 
-          {isEditing ? (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Status</label>
+            {isEditing ? (
               <Select
-                items={STATUS_ITEMS}
+                label="Status"
+                data={[
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ]}
                 value={watch("status")}
-                onValueChange={(v) => setValue("status", v as "active" | "inactive")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
+                onChange={(v) => setValue("status", v as "active" | "inactive")}
+              />
+            ) : null}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create supplier"}
-            </Button>
-          </DialogFooter>
+            <Group justify="flex-end" mt="md">
+              <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+                {isEditing ? "Save changes" : "Create supplier"}
+              </Button>
+            </Group>
+          </Stack>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Stack>
+    </Modal>
   );
 }

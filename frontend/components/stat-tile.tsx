@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, Group, Text, ThemeIcon } from "@mantine/core";
 
 interface StatTileProps {
   label: string;
@@ -9,25 +8,26 @@ interface StatTileProps {
   tone?: "default" | "warning" | "critical";
 }
 
-const TONE_CLASSES: Record<NonNullable<StatTileProps["tone"]>, string> = {
-  default: "text-foreground",
-  warning: "text-amber-600 dark:text-amber-500",
-  critical: "text-destructive",
-};
-
 /** A single KPI tile — value carries meaning via text tokens + an icon, never color alone (dataviz skill). */
 export function StatTile({ label, value, icon: Icon, tone = "default" }: StatTileProps) {
+  const color = tone === "warning" ? "yellow" : tone === "critical" ? "red" : "gray";
+  const textColor = tone === "warning" ? "yellow.8" : tone === "critical" ? "red.8" : undefined;
+
   return (
-    <Card>
-      <CardContent className="flex items-center gap-3 py-4">
-        <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted", TONE_CLASSES[tone])}>
-          <Icon className="size-4.5" />
+    <Card shadow="sm" radius="md" withBorder padding="md">
+      <Group wrap="nowrap" gap="md">
+        <ThemeIcon size={40} radius="md" variant="light" color={color}>
+          <Icon size={20} />
+        </ThemeIcon>
+        <div>
+          <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+            {label}
+          </Text>
+          <Text size="xl" fw={700} c={textColor}>
+            {value}
+          </Text>
         </div>
-        <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground">{label}</span>
-          <span className={cn("text-lg font-semibold", TONE_CLASSES[tone])}>{value}</span>
-        </div>
-      </CardContent>
+      </Group>
     </Card>
   );
 }

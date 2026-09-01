@@ -6,17 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Textarea,
+  Button,
+} from "@mantine/core";
 import { createRole, updateRole, type Role } from "@/lib/api/roles";
 import { getApiErrorMessage } from "@/lib/api-client";
 
@@ -64,41 +61,37 @@ export function RoleFormDialog({ open, onOpenChange, role }: RoleFormDialogProps
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Role" : "Add Role"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Update this role's name and description." : "Create a new role. Assign permissions after creating it."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={isEditing ? "Edit Role" : "Add Role"}
+      size="md"
+    >
+      <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+        <Stack gap="md">
+          <TextInput
+            label="Name"
+            withAsterisk
+            {...register("name")}
+            error={errors.name?.message}
+          />
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="role-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input id="role-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-            {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-          </div>
+          <Textarea
+            label="Description"
+            minRows={2}
+            {...register("description")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="role-description" className="text-sm font-medium">
-              Description
-            </label>
-            <Textarea id="role-description" rows={2} {...register("description")} />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Group justify="flex-end" mt="md">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create role"}
+            <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+              {isEditing ? "Save changes" : "Create role"}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

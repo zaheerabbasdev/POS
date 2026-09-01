@@ -5,19 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Modal, Stack, PasswordInput, Button, Group, Text } from "@mantine/core";
 import { changePassword } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-client";
 
+// Zod schema — unchanged from original
 const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Current password is required."),
@@ -41,14 +33,15 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ChangePasswordValues>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
   const mutation = useMutation({
-    mutationFn: (values: ChangePasswordValues) => changePassword(values.currentPassword, values.newPassword),
+    mutationFn: (values: ChangePasswordValues) =>
+      changePassword(values.currentPassword, values.newPassword),
     onSuccess: () => {
       toast.success("Password changed successfully.");
       reset();
@@ -57,73 +50,62 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const handleClose = () => {
+    reset();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset();
-        onOpenChange(next);
-      }}
+    <Modal
+      opened={open}
+      onClose={handleClose}
+      title="Change Password"
+      size="sm"
+      centered
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Change Password</DialogTitle>
-          <DialogDescription>Choose a new password for your account.</DialogDescription>
-        </DialogHeader>
+      <Text size="sm" c="dimmed" mb="md">
+        Choose a new password for your account.
+      </Text>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="current-password" className="text-sm font-medium">
-              Current password
-            </label>
-            <Input
-              id="current-password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={Boolean(errors.currentPassword)}
-              {...register("currentPassword")}
-            />
-            {errors.currentPassword ? <p className="text-sm text-destructive">{errors.currentPassword.message}</p> : null}
-          </div>
+      <form
+        onSubmit={handleSubmit((values) => mutation.mutate(values))}
+        noValidate
+      >
+        <Stack gap="sm">
+          <PasswordInput
+            id="current-password"
+            label="Current password"
+            autoComplete="current-password"
+            error={errors.currentPassword?.message}
+            {...register("currentPassword")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="new-password" className="text-sm font-medium">
-              New password
-            </label>
-            <Input
-              id="new-password"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={Boolean(errors.newPassword)}
-              {...register("newPassword")}
-            />
-            {errors.newPassword ? <p className="text-sm text-destructive">{errors.newPassword.message}</p> : null}
-          </div>
+          <PasswordInput
+            id="new-password"
+            label="New password"
+            autoComplete="new-password"
+            error={errors.newPassword?.message}
+            {...register("newPassword")}
+          />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="confirm-new-password" className="text-sm font-medium">
-              Confirm new password
-            </label>
-            <Input
-              id="confirm-new-password"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={Boolean(errors.confirmPassword)}
-              {...register("confirmPassword")}
-            />
-            {errors.confirmPassword ? <p className="text-sm text-destructive">{errors.confirmPassword.message}</p> : null}
-          </div>
+          <PasswordInput
+            id="confirm-new-password"
+            label="Confirm new password"
+            autoComplete="new-password"
+            error={errors.confirmPassword?.message}
+            {...register("confirmPassword")}
+          />
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Group justify="flex-end" gap="xs" mt="xs">
+            <Button variant="subtle" color="gray" type="button" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : "Change password"}
+            <Button type="submit" loading={mutation.isPending}>
+              Change password
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

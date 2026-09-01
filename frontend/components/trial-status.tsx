@@ -3,7 +3,7 @@
 import { format } from "date-fns";
 import { CalendarClock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert } from "@mantine/core";
 import { fetchCurrentSubscription } from "@/lib/api/subscription";
 
 const URGENT_THRESHOLD_DAYS = 3;
@@ -46,10 +46,13 @@ export function TrialStatus() {
   }
 
   return (
-    <Alert variant={isUrgent ? "destructive" : "default"}>
-      <CalendarClock className="size-4" />
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>{message}</AlertDescription>
+    <Alert 
+      variant="light" 
+      color={isUrgent ? "red" : "blue"} 
+      title={title} 
+      icon={<CalendarClock size={16} />}
+    >
+      {message}
     </Alert>
   );
 }

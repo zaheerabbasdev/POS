@@ -1,15 +1,15 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@mantine/core";
 import type { ShopStatus } from "@/lib/api/shops";
 
-const VARIANTS: Record<ShopStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  TRIAL: { label: "Trial", variant: "outline" },
-  ACTIVE: { label: "Active", variant: "default" },
-  EXPIRED: { label: "Expired", variant: "destructive" },
-  SUSPENDED: { label: "Suspended", variant: "destructive" },
-  CANCELLED: { label: "Cancelled", variant: "secondary" },
+const VARIANTS: Record<ShopStatus, { label: string; color: string }> = {
+  TRIAL: { label: "Trial", color: "indigo" },
+  ACTIVE: { label: "Active", color: "green" },
+  EXPIRED: { label: "Expired", color: "red" },
+  SUSPENDED: { label: "Suspended", color: "red" },
+  CANCELLED: { label: "Cancelled", color: "gray" },
 };
 
 export function ShopStatusBadge({ status }: { status: ShopStatus }) {
-  const { label, variant } = VARIANTS[status];
-  return <Badge variant={variant}>{label}</Badge>;
+  const { label, color } = VARIANTS[status];
+  return <Badge color={color} variant="light">{label}</Badge>;
 }

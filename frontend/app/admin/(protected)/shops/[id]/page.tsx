@@ -3,12 +3,19 @@
 import { use, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Stack,
+  Group,
+  Button,
+  Card,
+  Text,
+  Modal,
+  Textarea,
+  NumberInput,
+  SimpleGrid,
+  Skeleton,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
 import { ShopStatusBadge } from "@/components/shop-status-badge";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { RequirePermission } from "@/components/require-permission";
@@ -27,11 +34,10 @@ function ExtendTrialDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const queryClient = useQueryClient();
-  const [days, setDays] = useState<number>(30);
-  const [customDays, setCustomDays] = useState("");
+  const [days, setDays] = useState<number | string>(30);
   const [reason, setReason] = useState("");
 
-  const effectiveDays = customDays ? Number(customDays) : days;
+  const effectiveDays = Number(days) || 0;
 
   const mutation = useMutation({
     mutationFn: () => extendTrial(shopId, { days: effectiveDays, reason }),
@@ -40,68 +46,59 @@ function ExtendTrialDialog({
       toast.success(`Trial extended by ${effectiveDays} day(s).`);
       onOpenChange(false);
       setReason("");
-      setCustomDays("");
+      setDays(30);
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Extend free trial</DialogTitle>
-          <DialogDescription>Adds days to the current trial (or starts fresh from today if it already expired).</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap gap-2">
-            {DAY_PRESETS.map((preset) => (
-              <Button
-                key={preset}
-                type="button"
-                variant={!customDays && days === preset ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setDays(preset);
-                  setCustomDays("");
-                }}
-              >
-                {preset} Days
-              </Button>
-            ))}
-            <Input
-              type="number"
-              min={1}
-              placeholder="Custom"
-              className="w-24"
-              value={customDays}
-              onChange={(e) => setCustomDays(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="extend-reason" className="text-sm font-medium">
-              Reason
-            </label>
-            <Textarea
-              id="extend-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this trial being extended?"
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
+    <Modal opened={open} onClose={() => onOpenChange(false)} title="Extend free trial">
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">Adds days to the current trial (or starts fresh from today if it already expired).</Text>
+        
+        <Group gap="xs">
+          {DAY_PRESETS.map((preset) => (
+            <Button
+              key={preset}
+              variant={days === preset ? "filled" : "outline"}
+              color="indigo"
+              size="sm"
+              onClick={() => setDays(preset)}
+            >
+              {preset} Days
+            </Button>
+          ))}
+          <NumberInput
+            min={1}
+            placeholder="Custom"
+            value={days}
+            onChange={setDays}
+            w={100}
+          />
+        </Group>
+
+        <Textarea
+          label="Reason"
+          placeholder="Why is this trial being extended?"
+          value={reason}
+          onChange={(e) => setReason(e.currentTarget.value)}
+        />
+
+        <Group justify="flex-end" mt="md">
+          <Button variant="default" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
             Cancel
           </Button>
           <Button
+            color="indigo"
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !reason.trim() || !effectiveDays || effectiveDays <= 0}
+            disabled={mutation.isPending || !reason.trim() || effectiveDays <= 0}
+            loading={mutation.isPending}
           >
-            {mutation.isPending ? "Extending..." : "Extend Trial"}
+            Extend Trial
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </Group>
+      </Stack>
+    </Modal>
   );
 }
 
@@ -140,10 +137,10 @@ function ShopDetailPageContent({ id }: { id: string }) {
 
   if (isLoading || !shop) {
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full max-w-lg" />
-      </div>
+      <Stack gap="lg">
+        <Skeleton height={32} width={300} />
+        <Skeleton height={300} width="100%" radius="md" />
+      </Stack>
     );
   }
 
@@ -151,76 +148,71 @@ function ShopDetailPageContent({ id }: { id: string }) {
   const isArchived = shop.status === "CANCELLED";
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            {shop.name} <ShopStatusBadge status={shop.status} />
-          </h1>
-          <p className="text-muted-foreground">Created {new Date(shop.createdAt).toLocaleDateString()}</p>
-        </div>
+    <Stack gap="lg">
+      <Group justify="space-between" align="flex-start">
+        <PageHeader
+          title={
+            <Group gap="sm">
+              {shop.name}
+              <ShopStatusBadge status={shop.status} />
+            </Group>
+          }
+          description={`Created ${new Date(shop.createdAt).toLocaleDateString()}`}
+        />
         {!isArchived ? (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setExtendOpen(true)} disabled={!shop.subscription}>
+          <Group gap="sm">
+            <Button variant="default" onClick={() => setExtendOpen(true)} disabled={!shop.subscription}>
               Extend Trial
             </Button>
-            <Button variant={isSuspended ? "default" : "destructive"} onClick={() => setStatusConfirmOpen(true)}>
+            <Button color={isSuspended ? "green" : "red"} onClick={() => setStatusConfirmOpen(true)}>
               {isSuspended ? "Activate" : "Suspend"}
             </Button>
-            <Button variant="destructive" onClick={() => setArchiveConfirmOpen(true)}>
+            <Button color="red" variant="outline" onClick={() => setArchiveConfirmOpen(true)}>
               Archive Shop
             </Button>
-          </div>
+          </Group>
         ) : null}
-      </div>
+      </Group>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Shop information</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <Card shadow="sm" radius="md" withBorder>
+          <Text fw={600} size="lg" mb="md">Shop information</Text>
+          <dl className="grid grid-cols-2 gap-y-2 text-sm">
+            <dt className="text-muted-foreground">Owner</dt>
+            <dd>{shop.owner?.name ?? "—"}</dd>
+            <dt className="text-muted-foreground">Owner username</dt>
+            <dd>{shop.owner?.username ?? "—"}</dd>
+            <dt className="text-muted-foreground">Owner email</dt>
+            <dd>{shop.owner?.email ?? "—"}</dd>
+            <dt className="text-muted-foreground">Phone</dt>
+            <dd>{shop.phone ?? "—"}</dd>
+            <dt className="text-muted-foreground">Email</dt>
+            <dd>{shop.email ?? "—"}</dd>
+            <dt className="text-muted-foreground">Address</dt>
+            <dd>{[shop.address, shop.city, shop.country].filter(Boolean).join(", ") || "—"}</dd>
+          </dl>
+        </Card>
+
+        <Card shadow="sm" radius="md" withBorder>
+          <Text fw={600} size="lg" mb="md">Subscription</Text>
+          {shop.subscription ? (
             <dl className="grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-muted-foreground">Owner</dt>
-              <dd>{shop.owner?.name ?? "—"}</dd>
-              <dt className="text-muted-foreground">Owner username</dt>
-              <dd>{shop.owner?.username ?? "—"}</dd>
-              <dt className="text-muted-foreground">Owner email</dt>
-              <dd>{shop.owner?.email ?? "—"}</dd>
-              <dt className="text-muted-foreground">Phone</dt>
-              <dd>{shop.phone ?? "—"}</dd>
-              <dt className="text-muted-foreground">Email</dt>
-              <dd>{shop.email ?? "—"}</dd>
-              <dt className="text-muted-foreground">Address</dt>
-              <dd>{[shop.address, shop.city, shop.country].filter(Boolean).join(", ") || "—"}</dd>
+              <dt className="text-muted-foreground">Plan</dt>
+              <dd>{shop.subscription.plan.name}</dd>
+              <dt className="text-muted-foreground">Status</dt>
+              <dd>{shop.subscription.status}</dd>
+              <dt className="text-muted-foreground">Started</dt>
+              <dd>{new Date(shop.subscription.startDate).toLocaleDateString()}</dd>
+              <dt className="text-muted-foreground">Ends</dt>
+              <dd>{shop.subscription.endDate ? new Date(shop.subscription.endDate).toLocaleDateString() : "No end date"}</dd>
+              <dt className="text-muted-foreground">Payment</dt>
+              <dd>{shop.subscription.paymentStatus}</dd>
             </dl>
-          </CardContent>
+          ) : (
+            <Text size="sm" c="dimmed">No subscription on record.</Text>
+          )}
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Subscription</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {shop.subscription ? (
-              <dl className="grid grid-cols-2 gap-y-2 text-sm">
-                <dt className="text-muted-foreground">Plan</dt>
-                <dd>{shop.subscription.plan.name}</dd>
-                <dt className="text-muted-foreground">Status</dt>
-                <dd>{shop.subscription.status}</dd>
-                <dt className="text-muted-foreground">Started</dt>
-                <dd>{new Date(shop.subscription.startDate).toLocaleDateString()}</dd>
-                <dt className="text-muted-foreground">Ends</dt>
-                <dd>{shop.subscription.endDate ? new Date(shop.subscription.endDate).toLocaleDateString() : "No end date"}</dd>
-                <dt className="text-muted-foreground">Payment</dt>
-                <dd>{shop.subscription.paymentStatus}</dd>
-              </dl>
-            ) : (
-              <p className="text-sm text-muted-foreground">No subscription on record.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      </SimpleGrid>
 
       <ExtendTrialDialog shopId={id} open={extendOpen} onOpenChange={setExtendOpen} />
       <ConfirmDialog
@@ -245,7 +237,7 @@ function ShopDetailPageContent({ id }: { id: string }) {
         isPending={archiveMutation.isPending}
         onConfirm={() => archiveMutation.mutate()}
       />
-    </div>
+    </Stack>
   );
 }
 

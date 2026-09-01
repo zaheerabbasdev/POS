@@ -3,9 +3,16 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Store, CheckCircle2, Hourglass, AlarmClockCheck, XCircle, Ban, Users, BadgeDollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Stack,
+  SimpleGrid,
+  Card,
+  Text,
+  Skeleton,
+  Anchor,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatTile } from "@/components/stat-tile";
 import { ShopStatusBadge } from "@/components/shop-status-badge";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -19,22 +26,20 @@ export default function AdminDashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {user ? `Welcome, ${user.name}` : <Skeleton className="h-8 w-64" />}
-        </h1>
-        <p className="text-muted-foreground">Platform health, at a glance.</p>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title={user ? `Welcome, ${user.name}` : <Skeleton height={32} width={250} />}
+        description="Platform health, at a glance."
+      />
 
       {isLoading || !summary ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-[68px] w-full" />
+            <Skeleton key={i} height={80} radius="md" />
           ))}
-        </div>
+        </SimpleGrid>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg">
           <StatTile label="Total Shops" value={summary.totalShops} icon={Store} />
           <StatTile label="Active Shops" value={summary.activeShops} icon={CheckCircle2} />
           <StatTile label="Trial Shops" value={summary.trialShops} icon={Hourglass} />
@@ -58,56 +63,34 @@ export default function AdminDashboardPage() {
           />
           <StatTile label="Total Users" value={summary.totalUsers} icon={Users} />
           <StatTile label="New Subs Revenue (Month)" value={summary.newSubscriptionRevenueThisMonth} icon={BadgeDollarSign} />
-        </div>
+        </SimpleGrid>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Shops</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Shop</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : summary && summary.recentShops.length > 0 ? (
-                summary.recentShops.map((shop) => (
-                  <TableRow key={shop.id}>
-                    <TableCell>
-                      <Link href={`/admin/shops/${shop.id}`} className="font-medium hover:underline">
-                        {shop.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{shop.ownerName ?? "—"}</TableCell>
-                    <TableCell>
-                      <ShopStatusBadge status={shop.status} />
-                    </TableCell>
-                    <TableCell>{new Date(shop.createdAt).toLocaleDateString()}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No shops yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <Text fw={600} size="lg" p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+          Recent Shops
+        </Text>
+        <DataTable
+          data={summary?.recentShops ?? []}
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No shops yet."
+          columns={[
+            {
+              key: "shop",
+              header: "Shop",
+              render: (r) => (
+                <Anchor component={Link} href={`/admin/shops/${r.id}`} fw={500} c="indigo">
+                  {r.name}
+                </Anchor>
+              ),
+            },
+            { key: "owner", header: "Owner", render: (r) => <Text size="sm">{r.ownerName ?? "—"}</Text> },
+            { key: "status", header: "Status", render: (r) => <ShopStatusBadge status={r.status} /> },
+            { key: "created", header: "Created", render: (r) => <Text size="sm">{new Date(r.createdAt).toLocaleDateString()}</Text> },
+          ]}
+        />
       </Card>
-    </div>
+    </Stack>
   );
 }

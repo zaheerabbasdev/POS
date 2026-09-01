@@ -3,10 +3,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Stack,
+  Group,
+  Button,
+  Badge,
+  Card,
+  Text,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { RequirePermission } from "@/components/require-permission";
 import { fetchSubscriptionPlans, type SubscriptionPlan } from "@/lib/api/subscription-plans";
 import { PlanFormDialog } from "./plan-form-dialog";
@@ -31,82 +37,72 @@ function AdminSubscriptionPlansPageContent() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Subscription Plans</h1>
-          <p className="text-muted-foreground">Plans shops can subscribe to from their own Subscription page.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Create Plan
+    <Stack gap="lg">
+      <Group justify="space-between" align="flex-start">
+        <PageHeader
+          title="Subscription Plans"
+          description="Plans shops can subscribe to from their own Subscription page."
+        />
+        <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+          Create Plan
         </Button>
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Billing</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : plans && plans.length > 0 ? (
-                plans.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">{plan.name}</TableCell>
-                    <TableCell>
-                      {Number(plan.price) > 0 ? `${plan.currency} ${plan.price}` : "Free"}
-                    </TableCell>
-                    <TableCell>{plan.billingInterval}</TableCell>
-                    <TableCell>{plan.durationDays > 0 ? `${plan.durationDays} days` : "No expiry"}</TableCell>
-                    <TableCell>
-                      {plan.isTrial ? <Badge variant="outline">Trial</Badge> : <Badge variant="secondary">Paid</Badge>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={plan.isActive ? "default" : "secondary"}>
-                        {plan.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(plan)}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No plans yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <DataTable
+          data={plans ?? []}
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No plans yet."
+          columns={[
+            { key: "name", header: "Name", render: (r) => <Text size="sm" fw={500}>{r.name}</Text> },
+            {
+              key: "price",
+              header: "Price",
+              render: (r) => <Text size="sm">{Number(r.price) > 0 ? `${r.currency} ${r.price}` : "Free"}</Text>,
+            },
+            { key: "billing", header: "Billing", render: (r) => <Text size="sm">{r.billingInterval}</Text> },
+            { key: "duration", header: "Duration", render: (r) => <Text size="sm">{r.durationDays > 0 ? `${r.durationDays} days` : "No expiry"}</Text> },
+            {
+              key: "type",
+              header: "Type",
+              render: (r) => (
+                <Badge variant={r.isTrial ? "outline" : "light"} color={r.isTrial ? "indigo" : "gray"}>
+                  {r.isTrial ? "Trial" : "Paid"}
+                </Badge>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => (
+                <Badge variant="light" color={r.isActive ? "green" : "gray"}>
+                  {r.isActive ? "Active" : "Inactive"}
+                </Badge>
+              ),
+            },
+            {
+              key: "actions",
+              header: "Actions",
+              align: "right",
+              render: (r) => (
+                <Button variant="subtle" size="xs" onClick={() => openEdit(r)}>
+                  Edit
+                </Button>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       <PlanFormDialog open={formOpen} onOpenChange={setFormOpen} plan={editingPlan} />
-    </div>
+    </Stack>
   );
 }
 
 export default function AdminSubscriptionPlansPage() {
   return (
-    <RequirePermission permissions={["PLATFORM_PLAN_VIEW", "PLATFORM_PLAN_MANAGE"]}>
+    <RequirePermission permissions={["PLATFORM_PLAN_VIEW"]}>
       <AdminSubscriptionPlansPageContent />
     </RequirePermission>
   );

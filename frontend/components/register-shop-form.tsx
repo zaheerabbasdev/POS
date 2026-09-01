@@ -7,10 +7,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Stack,
+  SimpleGrid,
+  TextInput,
+  PasswordInput,
+  Button,
+  Card,
+  Text,
+  Alert,
+  Anchor,
+  Group,
+} from "@mantine/core";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { registerShop } from "@/lib/api/registration";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { currentUserQueryKey } from "@/hooks/use-current-user";
@@ -94,20 +103,20 @@ export function RegisterShopForm() {
 
   if (mutation.isSuccess) {
     return (
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-xl">You&apos;re all set 🎉</CardTitle>
-          <CardDescription>Your shop has been registered.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <Alert>
-            <AlertDescription>
-              Your 1-month free trial is active — no payment required.
-              {trialEndDate ? ` It runs until ${new Date(trialEndDate).toLocaleDateString()}.` : null}
-            </AlertDescription>
+      <Card shadow="sm" radius="md" withBorder p="xl" w="100%" maw={400}>
+        <Stack gap="md">
+          <Stack gap={0}>
+            <Text fw={700} size="xl">You&apos;re all set 🎉</Text>
+            <Text size="sm" c="dimmed">Your shop has been registered.</Text>
+          </Stack>
+          
+          <Alert icon={<CheckCircle2 size={16} />} color="teal" variant="light">
+            Your 1-month free trial is active — no payment required.
+            {trialEndDate ? ` It runs until ${new Date(trialEndDate).toLocaleDateString()}.` : null}
           </Alert>
+
           <Button
-            className="w-full"
+            color="indigo"
             onClick={() => {
               router.push("/dashboard");
               router.refresh();
@@ -115,112 +124,122 @@ export function RegisterShopForm() {
           >
             Continue to POS
           </Button>
-        </CardContent>
+        </Stack>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle className="text-xl">Register your shop</CardTitle>
-        <CardDescription>Set up your shop and start a 1-month free trial — no payment required.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card shadow="sm" radius="md" withBorder p="xl" w="100%" maw={600}>
+      <Stack gap="md">
+        <Stack gap={0}>
+          <Text fw={700} size="xl">Register your shop</Text>
+          <Text size="sm" c="dimmed">Set up your shop and start a 1-month free trial — no payment required.</Text>
+        </Stack>
+
         <form
-          className="flex flex-col gap-5"
           onSubmit={handleSubmit((values) => {
             setFormError(null);
             mutation.mutate(values);
           })}
           noValidate
         >
-          {formError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{formError}</AlertDescription>
-            </Alert>
-          ) : null}
+          <Stack gap="lg">
+            {formError && (
+              <Alert icon={<AlertCircle size={16} />} color="red" variant="light">
+                {formError}
+              </Alert>
+            )}
 
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-muted-foreground">Shop information</h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Shop name" htmlFor="shopName" error={errors.shopName?.message}>
-                <Input id="shopName" autoFocus {...register("shopName")} />
-              </Field>
-              <Field label="Phone" htmlFor="shopPhone" error={errors.shopPhone?.message}>
-                <Input id="shopPhone" autoComplete="tel" {...register("shopPhone")} />
-              </Field>
-              <Field label="Email (optional)" htmlFor="shopEmail" error={errors.shopEmail?.message}>
-                <Input id="shopEmail" type="email" {...register("shopEmail")} />
-              </Field>
-              <Field label="City (optional)" htmlFor="shopCity" error={errors.shopCity?.message}>
-                <Input id="shopCity" {...register("shopCity")} />
-              </Field>
-              <Field label="Country (optional)" htmlFor="shopCountry" error={errors.shopCountry?.message}>
-                <Input id="shopCountry" {...register("shopCountry")} />
-              </Field>
-              <Field label="Address (optional)" htmlFor="shopAddress" error={errors.shopAddress?.message}>
-                <Input id="shopAddress" {...register("shopAddress")} />
-              </Field>
-            </div>
-          </div>
+            <Stack gap="sm">
+              <Text size="sm" fw={600} c="dimmed" tt="uppercase">Shop information</Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <TextInput
+                  label="Shop name"
+                  autoFocus
+                  {...register("shopName")}
+                  error={errors.shopName?.message}
+                />
+                <TextInput
+                  label="Phone"
+                  autoComplete="tel"
+                  {...register("shopPhone")}
+                  error={errors.shopPhone?.message}
+                />
+                <TextInput
+                  label="Email (optional)"
+                  type="email"
+                  {...register("shopEmail")}
+                  error={errors.shopEmail?.message}
+                />
+                <TextInput
+                  label="City (optional)"
+                  {...register("shopCity")}
+                  error={errors.shopCity?.message}
+                />
+                <TextInput
+                  label="Country (optional)"
+                  {...register("shopCountry")}
+                  error={errors.shopCountry?.message}
+                />
+                <TextInput
+                  label="Address (optional)"
+                  {...register("shopAddress")}
+                  error={errors.shopAddress?.message}
+                />
+              </SimpleGrid>
+            </Stack>
 
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-muted-foreground">Owner login information</h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Owner name" htmlFor="ownerName" error={errors.ownerName?.message}>
-                <Input id="ownerName" {...register("ownerName")} />
-              </Field>
-              <Field label="Username" htmlFor="username" error={errors.username?.message}>
-                <Input id="username" autoComplete="username" {...register("username")} />
-              </Field>
-              <Field label="Email" htmlFor="email" error={errors.email?.message}>
-                <Input id="email" type="email" autoComplete="email" {...register("email")} />
-              </Field>
-              <div />
-              <Field label="Password" htmlFor="password" error={errors.password?.message}>
-                <Input id="password" type="password" autoComplete="new-password" {...register("password")} />
-              </Field>
-              <Field label="Confirm password" htmlFor="confirmPassword" error={errors.confirmPassword?.message}>
-                <Input id="confirmPassword" type="password" autoComplete="new-password" {...register("confirmPassword")} />
-              </Field>
-            </div>
-          </div>
+            <Stack gap="sm">
+              <Text size="sm" fw={600} c="dimmed" tt="uppercase">Owner login information</Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <TextInput
+                  label="Owner name"
+                  {...register("ownerName")}
+                  error={errors.ownerName?.message}
+                />
+                <TextInput
+                  label="Username"
+                  autoComplete="username"
+                  {...register("username")}
+                  error={errors.username?.message}
+                />
+                <TextInput
+                  label="Email"
+                  type="email"
+                  autoComplete="email"
+                  {...register("email")}
+                  error={errors.email?.message}
+                />
+                <div />
+                <PasswordInput
+                  label="Password"
+                  autoComplete="new-password"
+                  {...register("password")}
+                  error={errors.password?.message}
+                />
+                <PasswordInput
+                  label="Confirm password"
+                  autoComplete="new-password"
+                  {...register("confirmPassword")}
+                  error={errors.confirmPassword?.message}
+                />
+              </SimpleGrid>
+            </Stack>
 
-          <Button type="submit" className="mt-2 w-full" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Creating your shop..." : "Register Shop"}
-          </Button>
+            <Button type="submit" color="indigo" fullWidth disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+              Register Shop
+            </Button>
+          </Stack>
         </form>
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <Text size="sm" ta="center" c="dimmed" mt="xs">
           Already have an account?{" "}
-          <Link href="/login" className="underline underline-offset-2 hover:text-foreground">
+          <Anchor component={Link} href="/login" fw={500}>
             Sign in
-          </Link>
-        </p>
-      </CardContent>
+          </Anchor>
+        </Text>
+      </Stack>
     </Card>
-  );
-}
-
-function Field({
-  label,
-  htmlFor,
-  error,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium">
-        {label}
-      </label>
-      {children}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-    </div>
   );
 }

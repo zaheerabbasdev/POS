@@ -3,17 +3,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  SimpleGrid,
+  TextInput,
+  Select,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 import { fetchProducts } from "@/lib/api/products";
 import { addRepairItem } from "@/lib/api/repairs";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -26,17 +25,20 @@ interface AddPartDialogProps {
 
 export function AddPartDialog({ open, onOpenChange, repairId }: AddPartDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {open ? <AddPartDialogBody repairId={repairId} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>Record Part Used</Text>}
+      size="md"
+    >
+      {open ? <AddPartDialogBody repairId={repairId} onOpenChange={onOpenChange} /> : null}
+    </Modal>
   );
 }
 
 function AddPartDialogBody({ repairId, onOpenChange }: { repairId: string; onOpenChange: (open: boolean) => void }) {
   const queryClient = useQueryClient();
-  const [productId, setProductId] = useState("");
+  const [productId, setProductId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
 
@@ -45,12 +47,15 @@ function AddPartDialogBody({ repairId, onOpenChange }: { repairId: string; onOpe
     queryFn: () => fetchProducts({ status: "active", limit: 100 }),
   });
   const productItems = useMemo(
-    () => Object.fromEntries((products?.data ?? []).map((p) => [p.id, `${p.name} (${p.sku})`])),
+    () => (products?.data ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
     [products],
   );
 
   const mutation = useMutation({
-    mutationFn: () => addRepairItem(repairId, { productId, quantity: Number(quantity), unitPrice: Number(unitPrice) }),
+    mutationFn: () => {
+      if (!productId) throw new Error("Product ID is required");
+      return addRepairItem(repairId, { productId, quantity: Number(quantity), unitPrice: Number(unitPrice) });
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["repairs", repairId] });
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
@@ -61,56 +66,48 @@ function AddPartDialogBody({ repairId, onOpenChange }: { repairId: string; onOpe
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Record Part Used</DialogTitle>
-        <DialogDescription>Deducts the quantity from stock and adds it to this repair.</DialogDescription>
-      </DialogHeader>
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">Deducts the quantity from stock and adds it to this repair.</Text>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Part / Product</label>
-          <Select items={productItems} value={productId} onValueChange={(v) => setProductId(v ?? "")}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select product" />
-            </SelectTrigger>
-            <SelectContent>
-              {products?.data.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name} ({p.sku})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <Stack gap="sm">
+        <Select
+          label="Part / Product"
+          placeholder="Select product"
+          data={productItems}
+          value={productId}
+          onChange={setProductId}
+          searchable
+        />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="part-quantity" className="text-sm font-medium">
-              Quantity
-            </label>
-            <Input id="part-quantity" inputMode="numeric" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="part-unit-price" className="text-sm font-medium">
-              Unit Price
-            </label>
-            <Input id="part-unit-price" inputMode="decimal" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} />
-          </div>
-        </div>
-      </div>
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <TextInput
+            label="Quantity"
+            inputMode="numeric"
+            value={quantity}
+            onChange={(e) => setQuantity(e.currentTarget.value)}
+          />
+          <TextInput
+            label="Unit Price"
+            inputMode="decimal"
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(e.currentTarget.value)}
+          />
+        </SimpleGrid>
+      </Stack>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+      <Group justify="flex-end" mt="md">
+        <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
         <Button
+          color="indigo"
           disabled={!productId || !quantity || !unitPrice || mutation.isPending}
+          loading={mutation.isPending}
           onClick={() => mutation.mutate()}
         >
-          {mutation.isPending ? "Recording..." : "Add Part"}
+          Add Part
         </Button>
-      </DialogFooter>
-    </>
+      </Group>
+    </Stack>
   );
 }

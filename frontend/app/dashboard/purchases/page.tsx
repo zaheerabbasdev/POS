@@ -3,20 +3,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { Paper, Stack, Group, TextInput, Button, Text, Anchor, Box } from "@mantine/core";
 import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
+import { StatusBadge } from "@/components/status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { MoneyText } from "@/components/currency-display";
 import { fetchPurchases } from "@/lib/api/purchases";
-
-const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive"> = {
-  PAID: "default",
-  PARTIAL: "secondary",
-  PENDING: "destructive",
-};
 
 const PAGE_SIZE = 50;
 
@@ -24,95 +18,112 @@ export default function PurchasesPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
+  // Unchanged TanStack Query
   const { data, isLoading } = useQuery({
     queryKey: ["purchases", { page }],
     queryFn: () => fetchPurchases({ page, limit: PAGE_SIZE }),
   });
 
   const filtered = search
-    ? data?.data.filter(
-        (p) => p.invoiceNo.toLowerCase().includes(search.toLowerCase()) || p.supplier.toLowerCase().includes(search.toLowerCase()),
+    ? (data?.data ?? []).filter(
+        (p) =>
+          p.invoiceNo?.toLowerCase().includes(search.toLowerCase()) ||
+          p.supplier?.toLowerCase().includes(search.toLowerCase()),
       )
-    : data?.data;
+    : (data?.data ?? []);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Purchases</h1>
-          <p className="text-muted-foreground">Supplier purchases, stock increases, and purchase invoices.</p>
-        </div>
-        <Button nativeButton={false} render={<Link href="/dashboard/purchases/new" />}>
-          <Plus /> New Purchase
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Purchases"
+        description="Supplier purchases, stock increases, and purchase invoices."
+        actions={
+          <Button
+            component={Link}
+            href="/dashboard/purchases/new"
+            leftSection={<Plus size={16} />}
+            color="indigo"
+          >
+            New Purchase
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by invoice # or supplier..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search invoice # or supplier…"
+          leftSection={<Search size={15} />}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filtered && filtered.length > 0 ? (
-                filtered.map((purchase) => (
-                  <TableRow key={purchase.id}>
-                    <TableCell className="font-mono text-xs">{purchase.invoiceNo}</TableCell>
-                    <TableCell className="font-medium">{purchase.supplier}</TableCell>
-                    <TableCell className="text-right">{purchase.totalAmount}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[purchase.status] ?? "outline"}>{purchase.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/dashboard/purchases/${purchase.id}`} />}>
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    No purchases found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={filtered}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching purchases" : "No purchases yet"}
+          emptyDescription={
+            search
+              ? "No purchases match your search."
+              : "Purchases will appear here once the first purchase is recorded."
+          }
+          columns={[
+            {
+              key: "invoice",
+              header: "Invoice #",
+              render: (p) => (
+                <Anchor
+                  component={Link}
+                  href={`/dashboard/purchases/${p.id}`}
+                  size="sm"
+                  style={{ fontFamily: "var(--mantine-font-family-monospace)", fontWeight: 500 }}
+                >
+                  {p.invoiceNo}
+                </Anchor>
+              ),
+              minWidth: 130,
+            },
+            {
+              key: "supplier",
+              header: "Supplier",
+              render: (p) => (
+                <Text size="sm" fw={500}>
+                  {p.supplier}
+                </Text>
+              ),
+            },
+            {
+              key: "total",
+              header: "Total",
+              align: "right",
+              render: (p) => <MoneyText value={p.totalAmount} fw={500} />,
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (p) => <StatusBadge status={p.status} type="purchase" />,
+            },
+          ]}
         />
-      ) : null}
-    </div>
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
+    </Stack>
   );
 }

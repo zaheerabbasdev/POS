@@ -4,27 +4,18 @@ import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ImageIcon, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, Stack, Text, Group, ActionIcon } from "@mantine/core";
 import { uploadImage, deleteImage, type UploadType } from "@/lib/api/uploads";
 import { getApiErrorMessage } from "@/lib/api-client";
 
 interface ImageUploadFieldProps {
   type: UploadType;
-  /** Omit for "logo" — the shop logo isn't tied to a specific record, backend treats it as a singleton. */
   entityId?: string;
   imageUrl: string | null;
   label: string;
-  /** Query keys to invalidate after a successful upload/remove (e.g. the entity's list + detail queries). */
   invalidateQueryKeys: unknown[][];
 }
 
-/**
- * A small photo/attachment control — API Spec Chapter 52's "Frontend
- * Upload → Backend Validation → Cloudinary Upload → Save URL → Database"
- * flow, reused across Products, Employees, Customers, Repairs, and the shop
- * Logo. Only usable once the entity already exists (needs a real
- * entityId) — the one exception is "logo", which has no entityId at all.
- */
 export function ImageUploadField({ type, entityId, imageUrl, label, invalidateQueryKeys }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
@@ -55,46 +46,66 @@ export function ImageUploadField({ type, entityId, imageUrl, label, invalidateQu
   const pending = uploadMutation.isPending || removeMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium">{label}</span>
-      <div className="flex items-center gap-3">
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+    <Stack gap="xs">
+      <Text size="sm" fw={500}>{label}</Text>
+      <Group gap="md">
+        <div style={{
+          width: 64,
+          height: 64,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          borderRadius: "var(--mantine-radius-md)",
+          border: "1px solid var(--mantine-color-gray-3)",
+          backgroundColor: "var(--mantine-color-gray-0)"
+        }}>
           {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- external Cloudinary URLs, not a local asset
-            <img src={imageUrl} alt={label} className="size-full object-cover" />
+            <img src={imageUrl} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
-            <ImageIcon className="size-6 text-muted-foreground" />
+            <ImageIcon size={24} style={{ color: "var(--mantine-color-gray-5)" }} />
           )}
         </div>
-        <div className="flex flex-col gap-1.5">
+        <Stack gap="xs">
           <input
             ref={inputRef}
             type="file"
             accept="image/*"
-            className="hidden"
+            style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) uploadMutation.mutate(file);
               e.target.value = "";
             }}
           />
-          <Button type="button" variant="outline" size="sm" disabled={pending} onClick={() => inputRef.current?.click()}>
-            {uploadMutation.isPending ? "Uploading..." : imageUrl ? "Replace" : "Upload"}
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            disabled={pending}
+            loading={uploadMutation.isPending}
+            onClick={() => inputRef.current?.click()}
+          >
+            {imageUrl ? "Replace" : "Upload"}
           </Button>
           {imageUrl ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="subtle"
+              color="red"
               size="sm"
-              className="text-destructive"
               disabled={pending}
+              loading={removeMutation.isPending}
               onClick={() => removeMutation.mutate()}
+              leftSection={<X size={16} />}
+              style={{ justifyContent: "flex-start", padding: "0 4px" }}
             >
-              <X /> {removeMutation.isPending ? "Removing..." : "Remove"}
+              Remove
             </Button>
           ) : null}
-        </div>
-      </div>
-    </div>
+        </Stack>
+      </Group>
+    </Stack>
   );
 }

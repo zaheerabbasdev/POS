@@ -1,31 +1,26 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Select,
+  PasswordInput,
+  SimpleGrid,
+} from "@mantine/core";
 import { createUser, updateUser, type UserDetail } from "@/lib/api/users";
 import { fetchRoles } from "@/lib/api/roles";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { STATUS_ITEMS } from "@/lib/select-items";
 
-// Username/password are only collected (and required) when creating — built
-// as one schema whose shape stays constant across modes (both branches
-// resolve to `string | undefined`) so a single useForm<FormValues> type
-// works for both; only the runtime validation strictness changes.
 function buildFormSchema(isEditing: boolean) {
   return z.object({
     name: z.string().trim().min(1, "Name is required."),
@@ -47,15 +42,14 @@ interface UserFormDialogProps {
 
 export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {/* Keyed on the user identity so defaultValues initialize fresh per
-            open/user via useForm's initializer, instead of syncing them with
-            a reset()-in-effect that can re-fire (e.g. once the roles query
-            resolves) and wipe out fields already filled in. */}
-        {open ? <UserFormDialogBody key={user?.id ?? "new"} user={user} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={user ? "Edit User" : "Add User"}
+      size="md"
+    >
+      {open && <UserFormDialogBody key={user?.id ?? "new"} user={user} onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -70,13 +64,20 @@ function UserFormDialogBody({
   const queryClient = useQueryClient();
 
   const { data: roles } = useQuery({ queryKey: ["roles"], queryFn: fetchRoles });
-  const roleItems = useMemo(() => Object.fromEntries((roles ?? []).map((r) => [r.id, r.name])), [roles]);
+  
+  const roleOptions = useMemo(() => {
+    return (roles ?? []).map((r) => ({ value: r.id, label: r.name }));
+  }, [roles]);
+
+  const statusOptions = Object.entries(STATUS_ITEMS).map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(buildFormSchema(isEditing)),
@@ -117,100 +118,86 @@ function UserFormDialogBody({
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{isEditing ? "Edit User" : "Add User"}</DialogTitle>
-        <DialogDescription>
-          {isEditing ? "Update this user's details." : "Create a new system user with a role."}
-        </DialogDescription>
-      </DialogHeader>
-
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="user-name" className="text-sm font-medium">
-            Full name
-          </label>
-          <Input id="user-name" aria-invalid={Boolean(errors.name)} {...register("name")} />
-          {errors.name ? <p className="text-sm text-destructive">{errors.name.message}</p> : null}
-        </div>
+    <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+      <Stack gap="md">
+        <TextInput
+          label="Full name"
+          withAsterisk
+          {...register("name")}
+          error={errors.name?.message}
+        />
 
         {!isEditing ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="user-username" className="text-sm font-medium">
-                Username
-              </label>
-              <Input id="user-username" aria-invalid={Boolean(errors.username)} {...register("username")} />
-              {errors.username ? <p className="text-sm text-destructive">{errors.username.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="user-password" className="text-sm font-medium">
-                Password
-              </label>
-              <Input id="user-password" type="password" aria-invalid={Boolean(errors.password)} {...register("password")} />
-              {errors.password ? <p className="text-sm text-destructive">{errors.password.message}</p> : null}
-            </div>
-          </div>
+          <SimpleGrid cols={2}>
+            <TextInput
+              label="Username"
+              withAsterisk
+              {...register("username")}
+              error={errors.username?.message}
+            />
+            <PasswordInput
+              label="Password"
+              withAsterisk
+              {...register("password")}
+              error={errors.password?.message}
+            />
+          </SimpleGrid>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Username</span>
-            <Input value={user!.username} disabled />
-          </div>
+          <TextInput
+            label="Username"
+            value={user!.username}
+            disabled
+          />
         )}
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="user-email" className="text-sm font-medium">
-            Email
-          </label>
-          <Input id="user-email" type="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
-          {errors.email ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
-        </div>
+        <TextInput
+          label="Email"
+          type="email"
+          withAsterisk
+          {...register("email")}
+          error={errors.email?.message}
+        />
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Role</label>
-          <Select items={roleItems} value={watch("roleId")} onValueChange={(v) => setValue("roleId", v ?? "")}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select role" />
-            </SelectTrigger>
-            <SelectContent>
-              {roles?.map((role) => (
-                <SelectItem key={role.id} value={role.id}>
-                  {role.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.roleId ? <p className="text-sm text-destructive">{errors.roleId.message}</p> : null}
-        </div>
-
-        {isEditing ? (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Status</label>
+        <Controller
+          name="roleId"
+          control={control}
+          render={({ field }) => (
             <Select
-              items={STATUS_ITEMS}
-              value={watch("status")}
-              onValueChange={(v) => setValue("status", v as "active" | "inactive")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ) : null}
+              label="Role"
+              placeholder="Select role"
+              data={roleOptions}
+              value={field.value}
+              onChange={(v) => field.onChange(v ?? "")}
+              error={errors.roleId?.message}
+              withAsterisk
+            />
+          )}
+        />
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        {isEditing && (
+          <Controller
+            name="status"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Status"
+                data={statusOptions}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        )}
+
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Create user"}
+          <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+            {isEditing ? "Save changes" : "Create user"}
           </Button>
-        </DialogFooter>
-      </form>
-    </>
+        </Group>
+      </Stack>
+    </form>
   );
 }

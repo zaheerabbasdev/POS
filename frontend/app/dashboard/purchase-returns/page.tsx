@@ -5,11 +5,20 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Anchor,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { PaginationControls } from "@/components/pagination-controls";
+import { MoneyText } from "@/components/currency-display";
 import { fetchPurchaseReturns } from "@/lib/api/purchase-returns";
 import { fetchPurchase, type PurchaseDetail, type PurchaseListItem } from "@/lib/api/purchases";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -60,124 +69,136 @@ export default function PurchaseReturnsPage() {
     : data?.data;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Purchase Returns</h1>
-          <p className="text-muted-foreground">Every item sent back to a supplier, and the credit it created.</p>
-        </div>
-        <Button onClick={() => setPickerOpen(true)} disabled={isLoadingPurchase}>
-          <Plus /> {isLoadingPurchase ? "Loading purchase..." : "New Return"}
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Purchase Returns"
+        description="Every item sent back to a supplier, and the credit it created."
+        actions={
+          <Button
+            onClick={() => setPickerOpen(true)}
+            disabled={isLoadingPurchase}
+            loading={isLoadingPurchase}
+            leftSection={<Plus size={16} />}
+            color="indigo"
+          >
+            New Return
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search this page by purchase # or supplier..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="preturn-start-date" className="text-xs text-muted-foreground">
-            From
-          </label>
-          <Input
-            id="preturn-start-date"
-            type="date"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="preturn-end-date" className="text-xs text-muted-foreground">
-            To
-          </label>
-          <Input
-            id="preturn-end-date"
-            type="date"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Purchase #</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Items Returned</TableHead>
-                <TableHead className="text-right">Credit</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filtered && filtered.length > 0 ? (
-                filtered.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.purchaseNumber}</TableCell>
-                    <TableCell className="font-medium">{r.supplier}</TableCell>
-                    <TableCell className="text-muted-foreground">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
-                    </TableCell>
-                    <TableCell className="text-right">{r.returnAmount}</TableCell>
-                    <TableCell className="max-w-48 truncate text-muted-foreground" title={r.reason ?? undefined}>
-                      {r.reason ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        nativeButton={false}
-                        render={<Link href={`/dashboard/purchases/${r.purchaseId}`} />}
-                      >
-                        View Purchase
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No returns found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Group gap="sm" align="flex-end">
+        <TextInput
+          label="Search"
+          placeholder="Purchase # or supplier…"
+          leftSection={<Search size={15} />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 1, maxWidth: 300 }}
         />
-      ) : null}
+        <TextInput
+          type="date"
+          label="From"
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+            setPage(1);
+          }}
+        />
+        <TextInput
+          type="date"
+          label="To"
+          value={endDate}
+          onChange={(e) => {
+            setEndDate(e.target.value);
+            setPage(1);
+          }}
+        />
+      </Group>
+
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={filtered ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No returns found"
+          emptyDescription="No purchase returns match your current filters."
+          columns={[
+            {
+              key: "purchase",
+              header: "Purchase #",
+              render: (r) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.purchaseNumber}
+                </Text>
+              ),
+            },
+            {
+              key: "supplier",
+              header: "Supplier",
+              render: (r) => (
+                <Text size="sm" fw={500}>
+                  {r.supplier}
+                </Text>
+              ),
+            },
+            {
+              key: "date",
+              header: "Date",
+              render: (r) => (
+                <Text size="sm" c="dimmed">
+                  {new Date(r.returnDate).toLocaleDateString()}
+                </Text>
+              ),
+            },
+            {
+              key: "items",
+              header: "Items Returned",
+              render: (r) => (
+                <Text size="sm" c="dimmed">
+                  {r.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                </Text>
+              ),
+            },
+            {
+              key: "credit",
+              header: "Credit",
+              align: "right",
+              render: (r) => <MoneyText value={r.returnAmount} />,
+            },
+            {
+              key: "reason",
+              header: "Reason",
+              render: (r) => (
+                <Text size="sm" c="dimmed" truncate style={{ maxWidth: 200 }}>
+                  {r.reason ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "actions",
+              header: "",
+              align: "right",
+              render: (r) => (
+                <Anchor component={Link} href={`/dashboard/purchases/${r.purchaseId}`} size="sm" fw={500}>
+                  View Purchase
+                </Anchor>
+              ),
+            },
+          ]}
+        />
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <PickPurchaseDialog open={pickerOpen} onOpenChange={setPickerOpen} onPicked={(item) => void handlePicked(item)} />
       {selectedPurchase ? (
@@ -187,6 +208,6 @@ export default function PurchaseReturnsPage() {
           purchase={selectedPurchase}
         />
       ) : null}
-    </div>
+    </Stack>
   );
 }

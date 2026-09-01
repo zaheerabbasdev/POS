@@ -6,10 +6,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Stack,
+  Card,
+  Text,
+  Button,
+  TextInput,
+  Alert,
+  Anchor,
+} from "@mantine/core";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { forgotPassword } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-client";
 
@@ -39,60 +45,54 @@ export function ForgotPasswordForm() {
   });
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-xl">Forgot password</CardTitle>
-        <CardDescription>Enter your account email and a reset link will be sent to you.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card shadow="sm" radius="md" withBorder p="xl" w="100%" maw={400}>
+      <Stack gap="md">
+        <Stack gap={0}>
+          <Text fw={700} size="xl">Forgot password</Text>
+          <Text size="sm" c="dimmed">Enter your account email and a reset link will be sent to you.</Text>
+        </Stack>
+
         {submitted ? (
-          <Alert>
-            <AlertDescription>
-              If an account with that email exists, a password reset link has been sent. It expires in 1 hour.
-            </AlertDescription>
+          <Alert icon={<CheckCircle2 size={16} />} color="teal" variant="light">
+            If an account with that email exists, a password reset link has been sent. It expires in 1 hour.
           </Alert>
         ) : (
           <form
-            className="flex flex-col gap-4"
             onSubmit={handleSubmit((values) => {
               setFormError(null);
               mutation.mutate(values);
             })}
             noValidate
           >
-            {formError ? (
-              <Alert variant="destructive">
-                <AlertDescription>{formError}</AlertDescription>
-              </Alert>
-            ) : null}
+            <Stack gap="lg">
+              {formError && (
+                <Alert icon={<AlertCircle size={16} />} color="red" variant="light">
+                  {formError}
+                </Alert>
+              )}
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="forgot-email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="forgot-email"
+              <TextInput
+                label="Email"
                 type="email"
                 autoComplete="email"
                 autoFocus
-                aria-invalid={Boolean(errors.email)}
                 {...register("email")}
+                error={errors.email?.message}
               />
-              {errors.email ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
-            </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Sending..." : "Send reset link"}
-            </Button>
+              <Button type="submit" color="indigo" fullWidth disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+                Send reset link
+              </Button>
+            </Stack>
           </form>
         )}
 
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          <Link href="/login" className="underline underline-offset-2 hover:text-foreground">
+        <Text size="sm" ta="center" c="dimmed" mt="xs">
+          <Anchor component={Link} href="/login" c="dimmed">
             Back to sign in
-          </Link>
-        </p>
-      </CardContent>
+          </Anchor>
+        </Text>
+      </Stack>
     </Card>
   );
 }

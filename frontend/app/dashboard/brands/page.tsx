@@ -3,14 +3,22 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { fetchBrands, deleteBrand, type Brand } from "@/lib/api/brands";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { BrandFormDialog } from "./brand-form-dialog";
@@ -51,98 +59,114 @@ export default function BrandsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Brands</h1>
-          <p className="text-muted-foreground">Manage mobile phone and accessory brands.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Brand
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Brands"
+        description="Manage mobile phone and accessory brands."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Brand
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search brands..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search brands…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((brand) => (
-                  <TableRow key={brand.id}>
-                    <TableCell className="font-medium">{brand.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{brand.description ?? "—"}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={brand.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(brand)}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeletingBrand(brand)}>
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
-                    No brands found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching brands" : "No brands yet"}
+          emptyDescription={
+            search
+              ? "No brands match your search."
+              : "Add your first brand."
+          }
+          columns={[
+            {
+              key: "name",
+              header: "Name",
+              render: (b) => (
+                <Text size="sm" fw={500}>
+                  {b.name}
+                </Text>
+              ),
+            },
+            {
+              key: "description",
+              header: "Description",
+              render: (b) => (
+                <Text size="sm" c="dimmed">
+                  {b.description ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (b) => <StatusBadge status={b.status} />,
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (b) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(b),
+                    },
+                    {
+                      label: "Delete",
+                      icon: <Trash2 size={14} />,
+                      onClick: () => setDeletingBrand(b),
+                      destructive: true,
+                      dividerBefore: true,
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <BrandFormDialog open={formOpen} onOpenChange={setFormOpen} brand={editingBrand} />
 
-      <ConfirmDialog
-        open={Boolean(deletingBrand)}
-        onOpenChange={(open) => !open && setDeletingBrand(undefined)}
+      <ConfirmModal
+        opened={Boolean(deletingBrand)}
+        onClose={() => setDeletingBrand(undefined)}
         title="Delete brand?"
         description={`This will permanently delete "${deletingBrand?.name}". Brands linked to products can't be deleted — deactivate them instead.`}
+        confirmLabel="Delete Brand"
         isPending={deleteMutation.isPending}
         onConfirm={() => deletingBrand && deleteMutation.mutate(deletingBrand.id)}
       />
-    </div>
+    </Stack>
   );
 }

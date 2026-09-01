@@ -3,13 +3,23 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Plus, Pencil, Trash2, Banknote } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Button,
+  Text,
+  Badge,
+  Box,
+  SimpleGrid,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { ConfirmModal } from "@/components/confirm-modal";
+import { MoneyText } from "@/components/currency-display";
+import { StatCard } from "@/components/stat-card";
 import { fetchExpenses, deleteExpense, type Expense } from "@/lib/api/expenses";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ExpenseFormDialog } from "./expense-form-dialog";
@@ -51,98 +61,134 @@ export default function ExpensesPage() {
   const totalAmount = data?.data.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Expenses</h1>
-          <p className="text-muted-foreground">Record and track business expenses by category.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Expense
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Expenses"
+        description="Record and track business expenses by category."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Expense
+          </Button>
+        }
+      />
 
-      <Card className="max-w-xs">
-        <CardContent className="py-4">
-          <span className="text-xs text-muted-foreground">Total (this page)</span>
-          <p className="text-lg font-semibold">{totalAmount}</p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Expense #</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{expense.expenseNumber}</TableCell>
-                    <TableCell className="font-medium">{expense.category}</TableCell>
-                    <TableCell className="text-right">{expense.amount}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{expense.paymentMethod}</Badge>
-                    </TableCell>
-                    <TableCell>{new Date(expense.expenseDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-muted-foreground">{expense.description ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(expense)}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setDeletingExpense(expense)}>
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No expenses recorded yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }}>
+        <StatCard
+          label="Total (this page)"
+          value={<MoneyText value={totalAmount} fw={600} size="xl" />}
+          tone="default"
+          icon={Banknote}
         />
-      ) : null}
+      </SimpleGrid>
+
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No expenses recorded yet"
+          emptyDescription="Add an expense to start tracking your outflow."
+          columns={[
+            {
+              key: "expenseNumber",
+              header: "Expense #",
+              render: (e) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {e.expenseNumber}
+                </Text>
+              ),
+            },
+            {
+              key: "category",
+              header: "Category",
+              render: (e) => (
+                <Text size="sm" fw={500}>
+                  {e.category}
+                </Text>
+              ),
+            },
+            {
+              key: "amount",
+              header: "Amount",
+              align: "right",
+              render: (e) => <MoneyText value={e.amount} fw={500} />,
+            },
+            {
+              key: "paymentMethod",
+              header: "Method",
+              render: (e) => (
+                <Badge variant="outline" color="gray" size="sm">
+                  {e.paymentMethod}
+                </Badge>
+              ),
+            },
+            {
+              key: "date",
+              header: "Date",
+              render: (e) => (
+                <Text size="sm">
+                  {new Date(e.expenseDate).toLocaleDateString()}
+                </Text>
+              ),
+            },
+            {
+              key: "description",
+              header: "Description",
+              render: (e) => (
+                <Text size="sm" c="dimmed" truncate style={{ maxWidth: 200 }}>
+                  {e.description ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (e) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(e),
+                    },
+                    {
+                      label: "Delete",
+                      icon: <Trash2 size={14} />,
+                      onClick: () => setDeletingExpense(e),
+                      destructive: true,
+                      dividerBefore: true,
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
+        />
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <ExpenseFormDialog open={formOpen} onOpenChange={setFormOpen} expense={editingExpense} />
 
-      <ConfirmDialog
-        open={Boolean(deletingExpense)}
-        onOpenChange={(open) => !open && setDeletingExpense(undefined)}
+      <ConfirmModal
+        opened={Boolean(deletingExpense)}
+        onClose={() => setDeletingExpense(undefined)}
         title="Delete this expense?"
         description={`This will permanently remove "${deletingExpense?.expenseNumber}" (${deletingExpense?.amount}). This cannot be undone.`}
+        confirmLabel="Delete Expense"
         isPending={deleteMutation.isPending}
         onConfirm={() => deletingExpense && deleteMutation.mutate(deletingExpense.id)}
       />
-    </div>
+    </Stack>
   );
 }

@@ -4,16 +4,14 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal,
+  Stack,
+  Group,
+  Button,
+  Textarea,
+  Text,
+} from "@mantine/core";
 import { createWarrantyClaim, type Warranty } from "@/lib/api/warranties";
 import { getApiErrorMessage } from "@/lib/api-client";
 
@@ -25,11 +23,14 @@ interface ClaimDialogProps {
 
 export function ClaimDialog({ open, onOpenChange, warranty }: ClaimDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {warranty ? <ClaimDialogBody key={warranty.id} warranty={warranty} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={`Claim Warranty — ${warranty?.product ?? ""}`}
+      size="md"
+    >
+      {warranty && <ClaimDialogBody key={warranty.id} warranty={warranty} onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -43,39 +44,35 @@ function ClaimDialogBody({ warranty, onOpenChange }: { warranty: Warranty; onOpe
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ["warranties"] });
       toast.success("Claim registered — a repair ticket was opened.");
-      // See repair-form-dialog.tsx — navigating away unmounts this dialog
-      // anyway, and calling onOpenChange(false) right before router.push()
-      // can race Base UI's close transition against that unmount.
       router.push(`/dashboard/repairs/${result.repairId}`);
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Claim Warranty — {warranty.product}</DialogTitle>
-        <DialogDescription>
-          {warranty.customer} · Invoice {warranty.invoiceNumber} · Expires{" "}
-          {new Date(warranty.expiryDate).toLocaleDateString()}. Filing a claim opens a repair ticket at no charge.
-        </DialogDescription>
-      </DialogHeader>
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">
+        {warranty.customer} · Invoice {warranty.invoiceNumber} · Expires{" "}
+        {new Date(warranty.expiryDate).toLocaleDateString()}. Filing a claim opens a repair ticket at no charge.
+      </Text>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="claim-issue" className="text-sm font-medium">
-          Issue
-        </label>
-        <Textarea id="claim-issue" rows={3} value={issue} onChange={(e) => setIssue(e.target.value)} autoFocus />
-      </div>
+      <Textarea
+        label="Issue"
+        minRows={3}
+        value={issue}
+        onChange={(e) => setIssue(e.currentTarget.value)}
+        data-autofocus
+        withAsterisk
+      />
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+      <Group justify="flex-end" mt="md">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
-        <Button disabled={!issue.trim() || mutation.isPending} onClick={() => mutation.mutate()}>
-          {mutation.isPending ? "Submitting..." : "Submit Claim"}
+        <Button disabled={!issue.trim() || mutation.isPending} loading={mutation.isPending} onClick={() => mutation.mutate()} color="indigo">
+          Submit Claim
         </Button>
-      </DialogFooter>
-    </>
+      </Group>
+    </Stack>
   );
 }

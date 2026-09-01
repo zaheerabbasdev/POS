@@ -2,13 +2,21 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Badge,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
 import { fetchEmployees, type Employee } from "@/lib/api/employees";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 
@@ -36,92 +44,123 @@ export default function EmployeesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
-          <p className="text-muted-foreground">Manage shop staff — technicians, cashiers, and other employees.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Employee
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Employees"
+        description="Manage shop staff — technicians, cashiers, and other employees."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Employee
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, or code..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search by name, phone, or code…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Designation</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{employee.employeeCode}</TableCell>
-                    <TableCell className="font-medium">{employee.name}</TableCell>
-                    <TableCell>{employee.phone ?? "—"}</TableCell>
-                    <TableCell>{employee.designation ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant={employee.status === "ACTIVE" ? "default" : "secondary"}>
-                        {employee.status === "ACTIVE" ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(employee)}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    No employees found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching employees" : "No employees yet"}
+          emptyDescription={
+            search
+              ? "No employees match your search."
+              : "Add your first employee."
+          }
+          columns={[
+            {
+              key: "code",
+              header: "Code",
+              render: (e) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {e.employeeCode}
+                </Text>
+              ),
+            },
+            {
+              key: "name",
+              header: "Name",
+              render: (e) => (
+                <Text size="sm" fw={500}>
+                  {e.name}
+                </Text>
+              ),
+            },
+            {
+              key: "phone",
+              header: "Phone",
+              render: (e) => (
+                <Text size="sm" c="dimmed">
+                  {e.phone ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "designation",
+              header: "Designation",
+              render: (e) => (
+                <Text size="sm">
+                  {e.designation ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (e) => (
+                <Badge
+                  color={e.status === "ACTIVE" ? "green" : "gray"}
+                  variant="light"
+                  size="sm"
+                >
+                  {e.status === "ACTIVE" ? "Active" : "Inactive"}
+                </Badge>
+              ),
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (e) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(e),
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <EmployeeFormDialog open={formOpen} onOpenChange={setFormOpen} employee={editingEmployee} />
-    </div>
+    </Stack>
   );
 }

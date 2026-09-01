@@ -5,11 +5,20 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Plus, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Anchor,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { PaginationControls } from "@/components/pagination-controls";
+import { MoneyText } from "@/components/currency-display";
 import { fetchSalesReturns } from "@/lib/api/sales-returns";
 import { fetchSale, type SaleDetail, type SaleListItem } from "@/lib/api/sales";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -64,119 +73,136 @@ export default function SalesReturnsPage() {
     : data?.data;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Sales Returns</h1>
-          <p className="text-muted-foreground">Every item a customer has returned, with the refund it triggered.</p>
-        </div>
-        <Button onClick={() => setPickerOpen(true)} disabled={isLoadingSale}>
-          <Plus /> {isLoadingSale ? "Loading sale..." : "New Return"}
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Sales Returns"
+        description="Every item a customer has returned, with the refund it triggered."
+        actions={
+          <Button
+            onClick={() => setPickerOpen(true)}
+            disabled={isLoadingSale}
+            loading={isLoadingSale}
+            leftSection={<Plus size={16} />}
+            color="indigo"
+          >
+            New Return
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search this page by invoice # or customer..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="return-start-date" className="text-xs text-muted-foreground">
-            From
-          </label>
-          <Input
-            id="return-start-date"
-            type="date"
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="return-end-date" className="text-xs text-muted-foreground">
-            To
-          </label>
-          <Input
-            id="return-end-date"
-            type="date"
-            value={endDate}
-            onChange={(e) => {
-              setEndDate(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Items Returned</TableHead>
-                <TableHead className="text-right">Refund</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : filtered && filtered.length > 0 ? (
-                filtered.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.invoiceNumber}</TableCell>
-                    <TableCell className="font-medium">{r.customer}</TableCell>
-                    <TableCell className="text-muted-foreground">{new Date(r.returnDate).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
-                    </TableCell>
-                    <TableCell className="text-right">{r.refundAmount}</TableCell>
-                    <TableCell className="max-w-48 truncate text-muted-foreground" title={r.returnReason ?? undefined}>
-                      {r.returnReason ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/dashboard/sales/${r.saleId}`} />}>
-                        View Sale
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No returns found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Group gap="sm" align="flex-end">
+        <TextInput
+          label="Search"
+          placeholder="Invoice # or customer…"
+          leftSection={<Search size={15} />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 1, maxWidth: 300 }}
         />
-      ) : null}
+        <TextInput
+          type="date"
+          label="From"
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+            setPage(1);
+          }}
+        />
+        <TextInput
+          type="date"
+          label="To"
+          value={endDate}
+          onChange={(e) => {
+            setEndDate(e.target.value);
+            setPage(1);
+          }}
+        />
+      </Group>
+
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={filtered ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No returns found"
+          emptyDescription="No sales returns match your current filters."
+          columns={[
+            {
+              key: "invoice",
+              header: "Invoice #",
+              render: (r) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {r.invoiceNumber}
+                </Text>
+              ),
+            },
+            {
+              key: "customer",
+              header: "Customer",
+              render: (r) => (
+                <Text size="sm" fw={500}>
+                  {r.customer}
+                </Text>
+              ),
+            },
+            {
+              key: "date",
+              header: "Date",
+              render: (r) => (
+                <Text size="sm" c="dimmed">
+                  {new Date(r.returnDate).toLocaleDateString()}
+                </Text>
+              ),
+            },
+            {
+              key: "items",
+              header: "Items Returned",
+              render: (r) => (
+                <Text size="sm" c="dimmed">
+                  {r.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
+                </Text>
+              ),
+            },
+            {
+              key: "refund",
+              header: "Refund",
+              align: "right",
+              render: (r) => <MoneyText value={r.refundAmount} />,
+            },
+            {
+              key: "reason",
+              header: "Reason",
+              render: (r) => (
+                <Text size="sm" c="dimmed" truncate style={{ maxWidth: 200 }}>
+                  {r.returnReason ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "actions",
+              header: "",
+              align: "right",
+              render: (r) => (
+                <Anchor component={Link} href={`/dashboard/sales/${r.saleId}`} size="sm" fw={500}>
+                  View Sale
+                </Anchor>
+              ),
+            },
+          ]}
+        />
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <PickSaleDialog open={pickerOpen} onOpenChange={setPickerOpen} onPicked={(item) => void handlePicked(item)} />
       {selectedSale ? (
@@ -186,6 +212,6 @@ export default function SalesReturnsPage() {
           sale={selectedSale}
         />
       ) : null}
-    </div>
+    </Stack>
   );
 }

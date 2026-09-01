@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@mantine/core";
 import { fetchRepair } from "@/lib/api/repairs";
 import { fetchSettings } from "@/lib/api/settings";
 import { REPAIR_STATUS_ITEMS } from "@/lib/select-items";
@@ -103,8 +103,8 @@ export default function PrintRepairPage(props: PageProps<"/print/repairs/[id]">)
       <p className="mt-8 text-center text-xs text-muted-foreground">Please bring this receipt when collecting your device.</p>
 
       <div className="mt-6 flex justify-center print:hidden">
-        <Button onClick={() => window.print()}>
-          <Printer /> Print
+        <Button color="indigo" onClick={() => window.print()} leftSection={<Printer size={16} />}>
+          Print
         </Button>
       </div>
     </div>

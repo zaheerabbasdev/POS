@@ -6,18 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Group,
+  Text,
+} from "@mantine/core";
 import { createAdjustment, type InventoryItem } from "@/lib/api/inventory";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { ADJUSTMENT_TYPE_ITEMS } from "@/lib/select-items";
@@ -68,66 +66,55 @@ export function AdjustmentDialog({ open, onOpenChange, item }: AdjustmentDialogP
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
+  const adjustmentTypeData = Object.entries(ADJUSTMENT_TYPE_ITEMS).map(([value, label]) => ({ value, label }));
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Adjust Stock</DialogTitle>
-          <DialogDescription>
-            {item ? `${item.name} — currently ${item.quantity} in stock.` : "Manually correct inventory."}
-          </DialogDescription>
-        </DialogHeader>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>Adjust Stock</Text>}
+      size="sm"
+    >
+      <Stack gap="md">
+        <Text size="sm" c="dimmed">
+          {item ? `${item.name} — currently ${item.quantity} in stock.` : "Manually correct inventory."}
+        </Text>
 
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Adjustment type</label>
+        <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+          <Stack gap="md">
             <Select
-              items={ADJUSTMENT_TYPE_ITEMS}
+              label="Adjustment type"
+              data={adjustmentTypeData}
               value={watch("type")}
-              onValueChange={(v) => setValue("type", v as "increase" | "decrease")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="increase">Increase</SelectItem>
-                <SelectItem value="decrease">Decrease</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              onChange={(v) => setValue("type", v as "increase" | "decrease")}
+            />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="adjustment-quantity" className="text-sm font-medium">
-              Quantity
-            </label>
-            <Input id="adjustment-quantity" inputMode="numeric" aria-invalid={Boolean(errors.quantity)} {...register("quantity")} />
-            {errors.quantity ? <p className="text-sm text-destructive">{errors.quantity.message}</p> : null}
-          </div>
+            <TextInput
+              label="Quantity"
+              inputMode="numeric"
+              {...register("quantity")}
+              error={errors.quantity?.message}
+            />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="adjustment-reason" className="text-sm font-medium">
-              Reason
-            </label>
             <Textarea
-              id="adjustment-reason"
+              label="Reason"
               rows={2}
               placeholder="e.g. Stock count correction, damaged goods..."
-              aria-invalid={Boolean(errors.reason)}
               {...register("reason")}
+              error={errors.reason?.message}
             />
-            {errors.reason ? <p className="text-sm text-destructive">{errors.reason.message}</p> : null}
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-              {mutation.isPending ? "Saving..." : "Record adjustment"}
-            </Button>
-          </DialogFooter>
+            <Group justify="flex-end" mt="md">
+              <Button type="button" variant="default" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+                Record adjustment
+              </Button>
+            </Group>
+          </Stack>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Stack>
+    </Modal>
   );
 }

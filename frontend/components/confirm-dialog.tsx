@@ -1,14 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Modal, Text, Button, Group } from "@mantine/core";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -20,7 +12,6 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
 }
 
-/** Shared yes/no confirmation — used for every module's delete action. */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -31,21 +22,24 @@ export function ConfirmDialog({
   onConfirm,
 }: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
-          </Button>
-          <Button variant="destructive" onClick={onConfirm} disabled={isPending}>
-            {isPending ? "Deleting..." : confirmLabel}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={<Text fw={600}>{title}</Text>}
+      size="sm"
+    >
+      <Text size="sm" c="dimmed" mb="xl">
+        {description}
+      </Text>
+      
+      <Group justify="flex-end">
+        <Button variant="default" onClick={() => onOpenChange(false)} disabled={isPending}>
+          Cancel
+        </Button>
+        <Button color="red" onClick={onConfirm} loading={isPending}>
+          {confirmLabel}
+        </Button>
+      </Group>
+    </Modal>
   );
 }

@@ -4,25 +4,32 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Select,
+  Card,
+  Anchor,
+  Text,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { ShopStatusBadge } from "@/components/shop-status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { RequirePermission } from "@/components/require-permission";
 import { fetchShops, type ShopStatus } from "@/lib/api/shops";
 
 const PAGE_SIZE = 20;
-const STATUS_ITEMS: Record<"all" | ShopStatus, string> = {
-  all: "All statuses",
-  TRIAL: "Trial",
-  ACTIVE: "Active",
-  EXPIRED: "Expired",
-  SUSPENDED: "Suspended",
-  CANCELLED: "Cancelled",
-};
+const STATUS_ITEMS = [
+  { value: "all", label: "All statuses" },
+  { value: "TRIAL", label: "Trial" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "EXPIRED", label: "Expired" },
+  { value: "SUSPENDED", label: "Suspended" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
 
 function AdminShopsPageContent() {
   const [search, setSearch] = useState("");
@@ -41,100 +48,79 @@ function AdminShopsPageContent() {
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Shops</h1>
-          <p className="text-muted-foreground">Every shop on the platform, its owner, plan, and trial status.</p>
-        </div>
-        <Button render={<Link href="/admin/shops/new" />}>
-          <Plus /> Create Shop
+    <Stack gap="lg">
+      <Group justify="space-between" align="flex-start">
+        <PageHeader
+          title="Shops"
+          description="Every shop on the platform, its owner, plan, and trial status."
+        />
+        <Button component={Link} href="/admin/shops/new" leftSection={<Plus size={16} />} color="indigo">
+          Create Shop
         </Button>
-      </div>
+      </Group>
 
-      <div className="flex items-center gap-3">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by shop or owner name..."
-            className="pl-8"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <Select
-          items={STATUS_ITEMS}
-          value={status}
-          onValueChange={(value) => {
-            setStatus((value as "all" | ShopStatus | null) ?? "all");
+      <Group>
+        <TextInput
+          placeholder="Search by shop or owner name..."
+          leftSection={<Search size={16} />}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value);
             setPage(1);
           }}
-        >
-          <SelectTrigger className="w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(STATUS_ITEMS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          w="100%"
+          maw={300}
+        />
+        <Select
+          data={STATUS_ITEMS}
+          value={status}
+          onChange={(val) => {
+            if (val) {
+              setStatus(val as "all" | ShopStatus);
+              setPage(1);
+            }
+          }}
+          w={200}
+        />
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Shop</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Trial ends</TableHead>
-                <TableHead>Days remaining</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((shop) => (
-                  <TableRow key={shop.id}>
-                    <TableCell className="font-medium">{shop.name}</TableCell>
-                    <TableCell>{shop.ownerName ?? "—"}</TableCell>
-                    <TableCell>{shop.planName ?? "—"}</TableCell>
-                    <TableCell>
-                      <ShopStatusBadge status={shop.status} />
-                    </TableCell>
-                    <TableCell>{shop.trialEndDate ? new Date(shop.trialEndDate).toLocaleDateString() : "—"}</TableCell>
-                    <TableCell>{shop.daysRemaining ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" render={<Link href={`/admin/shops/${shop.id}`} />}>
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No shops found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+      <Card shadow="sm" radius="md" withBorder padding={0}>
+        <DataTable
+          data={data?.data ?? []}
+          isLoading={isLoading}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No shops found."
+          columns={[
+            {
+              key: "shop",
+              header: "Shop",
+              render: (r) => (
+                <Anchor component={Link} href={`/admin/shops/${r.id}`} fw={500} c="indigo">
+                  {r.name}
+                </Anchor>
+              ),
+            },
+            { key: "owner", header: "Owner", render: (r) => <Text size="sm">{r.ownerName ?? "—"}</Text> },
+            { key: "plan", header: "Plan", render: (r) => <Text size="sm">{r.planName ?? "—"}</Text> },
+            { key: "status", header: "Status", render: (r) => <ShopStatusBadge status={r.status} /> },
+            {
+              key: "trialEnd",
+              header: "Trial ends",
+              render: (r) => <Text size="sm">{r.trialEndDate ? new Date(r.trialEndDate).toLocaleDateString() : "—"}</Text>,
+            },
+            { key: "days", header: "Days remaining", render: (r) => <Text size="sm">{r.daysRemaining ?? "—"}</Text> },
+            {
+              key: "actions",
+              header: "Actions",
+              align: "right",
+              render: (r) => (
+                <Button component={Link} href={`/admin/shops/${r.id}`} variant="subtle" size="xs">
+                  View
+                </Button>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {data ? (
@@ -146,7 +132,7 @@ function AdminShopsPageContent() {
           onPageChange={setPage}
         />
       ) : null}
-    </div>
+    </Stack>
   );
 }
 

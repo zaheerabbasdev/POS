@@ -8,15 +8,25 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Paper,
+  Stack,
+  TextInput,
+  PasswordInput,
+  Button,
+  Text,
+  Alert,
+  Anchor,
+  Box,
+  ThemeIcon,
+  Group,
+} from "@mantine/core";
+import { Store, AlertCircle } from "lucide-react";
 import { login, logout } from "@/lib/api/auth";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { currentUserQueryKey } from "@/hooks/use-current-user";
 
-// Mirrors the backend's loginSchema (modules/auth/auth.validation.ts).
+// Zod schema — unchanged from original
 const loginFormSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters."),
   password: z.string().min(1, "Password is required."),
@@ -25,22 +35,13 @@ const loginFormSchema = z.object({
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 interface LoginFormProps {
-  /**
-   * "shop" (default): the public login at /login used by real shop
-   * owners/staff — shows the "Register Shop" self-signup link. "platform":
-   * the dedicated /admin/login used only by platform staff — no self-signup
-   * link, since registering a shop isn't something platform staff do from
-   * here. Post-login redirect itself is unaffected by this — it's already
-   * driven by the logged-in account's own `shopId` below, regardless of
-   * which page they logged in from.
-   */
   variant?: "shop" | "platform";
 }
 
 export function LoginForm({ variant = "shop" }: LoginFormProps) {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
+  const queryClient  = useQueryClient();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -52,22 +53,17 @@ export function LoginForm({ variant = "shop" }: LoginFormProps) {
     defaultValues: { username: "", password: "" },
   });
 
+  // Mutation is identical to original — same API call, same routing logic
   const loginMutation = useMutation({
     mutationFn: (values: LoginFormValues) => login(values.username, values.password),
     onSuccess: async (user) => {
-      // Each login page is only meant for one kind of account — /login for
-      // real shop owners/staff, /admin/login for platform staff. The
-      // credentials just checked out, but for the wrong surface: log back
-      // out (the backend already set the auth cookie by this point) and
-      // reject, rather than silently letting either account type in through
-      // either door and just routing around the mismatch.
       const isPlatformAdmin = user.shopId === null;
       if ((variant === "platform") !== isPlatformAdmin) {
         await logout();
         setFormError(
           variant === "platform"
-            ? "This is a platform account, not a shop account. Sign in at the regular login page instead."
-            : "This is an admin account, not a platform admin account. Sign in at the platform admin login page instead.",
+            ? "This is a shop account, not a platform admin account. Sign in at the regular login page instead."
+            : "This is an admin account. Sign in at the platform admin login page instead.",
         );
         return;
       }
@@ -92,67 +88,109 @@ export function LoginForm({ variant = "shop" }: LoginFormProps) {
     loginMutation.mutate(values);
   };
 
+  const isPlatform = variant === "platform";
+
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader>
-        <CardTitle className="text-xl">{variant === "platform" ? "Platform Admin" : "Mobile Shop POS"}</CardTitle>
-        <CardDescription>Sign in with your username and password.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-          {formError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{formError}</AlertDescription>
+    <Box style={{ width: "100%", maxWidth: 400 }}>
+      <Paper withBorder shadow="sm" radius="lg" p="xl">
+        <Stack gap="md">
+          {/* Brand header */}
+          <Group gap="md" mb="xs">
+            <ThemeIcon
+              size={48}
+              radius="md"
+              style={{
+                backgroundColor: isPlatform
+                  ? "var(--mantine-color-violet-6)"
+                  : "var(--mantine-color-indigo-6)",
+                color: "white",
+                border: "none",
+              }}
+            >
+              <Store size={24} />
+            </ThemeIcon>
+            <Box>
+              <Text fw={700} size="lg" lh={1.2}>
+                {isPlatform ? "Platform Admin" : "Mobile Shop POS"}
+              </Text>
+              <Text size="xs" c="dimmed">
+                Sign in to your account
+              </Text>
+            </Box>
+          </Group>
+
+          {/* Error alert */}
+          {formError && (
+            <Alert
+              icon={<AlertCircle size={16} />}
+              color="red"
+              variant="light"
+              radius="sm"
+            >
+              {formError}
             </Alert>
-          ) : null}
+          )}
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="username" className="text-sm font-medium">
-              Username
-            </label>
-            <Input
-              id="username"
-              autoComplete="username"
-              autoFocus
-              aria-invalid={Boolean(errors.username)}
-              {...register("username")}
-            />
-            {errors.username ? <p className="text-sm text-destructive">{errors.username.message}</p> : null}
-          </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <Stack gap="sm">
+              <TextInput
+                id="username"
+                label="Username"
+                autoComplete="username"
+                autoFocus
+                error={errors.username?.message}
+                {...register("username")}
+              />
 
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
-              <Link href="/forgot-password" className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={Boolean(errors.password)}
-              {...register("password")}
-            />
-            {errors.password ? <p className="text-sm text-destructive">{errors.password.message}</p> : null}
-          </div>
+              <Box>
+                <Group justify="space-between" mb={4}>
+                  <Text size="sm" fw={500}>
+                    Password
+                  </Text>
+                  {!isPlatform && (
+                    <Anchor
+                      component={Link}
+                      href="/forgot-password"
+                      size="xs"
+                      c="dimmed"
+                    >
+                      Forgot password?
+                    </Anchor>
+                  )}
+                </Group>
+                <PasswordInput
+                  id="password"
+                  autoComplete="current-password"
+                  error={errors.password?.message}
+                  {...register("password")}
+                />
+              </Box>
 
-          <Button type="submit" className="mt-2 w-full" disabled={isSubmitting || loginMutation.isPending}>
-            {loginMutation.isPending ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
+              <Button
+                type="submit"
+                fullWidth
+                mt="xs"
+                loading={loginMutation.isPending}
+                disabled={isSubmitting}
+                color={isPlatform ? "violet" : "indigo"}
+              >
+                Sign in
+              </Button>
+            </Stack>
+          </form>
 
-        {variant === "shop" ? (
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="underline underline-offset-2 hover:text-foreground">
-              Register Shop
-            </Link>
-          </p>
-        ) : null}
-      </CardContent>
-    </Card>
+          {/* Register link */}
+          {variant === "shop" && (
+            <Text size="sm" ta="center" c="dimmed" mt="xs">
+              Don&apos;t have an account?{" "}
+              <Anchor component={Link} href="/register" fw={500}>
+                Register Shop
+              </Anchor>
+            </Text>
+          )}
+        </Stack>
+      </Paper>
+    </Box>
   );
 }

@@ -2,13 +2,22 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { MoneyText } from "@/components/currency-display";
 import { fetchSuppliers, type Supplier } from "@/lib/api/suppliers";
 import { SupplierFormDialog } from "./supplier-form-dialog";
 
@@ -36,98 +45,127 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Suppliers</h1>
-          <p className="text-muted-foreground">Manage suppliers and outstanding payables.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add Supplier
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Suppliers"
+        description="Manage suppliers and outstanding payables."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add Supplier
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, phone, or code..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search by name, phone, or code…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead className="text-right">Outstanding</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((supplier) => (
-                  <TableRow key={supplier.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{supplier.supplierCode}</TableCell>
-                    <TableCell className="font-medium">{supplier.name}</TableCell>
-                    <TableCell>{supplier.phone ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{supplier.contactPerson ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      {Number(supplier.outstandingBalance) > 0 ? (
-                        <span className="text-destructive">{supplier.outstandingBalance}</span>
-                      ) : (
-                        supplier.outstandingBalance
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={supplier.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(supplier)}>
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                    No suppliers found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching suppliers" : "No suppliers yet"}
+          emptyDescription={
+            search
+              ? "No suppliers match your search."
+              : "Add your first supplier to start tracking purchases."
+          }
+          columns={[
+            {
+              key: "code",
+              header: "Code",
+              render: (s) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {s.supplierCode}
+                </Text>
+              ),
+            },
+            {
+              key: "name",
+              header: "Name",
+              render: (s) => (
+                <Text size="sm" fw={500}>
+                  {s.name}
+                </Text>
+              ),
+            },
+            {
+              key: "phone",
+              header: "Phone",
+              render: (s) => (
+                <Text size="sm" c="dimmed">
+                  {s.phone ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "contact",
+              header: "Contact",
+              render: (s) => (
+                <Text size="sm" c="dimmed">
+                  {s.contactPerson ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "outstanding",
+              header: "Outstanding",
+              align: "right",
+              render: (s) => (
+                <MoneyText
+                  value={s.outstandingBalance}
+                  c={Number(s.outstandingBalance) > 0 ? "red" : undefined}
+                  fw={Number(s.outstandingBalance) > 0 ? 500 : undefined}
+                />
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (s) => <StatusBadge status={s.status} type="generic" />,
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (s) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(s),
+                    },
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <SupplierFormDialog open={formOpen} onOpenChange={setFormOpen} supplier={editingSupplier} />
-    </div>
+    </Stack>
   );
 }

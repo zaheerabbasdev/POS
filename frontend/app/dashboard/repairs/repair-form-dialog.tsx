@@ -1,24 +1,22 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Textarea,
+  Button,
+  Select,
+  SimpleGrid,
+} from "@mantine/core";
 import { fetchCustomers } from "@/lib/api/customers";
 import { fetchEmployees } from "@/lib/api/employees";
 import { createRepair } from "@/lib/api/repairs";
@@ -42,9 +40,14 @@ interface RepairFormDialogProps {
 
 export function RepairFormDialog({ open, onOpenChange }: RepairFormDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>{open ? <RepairFormDialogBody onOpenChange={onOpenChange} /> : null}</DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title="New Repair Ticket"
+      size="md"
+    >
+      {open && <RepairFormDialogBody onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -56,25 +59,24 @@ function RepairFormDialogBody({ onOpenChange }: { onOpenChange: (open: boolean) 
     queryKey: ["customers", { forSelect: true }],
     queryFn: () => fetchCustomers({ status: "active", limit: 100 }),
   });
-  const customerItems = useMemo(
-    () => Object.fromEntries((customers?.data ?? []).map((c) => [c.id, c.name])),
-    [customers],
-  );
+  
+  const customerOptions = useMemo(() => {
+    return (customers?.data ?? []).map((c) => ({ value: c.id, label: c.name }));
+  }, [customers]);
 
   const { data: employees } = useQuery({
     queryKey: ["employees", { forSelect: true }],
     queryFn: () => fetchEmployees({ status: "ACTIVE", limit: 100 }),
   });
-  const technicianItems = useMemo(
-    () => Object.fromEntries((employees?.data ?? []).map((e) => [e.id, e.name])),
-    [employees],
-  );
+  
+  const technicianOptions = useMemo(() => {
+    return (employees?.data ?? []).map((e) => ({ value: e.id, label: e.name }));
+  }, [employees]);
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<RepairFormValues>({
     resolver: zodResolver(repairFormSchema),
@@ -94,101 +96,81 @@ function RepairFormDialogBody({ onOpenChange }: { onOpenChange: (open: boolean) 
     onSuccess: (repair) => {
       void queryClient.invalidateQueries({ queryKey: ["repairs"] });
       toast.success(`Repair ticket ${repair.repairTicketNumber} created.`);
-      // Navigating away unmounts this dialog anyway — skip onOpenChange(false)
-      // here. Calling it right before router.push() raced Base UI's
-      // dialog-close transition against the navigation-triggered unmount,
-      // occasionally leaving an orphaned overlay portal that blocked clicks
-      // on the next page.
       router.push(`/dashboard/repairs/${repair.id}`);
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>New Repair Ticket</DialogTitle>
-        <DialogDescription>Log a customer device for repair.</DialogDescription>
-      </DialogHeader>
-
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Customer</label>
-          <Select items={customerItems} value={watch("customerId")} onValueChange={(v) => setValue("customerId", v ?? "")}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select customer" />
-            </SelectTrigger>
-            <SelectContent>
-              {customers?.data.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.customerId ? <p className="text-sm text-destructive">{errors.customerId.message}</p> : null}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="repair-device" className="text-sm font-medium">
-              Device
-            </label>
-            <Input id="repair-device" placeholder="e.g. iPhone 13" {...register("device")} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="repair-imei" className="text-sm font-medium">
-              IMEI
-            </label>
-            <Input id="repair-imei" placeholder="Optional" {...register("imei")} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="repair-problem" className="text-sm font-medium">
-            Problem
-          </label>
-          <Textarea id="repair-problem" rows={2} aria-invalid={Boolean(errors.problem)} {...register("problem")} />
-          {errors.problem ? <p className="text-sm text-destructive">{errors.problem.message}</p> : null}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Technician</label>
+    <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+      <Stack gap="md">
+        <Controller
+          name="customerId"
+          control={control}
+          render={({ field }) => (
             <Select
-              items={technicianItems}
-              value={watch("technicianId")}
-              onValueChange={(v) => setValue("technicianId", v ?? "")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Unassigned" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees?.data.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="repair-estimated-cost" className="text-sm font-medium">
-              Estimated Cost
-            </label>
-            <Input id="repair-estimated-cost" inputMode="decimal" {...register("estimatedCost")} />
-          </div>
-        </div>
+              label="Customer"
+              placeholder="Select customer"
+              data={customerOptions}
+              value={field.value}
+              onChange={(v) => field.onChange(v ?? "")}
+              error={errors.customerId?.message}
+              withAsterisk
+            />
+          )}
+        />
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <SimpleGrid cols={2}>
+          <TextInput
+            label="Device"
+            placeholder="e.g. iPhone 13"
+            {...register("device")}
+          />
+          <TextInput
+            label="IMEI"
+            placeholder="Optional"
+            {...register("imei")}
+          />
+        </SimpleGrid>
+
+        <Textarea
+          label="Problem"
+          minRows={2}
+          withAsterisk
+          {...register("problem")}
+          error={errors.problem?.message}
+        />
+
+        <SimpleGrid cols={2}>
+          <Controller
+            name="technicianId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Technician"
+                placeholder="Unassigned"
+                data={technicianOptions}
+                value={field.value}
+                onChange={(v) => field.onChange(v ?? "")}
+              />
+            )}
+          />
+          <TextInput
+            label="Estimated Cost"
+            inputMode="decimal"
+            {...register("estimatedCost")}
+          />
+        </SimpleGrid>
+
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Creating..." : "Create Repair Ticket"}
+          <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+            Create Repair Ticket
           </Button>
-        </DialogFooter>
-      </form>
-    </>
+        </Group>
+      </Stack>
+    </form>
   );
 }

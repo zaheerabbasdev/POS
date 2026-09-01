@@ -1,21 +1,19 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+  Modal,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Select,
+  SimpleGrid,
+} from "@mantine/core";
 import { fetchExpenseCategories, createExpense, updateExpense, type Expense } from "@/lib/api/expenses";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { PAYMENT_METHOD_ITEMS } from "@/lib/select-items";
@@ -37,11 +35,14 @@ interface ExpenseFormDialogProps {
 
 export function ExpenseFormDialog({ open, onOpenChange, expense }: ExpenseFormDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        {open ? <ExpenseFormDialogBody key={expense?.id ?? "new"} expense={expense} onOpenChange={onOpenChange} /> : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={expense ? "Edit Expense" : "Add Expense"}
+      size="md"
+    >
+      {open && <ExpenseFormDialogBody key={expense?.id ?? "new"} expense={expense} onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -56,13 +57,21 @@ function ExpenseFormDialogBody({
   const queryClient = useQueryClient();
 
   const { data: categories } = useQuery({ queryKey: ["expense-categories"], queryFn: fetchExpenseCategories });
-  const categoryItems = Object.fromEntries((categories ?? []).map((c) => [c.name, c.name]));
+  
+  const categoryOptions = (categories ?? []).map((c) => ({
+    value: c.name,
+    label: c.name,
+  }));
+
+  const paymentMethodOptions = Object.entries(PAYMENT_METHOD_ITEMS).map(([value, label]) => ({
+    value,
+    label,
+  }));
 
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -91,86 +100,68 @@ function ExpenseFormDialogBody({
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{isEditing ? "Edit Expense" : "Add Expense"}</DialogTitle>
-        <DialogDescription>{isEditing ? "Update this expense record." : "Record a new business expense."}</DialogDescription>
-      </DialogHeader>
-
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+    <form onSubmit={handleSubmit((values) => mutation.mutate(values))} noValidate>
+      <Stack gap="md">
         {!isEditing ? (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Category</label>
-            <Select
-              items={categoryItems}
-              value={watch("category")}
-              onValueChange={(v) => setValue("category", v ?? "")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {(categories ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.category ? <p className="text-sm text-destructive">{errors.category.message}</p> : null}
-          </div>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Category"
+                placeholder="Select category"
+                data={categoryOptions}
+                value={field.value}
+                onChange={(v) => field.onChange(v ?? "")}
+                error={errors.category?.message}
+                withAsterisk
+              />
+            )}
+          />
         ) : (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">Category</span>
-            <Input value={expense!.category} disabled />
-          </div>
+          <TextInput
+            label="Category"
+            value={expense!.category}
+            disabled
+          />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="expense-amount" className="text-sm font-medium">
-              Amount
-            </label>
-            <Input id="expense-amount" inputMode="decimal" aria-invalid={Boolean(errors.amount)} {...register("amount")} />
-            {errors.amount ? <p className="text-sm text-destructive">{errors.amount.message}</p> : null}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Payment Method</label>
-            <Select
-              items={PAYMENT_METHOD_ITEMS}
-              value={watch("paymentMethod")}
-              onValueChange={(v) => setValue("paymentMethod", v ?? "cash")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_METHOD_ITEMS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <SimpleGrid cols={2}>
+          <TextInput
+            label="Amount"
+            inputMode="decimal"
+            withAsterisk
+            {...register("amount")}
+            error={errors.amount?.message}
+          />
+          <Controller
+            name="paymentMethod"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Payment Method"
+                data={paymentMethodOptions}
+                value={field.value}
+                onChange={(v) => field.onChange(v ?? "cash")}
+              />
+            )}
+          />
+        </SimpleGrid>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="expense-description" className="text-sm font-medium">
-            Description
-          </label>
-          <Input id="expense-description" {...register("description")} />
-        </div>
+        <TextInput
+          label="Description"
+          {...register("description")}
+        />
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+        <Group justify="flex-end" mt="md">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Saving..." : isEditing ? "Save changes" : "Record Expense"}
+          <Button type="submit" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending} color="indigo">
+            {isEditing ? "Save changes" : "Record Expense"}
           </Button>
-        </DialogFooter>
-      </form>
-    </>
+        </Group>
+      </Stack>
+    </form>
   );
 }

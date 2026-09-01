@@ -8,11 +8,20 @@ import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Stack,
+  Card,
+  SimpleGrid,
+  TextInput,
+  Textarea,
+  Select,
+  Button,
+  Group,
+  Text,
+  Title,
+  ActionIcon,
+  Divider,
+} from "@mantine/core";
 import { createPurchase } from "@/lib/api/purchases";
 import { fetchSuppliers } from "@/lib/api/suppliers";
 import { fetchProducts } from "@/lib/api/products";
@@ -63,11 +72,11 @@ export default function NewPurchasePage() {
   });
 
   const supplierItems = useMemo(
-    () => Object.fromEntries((suppliers?.data ?? []).map((s) => [s.id, s.name])),
+    () => (suppliers?.data ?? []).map((s) => ({ value: s.id, label: s.name })),
     [suppliers],
   );
   const productItems = useMemo(
-    () => Object.fromEntries((products?.data ?? []).map((p) => [p.id, `${p.name} (${p.sku})`])),
+    () => (products?.data ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
     [products],
   );
   const productById = useMemo(() => new Map((products?.data ?? []).map((p) => [p.id, p])), [products]);
@@ -115,9 +124,6 @@ export default function NewPurchasePage() {
   });
 
   const onSubmit = (values: FormValues) => {
-    // Cross-field validation (needs the fetched products list, so it can't
-    // live in the zod schema): IMEI-tracked products must supply exactly
-    // `quantity` IMEIs; non-tracked products must not supply any.
     for (const [index, item] of values.items.entries()) {
       const product = productById.get(item.productId);
       const imeis = parseImeis(item.imeis);
@@ -152,107 +158,90 @@ export default function NewPurchasePage() {
     });
   };
 
+  const paymentMethodData = Object.entries(PAYMENT_METHOD_ITEMS).map(([value, label]) => ({ value, label }));
+
   return (
-    <div className="flex flex-col gap-4">
+    <Stack gap="lg">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">New Purchase</h1>
-        <p className="text-muted-foreground">Record a supplier purchase and increase inventory.</p>
+        <Title order={2} fw={600}>New Purchase</Title>
+        <Text c="dimmed">Record a supplier purchase and increase inventory.</Text>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Supplier</label>
-              <Select items={supplierItems} value={watch("supplierId")} onValueChange={(v) => setValue("supplierId", v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers?.data.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.supplierId ? <p className="text-sm text-destructive">{errors.supplierId.message}</p> : null}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="purchase-invoice-no" className="text-sm font-medium">
-                Supplier invoice # (optional)
-              </label>
-              <Input id="purchase-invoice-no" {...register("invoiceNo")} />
-            </div>
-          </CardContent>
-        </Card>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <Stack gap="md">
+          <Card withBorder radius="md">
+            <Text fw={600} mb="md">Details</Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <Select
+                label="Supplier"
+                placeholder="Select supplier"
+                data={supplierItems}
+                value={watch("supplierId")}
+                onChange={(v) => setValue("supplierId", v ?? "")}
+                error={errors.supplierId?.message}
+                searchable
+              />
+              <TextInput
+                label="Supplier invoice # (optional)"
+                {...register("invoiceNo")}
+                error={errors.invoiceNo?.message}
+              />
+            </SimpleGrid>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Items</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {fields.map((field, index) => {
-              const selectedProductId = watchedItems[index]?.productId;
-              const selectedProduct = selectedProductId ? productById.get(selectedProductId) : undefined;
+          <Card withBorder radius="md">
+            <Text fw={600} mb="md">Items</Text>
+            <Stack gap="md">
+              {fields.map((field, index) => {
+                const selectedProductId = watchedItems[index]?.productId;
+                const selectedProduct = selectedProductId ? productById.get(selectedProductId) : undefined;
 
-              return (
-                <div key={field.id} className="flex flex-col gap-3 rounded-lg border p-3">
-                  <div className="grid grid-cols-[1fr_auto_auto_auto] items-end gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium">Product</label>
+                return (
+                  <Card key={field.id} withBorder radius="md" p="md" bg="var(--mantine-color-gray-0)">
+                    <Group align="flex-end" grow>
                       <Select
-                        items={productItems}
+                        label="Product"
+                        placeholder="Select product"
+                        data={productItems}
                         value={watchedItems[index]?.productId ?? ""}
-                        onValueChange={(v) => setValue(`items.${index}.productId`, v ?? "")}
+                        onChange={(v) => setValue(`items.${index}.productId`, v ?? "")}
+                        error={errors.items?.[index]?.productId?.message}
+                        searchable
+                        style={{ flex: 2 }}
+                      />
+                      <TextInput
+                        label="Qty"
+                        inputMode="numeric"
+                        {...register(`items.${index}.quantity`)}
+                        error={errors.items?.[index]?.quantity?.message}
+                      />
+                      <TextInput
+                        label="Unit price"
+                        inputMode="decimal"
+                        {...register(`items.${index}.purchasePrice`)}
+                        error={errors.items?.[index]?.purchasePrice?.message}
+                      />
+                      <ActionIcon
+                        color="red"
+                        variant="subtle"
+                        size="lg"
+                        disabled={fields.length === 1}
+                        onClick={() => remove(index)}
+                        style={{ flexGrow: 0 }}
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select product" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products?.data.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name} ({p.sku})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.items?.[index]?.productId ? (
-                        <p className="text-sm text-destructive">{errors.items[index]?.productId?.message}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex w-24 flex-col gap-1.5">
-                      <label className="text-sm font-medium">Qty</label>
-                      <Input inputMode="numeric" {...register(`items.${index}.quantity`)} />
-                    </div>
-                    <div className="flex w-32 flex-col gap-1.5">
-                      <label className="text-sm font-medium">Unit price</label>
-                      <Input inputMode="decimal" {...register(`items.${index}.purchasePrice`)} />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={fields.length === 1}
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
+                        <Trash2 size={18} />
+                      </ActionIcon>
+                    </Group>
 
-                  {selectedProduct?.tracksImei ? (
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-sm font-medium">
-                        IMEI numbers ({watchedItems[index]?.quantity ?? 0} required — one per line)
-                      </label>
+                    {selectedProduct?.tracksImei ? (
                       <Textarea
+                        mt="md"
+                        label={`IMEI numbers (${watchedItems[index]?.quantity ?? 0} required — one per line)`}
                         rows={3}
                         placeholder="One 15-digit IMEI per line"
                         inputMode="numeric"
                         {...register(`items.${index}.imeis`)}
+                        error={errors.items?.[index]?.imeis?.message}
                         onChange={(event) =>
                           setValue(
                             `items.${index}.imeis`,
@@ -264,95 +253,88 @@ export default function NewPurchasePage() {
                           )
                         }
                       />
-                      {errors.items?.[index]?.imeis ? (
-                        <p className="text-sm text-destructive">{errors.items[index]?.imeis?.message}</p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
+                    ) : null}
+                  </Card>
+                );
+              })}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => append({ productId: "", quantity: "1", purchasePrice: "", imeis: "" })}
-            >
-              <Plus /> Add Item
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Adjustments</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Discount</label>
-                  <Input inputMode="decimal" {...register("discount")} />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Shipping cost</label>
-                  <Input inputMode="decimal" {...register("shippingCost")} />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Remarks</label>
-                <Textarea rows={2} {...register("remarks")} />
-              </div>
-            </CardContent>
+              <Group>
+                <Button
+                  type="button"
+                  variant="outline"
+                  leftSection={<Plus size={16} />}
+                  onClick={() => append({ productId: "", quantity: "1", purchasePrice: "", imeis: "" })}
+                >
+                  Add Item
+                </Button>
+              </Group>
+            </Stack>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Items subtotal</span>
-                <span className="font-medium">{total.toFixed(2)}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Method</label>
+          <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <Card withBorder radius="md">
+              <Text fw={600} mb="md">Adjustments</Text>
+              <Stack gap="sm">
+                <SimpleGrid cols={2}>
+                  <TextInput
+                    label="Discount"
+                    inputMode="decimal"
+                    {...register("discount")}
+                    error={errors.discount?.message}
+                  />
+                  <TextInput
+                    label="Shipping cost"
+                    inputMode="decimal"
+                    {...register("shippingCost")}
+                    error={errors.shippingCost?.message}
+                  />
+                </SimpleGrid>
+                <Textarea
+                  label="Remarks"
+                  rows={2}
+                  {...register("remarks")}
+                  error={errors.remarks?.message}
+                />
+              </Stack>
+            </Card>
+
+            <Card withBorder radius="md">
+              <Text fw={600} mb="md">Payment</Text>
+              <Stack gap="sm">
+                <Group justify="space-between">
+                  <Text size="sm" c="dimmed">Items subtotal</Text>
+                  <Text fw={500}>{total.toFixed(2)}</Text>
+                </Group>
+                <Divider />
+                <SimpleGrid cols={2}>
                   <Select
-                    items={PAYMENT_METHOD_ITEMS}
+                    label="Method"
+                    data={paymentMethodData}
                     value={watch("paymentMethod")}
-                    onValueChange={(v) => setValue("paymentMethod", v ?? "cash")}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(PAYMENT_METHOD_ITEMS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Amount paid now</label>
-                  <Input inputMode="decimal" placeholder="0 = unpaid" {...register("paymentAmount")} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    onChange={(v) => setValue("paymentMethod", v ?? "cash")}
+                  />
+                  <TextInput
+                    label="Amount paid now"
+                    inputMode="decimal"
+                    placeholder="0 = unpaid"
+                    {...register("paymentAmount")}
+                    error={errors.paymentAmount?.message}
+                  />
+                </SimpleGrid>
+              </Stack>
+            </Card>
+          </SimpleGrid>
 
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/purchases")}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || mutation.isPending}>
-            {mutation.isPending ? "Saving..." : "Create Purchase"}
-          </Button>
-        </div>
+          <Group justify="flex-end" mt="sm">
+            <Button type="button" variant="default" onClick={() => router.push("/dashboard/purchases")}>
+              Cancel
+            </Button>
+            <Button type="submit" color="indigo" disabled={isSubmitting || mutation.isPending} loading={mutation.isPending}>
+              Create Purchase
+            </Button>
+          </Group>
+        </Stack>
       </form>
-    </div>
+    </Stack>
   );
 }

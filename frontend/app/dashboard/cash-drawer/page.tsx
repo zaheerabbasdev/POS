@@ -4,13 +4,23 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowDownToLine, ArrowUpFromLine, Banknote, RefreshCcw, ShoppingCart, Wallet } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { StatTile } from "@/components/stat-tile";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Badge,
+  Box,
+  SimpleGrid,
+  Skeleton,
+  Card,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
+import { StatCard } from "@/components/stat-card";
+import { MoneyText } from "@/components/currency-display";
 import { PaginationControls } from "@/components/pagination-controls";
 import { fetchCurrentDrawer, fetchDrawerSummary, fetchDrawerHistory, openDrawer, closeDrawer, cashIn, cashOut } from "@/lib/api/cash-drawer";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -90,202 +100,207 @@ export default function CashDrawerPage() {
   });
 
   if (isDrawerLoading) {
-    return <Skeleton className="h-64 w-full" />;
+    return <Skeleton height={256} width="100%" radius="md" />;
   }
 
   if (!drawer) {
     return (
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cash Drawer</h1>
-          <p className="text-muted-foreground">No session is currently open.</p>
-        </div>
-        <Card className="max-w-sm">
-          <CardHeader>
-            <CardTitle>Open Cash Drawer</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="opening-balance" className="text-sm font-medium">
-                Opening balance
-              </label>
-              <Input
-                id="opening-balance"
-                inputMode="decimal"
-                placeholder="0"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(e.target.value)}
-              />
-            </div>
-            <Button disabled={!openingBalance || openMutation.isPending} onClick={() => openMutation.mutate()}>
-              {openMutation.isPending ? "Opening..." : "Open Drawer"}
+      <Stack gap="lg">
+        <PageHeader title="Cash Drawer" description="No session is currently open." />
+        <Card shadow="sm" padding="lg" radius="md" withBorder maw={400}>
+          <Text fw={500} size="lg" mb="md">Open Cash Drawer</Text>
+          <Stack gap="sm">
+            <TextInput
+              label="Opening balance"
+              inputMode="decimal"
+              placeholder="0"
+              value={openingBalance}
+              onChange={(e) => setOpeningBalance(e.target.value)}
+            />
+            <Button
+              disabled={!openingBalance || openMutation.isPending}
+              onClick={() => openMutation.mutate()}
+              loading={openMutation.isPending}
+              color="indigo"
+            >
+              Open Drawer
             </Button>
-          </CardContent>
+          </Stack>
         </Card>
 
         <DrawerHistorySection />
-      </div>
+      </Stack>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cash Drawer</h1>
-          <p className="text-muted-foreground">
-            Opened {new Date(drawer.openedAt).toLocaleString()} by {drawer.cashier}
-          </p>
-        </div>
-        <Badge>OPEN</Badge>
-      </div>
+    <Stack gap="lg">
+      <Group justify="space-between" align="center">
+        <PageHeader
+          title="Cash Drawer"
+          description={`Opened ${new Date(drawer.openedAt).toLocaleString()} by ${drawer.cashier}`}
+        />
+        <Badge color="green" variant="light" size="lg">OPEN</Badge>
+      </Group>
 
       {isSummaryLoading || !summary ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <SimpleGrid cols={{ base: 2, md: 3, lg: 4 }}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-[68px] w-full" />
+            <Skeleton key={i} height={88} radius="md" />
           ))}
-        </div>
+        </SimpleGrid>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          <StatTile label="Opening Cash" value={summary.openingCash} icon={Wallet} />
-          <StatTile label="Sales Cash" value={summary.salesCash} icon={ShoppingCart} />
-          <StatTile label="Cash In" value={summary.cashIn} icon={ArrowDownToLine} />
-          <StatTile
+        <SimpleGrid cols={{ base: 2, md: 3, lg: 4 }}>
+          <StatCard label="Opening Cash" value={<MoneyText value={summary.openingCash} />} icon={Wallet} />
+          <StatCard label="Sales Cash" value={<MoneyText value={summary.salesCash} />} icon={ShoppingCart} />
+          <StatCard label="Cash In" value={<MoneyText value={summary.cashIn} />} icon={ArrowDownToLine} />
+          <StatCard
             label="Refunds"
-            value={summary.refunds}
+            value={<MoneyText value={summary.refunds} />}
             icon={RefreshCcw}
-            tone={summary.refunds > 0 ? "warning" : "default"}
+            tone={Number(summary.refunds) > 0 ? "warning" : "default"}
           />
-          <StatTile label="Expenses" value={summary.expenses} icon={Banknote} tone={summary.expenses > 0 ? "warning" : "default"} />
-          <StatTile label="Cash Out" value={summary.cashOut} icon={ArrowUpFromLine} />
-          <StatTile label="Expected Closing" value={summary.expectedClosingCash} icon={Wallet} />
-        </div>
+          <StatCard label="Expenses" value={<MoneyText value={summary.expenses} />} icon={Banknote} tone={Number(summary.expenses) > 0 ? "warning" : "default"} />
+          <StatCard label="Cash Out" value={<MoneyText value={summary.cashOut} />} icon={ArrowUpFromLine} />
+          <StatCard label="Expected Closing" value={<MoneyText value={summary.expectedClosingCash} />} icon={Wallet} />
+        </SimpleGrid>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cash In / Cash Out</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Input
+      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Text fw={500} size="lg" mb="md">Cash In / Cash Out</Text>
+          <Stack gap="sm">
+            <TextInput
               inputMode="decimal"
               placeholder="Amount"
               value={movementAmount}
               onChange={(e) => setMovementAmount(e.target.value)}
             />
-            <Input
+            <TextInput
               placeholder="Remarks (optional)"
               value={movementRemarks}
               onChange={(e) => setMovementRemarks(e.target.value)}
             />
-            <div className="flex gap-2">
+            <Group grow>
               <Button
                 variant="outline"
-                className="flex-1"
                 disabled={!movementAmount || cashInMutation.isPending}
                 onClick={() => cashInMutation.mutate()}
+                loading={cashInMutation.isPending}
               >
                 Cash In
               </Button>
               <Button
                 variant="outline"
-                className="flex-1"
                 disabled={!movementAmount || cashOutMutation.isPending}
                 onClick={() => cashOutMutation.mutate()}
+                loading={cashOutMutation.isPending}
               >
                 Cash Out
               </Button>
-            </div>
-          </CardContent>
+            </Group>
+          </Stack>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Close Drawer</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Input
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Text fw={500} size="lg" mb="md">Close Drawer</Text>
+          <Stack gap="sm">
+            <TextInput
               inputMode="decimal"
               placeholder={`Expected ~${summary?.expectedClosingCash ?? 0}`}
               value={closingBalance}
               onChange={(e) => setClosingBalance(e.target.value)}
             />
-            <Input placeholder="Notes (optional)" value={closingNotes} onChange={(e) => setClosingNotes(e.target.value)} />
+            <TextInput
+              placeholder="Notes (optional)"
+              value={closingNotes}
+              onChange={(e) => setClosingNotes(e.target.value)}
+            />
             <Button
-              variant="destructive"
+              color="red"
               disabled={!closingBalance || closeMutation.isPending}
               onClick={() => closeMutation.mutate()}
+              loading={closeMutation.isPending}
             >
-              {closeMutation.isPending ? "Closing..." : "Close Drawer"}
+              Close Drawer
             </Button>
-          </CardContent>
+          </Stack>
         </Card>
 
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Session</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Opened</span>
-              <span>{new Date(drawer.openedAt).toLocaleTimeString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Cashier</span>
-              <span>{drawer.cashier}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Opening Balance</span>
-              <span>{drawer.openingBalance}</span>
-            </div>
-          </CardContent>
+        <Card shadow="sm" padding="lg" radius="md" withBorder>
+          <Text fw={500} size="lg" mb="md">Session Details</Text>
+          <Stack gap="xs" mt="sm">
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Opened</Text>
+              <Text size="sm">{new Date(drawer.openedAt).toLocaleTimeString()}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Cashier</Text>
+              <Text size="sm">{drawer.cashier}</Text>
+            </Group>
+            <Group justify="space-between">
+              <Text size="sm" c="dimmed">Opening Balance</Text>
+              <Text size="sm"><MoneyText value={drawer.openingBalance} /></Text>
+            </Group>
+          </Stack>
         </Card>
-      </div>
+      </SimpleGrid>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Remarks</TableHead>
-                <TableHead>Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {summary && summary.transactions.length > 0 ? (
-                summary.transactions.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>
-                      <Badge variant="outline">{t.type}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{t.amount}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{t.referenceNumber ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{t.remarks ?? "—"}</TableCell>
-                    <TableCell>{new Date(t.createdAt).toLocaleTimeString()}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="py-6 text-center text-muted-foreground">
-                    No transactions yet.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          data={summary?.transactions ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle="No transactions yet"
+          emptyDescription="Transactions for this session will appear here."
+          columns={[
+            {
+              key: "type",
+              header: "Type",
+              render: (t) => (
+                <Badge variant="outline" color="gray">
+                  {t.type}
+                </Badge>
+              ),
+            },
+            {
+              key: "amount",
+              header: "Amount",
+              align: "right",
+              render: (t) => <MoneyText value={t.amount} />,
+            },
+            {
+              key: "reference",
+              header: "Reference",
+              render: (t) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {t.referenceNumber ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "remarks",
+              header: "Remarks",
+              render: (t) => (
+                <Text size="sm" c="dimmed">
+                  {t.remarks ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "time",
+              header: "Time",
+              render: (t) => (
+                <Text size="sm">
+                  {new Date(t.createdAt).toLocaleTimeString()}
+                </Text>
+              ),
+            },
+          ]}
+        />
+      </Paper>
 
       <DrawerHistorySection />
-    </div>
+    </Stack>
   );
 }
 
@@ -299,71 +314,96 @@ function DrawerHistorySection() {
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Session History</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cashier</TableHead>
-              <TableHead>Opened</TableHead>
-              <TableHead>Closed</TableHead>
-              <TableHead className="text-right">Opening</TableHead>
-              <TableHead className="text-right">Closing</TableHead>
-              <TableHead className="text-right">Difference</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : data && data.data.length > 0 ? (
-              data.data.map((session) => (
-                <TableRow key={session.id}>
-                  <TableCell className="font-medium">{session.cashier}</TableCell>
-                  <TableCell>{new Date(session.openedAt).toLocaleString()}</TableCell>
-                  <TableCell>{session.closedAt ? new Date(session.closedAt).toLocaleString() : "—"}</TableCell>
-                  <TableCell className="text-right">{session.openingBalance}</TableCell>
-                  <TableCell className="text-right">{session.closingBalance ?? "—"}</TableCell>
-                  <TableCell className="text-right">
-                    {session.difference !== null && Number(session.difference) !== 0 ? (
-                      <span className={Number(session.difference) < 0 ? "text-destructive" : "text-amber-600 dark:text-amber-500"}>
-                        {session.difference}
-                      </span>
-                    ) : (
-                      (session.difference ?? "—")
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={session.status === "OPEN" ? "default" : "outline"}>{session.status}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="py-6 text-center text-muted-foreground">
-                  No past sessions yet.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={HISTORY_PAGE_SIZE}
-          onPageChange={setPage}
-        />
-      ) : null}
-    </Card>
+    <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+      <Box p="md" style={{ borderBottom: "1px solid var(--mantine-color-gray-2)" }}>
+        <Text fw={500} size="lg">Session History</Text>
+      </Box>
+      <DataTable
+        isLoading={isLoading}
+        data={data?.data ?? []}
+        keyExtractor={(row) => row.id}
+        emptyTitle="No past sessions yet"
+        emptyDescription="Past cash drawer sessions will appear here."
+        columns={[
+          {
+            key: "cashier",
+            header: "Cashier",
+            render: (s) => (
+              <Text size="sm" fw={500}>
+                {s.cashier}
+              </Text>
+            ),
+          },
+          {
+            key: "opened",
+            header: "Opened",
+            render: (s) => (
+              <Text size="sm">
+                {new Date(s.openedAt).toLocaleString()}
+              </Text>
+            ),
+          },
+          {
+            key: "closed",
+            header: "Closed",
+            render: (s) => (
+              <Text size="sm">
+                {s.closedAt ? new Date(s.closedAt).toLocaleString() : "—"}
+              </Text>
+            ),
+          },
+          {
+            key: "opening",
+            header: "Opening",
+            align: "right",
+            render: (s) => <MoneyText value={s.openingBalance} />,
+          },
+          {
+            key: "closing",
+            header: "Closing",
+            align: "right",
+            render: (s) => (
+              s.closingBalance !== null ? <MoneyText value={s.closingBalance} /> : <Text size="sm">—</Text>
+            ),
+          },
+          {
+            key: "difference",
+            header: "Difference",
+            align: "right",
+            render: (s) => {
+              if (s.difference !== null && Number(s.difference) !== 0) {
+                const diff = Number(s.difference);
+                return (
+                  <Text size="sm" c={diff < 0 ? "red" : "orange"} fw={500}>
+                    <MoneyText value={s.difference} />
+                  </Text>
+                );
+              }
+              return <Text size="sm">{s.difference ?? "—"}</Text>;
+            },
+          },
+          {
+            key: "status",
+            header: "Status",
+            render: (s) => (
+              <Badge color={s.status === "OPEN" ? "green" : "gray"} variant="light" size="sm">
+                {s.status}
+              </Badge>
+            ),
+          },
+        ]}
+      />
+      {data && (
+        <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+          <PaginationControls
+            page={page}
+            totalPages={data.pagination.totalPages}
+            total={data.pagination.total}
+            limit={HISTORY_PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        </Box>
+      )}
+    </Paper>
   );
 }

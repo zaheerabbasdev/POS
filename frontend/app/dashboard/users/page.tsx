@@ -3,15 +3,23 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import {
+  Paper,
+  Stack,
+  Group,
+  TextInput,
+  Button,
+  Text,
+  Badge,
+  Box,
+} from "@mantine/core";
+import { PageHeader } from "@/components/page-header";
+import { DataTable } from "@/components/data-table";
 import { StatusBadge } from "@/components/status-badge";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PaginationControls } from "@/components/pagination-controls";
+import { ActionMenu } from "@/components/action-menu";
+import { ConfirmModal } from "@/components/confirm-modal";
 import { fetchUsers, deleteUser, type UserListItem, type UserDetail } from "@/lib/api/users";
 import { getApiErrorMessage } from "@/lib/api-client";
 import { UserFormDialog } from "./user-form-dialog";
@@ -47,119 +55,141 @@ export default function UsersPage() {
   };
 
   const openEdit = (user: UserListItem) => {
-    // The list row already has everything the edit form needs; UserDetail
-    // just adds phone/profileImage/lastLogin, which the form doesn't use.
     setEditingUser({ ...user, phone: null, profileImage: null, lastLogin: null });
     setFormOpen(true);
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-          <p className="text-muted-foreground">Manage who can access the POS system and their roles.</p>
-        </div>
-        <Button onClick={openCreate}>
-          <Plus /> Add User
-        </Button>
-      </div>
+    <Stack gap="lg">
+      <PageHeader
+        title="Users"
+        description="Manage who can access the POS system and their roles."
+        actions={
+          <Button onClick={openCreate} leftSection={<Plus size={16} />} color="indigo">
+            Add User
+          </Button>
+        }
+      />
 
-      <div className="relative max-w-sm">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, username, or email..."
-          className="pl-8"
+      <Group gap="sm">
+        <TextInput
+          placeholder="Search by name, username, or email…"
+          leftSection={<Search size={15} />}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
+          style={{ width: 300 }}
         />
-      </div>
+      </Group>
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Username</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : data && data.data.length > 0 ? (
-                data.data.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{user.username}</TableCell>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.role ?? "No role"}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={user.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(user)}>
-                        Edit
-                      </Button>
-                      {user.status === "active" ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => setDeactivatingUser(user)}
-                        >
-                          Deactivate
-                        </Button>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">
-                    No users found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data ? (
-        <PaginationControls
-          page={page}
-          totalPages={data.pagination.totalPages}
-          total={data.pagination.total}
-          limit={PAGE_SIZE}
-          onPageChange={setPage}
+      <Paper withBorder radius="md" style={{ overflow: "hidden" }}>
+        <DataTable
+          isLoading={isLoading}
+          data={data?.data ?? []}
+          keyExtractor={(row) => row.id}
+          emptyTitle={search ? "No matching users" : "No users yet"}
+          emptyDescription={
+            search
+              ? "No users match your search."
+              : "Add a user."
+          }
+          columns={[
+            {
+              key: "username",
+              header: "Username",
+              render: (u) => (
+                <Text size="xs" c="dimmed" style={{ fontFamily: "var(--mantine-font-family-monospace)" }}>
+                  {u.username}
+                </Text>
+              ),
+            },
+            {
+              key: "name",
+              header: "Name",
+              render: (u) => (
+                <Text size="sm" fw={500}>
+                  {u.name}
+                </Text>
+              ),
+            },
+            {
+              key: "email",
+              header: "Email",
+              render: (u) => (
+                <Text size="sm" c="dimmed">
+                  {u.email ?? "—"}
+                </Text>
+              ),
+            },
+            {
+              key: "role",
+              header: "Role",
+              render: (u) => (
+                <Badge variant="outline" color="gray" size="sm">
+                  {u.role ?? "No role"}
+                </Badge>
+              ),
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (u) => <StatusBadge status={u.status} />,
+            },
+            {
+              key: "actions",
+              header: "",
+              render: (u) => (
+                <ActionMenu
+                  items={[
+                    {
+                      label: "Edit",
+                      icon: <Pencil size={14} />,
+                      onClick: () => openEdit(u),
+                    },
+                    ...(u.status === "active"
+                      ? [
+                          {
+                            label: "Deactivate",
+                            icon: <Trash2 size={14} />,
+                            onClick: () => setDeactivatingUser(u),
+                            destructive: true,
+                            dividerBefore: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              ),
+            },
+          ]}
         />
-      ) : null}
+
+        {data && (
+          <Box style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>
+            <PaginationControls
+              page={page}
+              totalPages={data.pagination.totalPages}
+              total={data.pagination.total}
+              limit={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </Box>
+        )}
+      </Paper>
 
       <UserFormDialog open={formOpen} onOpenChange={setFormOpen} user={editingUser} />
 
-      <ConfirmDialog
-        open={Boolean(deactivatingUser)}
-        onOpenChange={(open) => !open && setDeactivatingUser(undefined)}
+      <ConfirmModal
+        opened={Boolean(deactivatingUser)}
+        onClose={() => setDeactivatingUser(undefined)}
         title="Deactivate user?"
         description={`"${deactivatingUser?.name}" will no longer be able to log in. Their history is preserved and this can be reversed later.`}
         confirmLabel="Deactivate"
         isPending={deleteMutation.isPending}
         onConfirm={() => deactivatingUser && deleteMutation.mutate(deactivatingUser.id)}
       />
-    </div>
+    </Stack>
   );
 }

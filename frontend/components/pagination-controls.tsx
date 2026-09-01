@@ -1,7 +1,7 @@
 "use client";
 
+import { Group, Text, Button, Box } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface PaginationControlsProps {
   page: number;
@@ -12,45 +12,65 @@ interface PaginationControlsProps {
 }
 
 /**
- * Shared list-page pagination — every backend list endpoint already returns
- * { page, limit, total, totalPages }; this is the one place that turns that
- * into "Prev / Next" controls instead of every page silently capping at
- * whatever `limit` it fetched.
+ * Shared pagination controls — keeps the same props/behavior as the original;
+ * only the visual presentation is updated to use Mantine components.
+ * Backend pagination API is unchanged.
  */
-export function PaginationControls({ page, totalPages, total, limit, onPageChange }: PaginationControlsProps) {
+export function PaginationControls({
+  page,
+  totalPages,
+  total,
+  limit,
+  onPageChange,
+}: PaginationControlsProps) {
   if (total === 0) return null;
 
   const start = (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
+  const end   = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-2 py-3">
-      <p className="text-sm text-muted-foreground">
-        Showing {start}–{end} of {total}
-      </p>
-      <div className="flex items-center gap-2">
+    <Group justify="space-between" px="xs" py="sm">
+      <Text size="sm" c="dimmed">
+        Showing <strong>{start}–{end}</strong> of <strong>{total}</strong>
+      </Text>
+
+      <Group gap="xs">
         <Button
-          type="button"
-          variant="outline"
-          size="sm"
+          variant="default"
+          size="xs"
+          leftSection={<ChevronLeft size={14} />}
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          <ChevronLeft /> Prev
+          Prev
         </Button>
-        <span className="text-sm text-muted-foreground">
-          Page {page} of {totalPages}
-        </span>
+
+        <Box
+          style={{
+            display: "flex",
+            alignItems: "center",
+            padding: "0 8px",
+            height: 28,
+            border: "1px solid var(--mantine-color-gray-3)",
+            borderRadius: 6,
+            backgroundColor: "var(--mantine-color-gray-0)",
+          }}
+        >
+          <Text size="xs" c="dimmed">
+            {page} / {totalPages}
+          </Text>
+        </Box>
+
         <Button
-          type="button"
-          variant="outline"
-          size="sm"
+          variant="default"
+          size="xs"
+          rightSection={<ChevronRight size={14} />}
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next <ChevronRight />
+          Next
         </Button>
-      </div>
-    </div>
+      </Group>
+    </Group>
   );
 }

@@ -3,16 +3,16 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal,
+  Stack,
+  Group,
+  Button,
+  Checkbox,
+  Text,
+  SimpleGrid,
+  ScrollArea,
+} from "@mantine/core";
 import { fetchPermissions, type Permission } from "@/lib/api/permissions";
 import { assignPermissions, type Role } from "@/lib/api/roles";
 import { getApiErrorMessage } from "@/lib/api-client";
@@ -25,15 +25,14 @@ interface PermissionsDialogProps {
 
 export function PermissionsDialog({ open, onOpenChange, role }: PermissionsDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        {/* Keyed on role.id so `selected` initializes fresh per role via
-            useState's initializer, instead of syncing it with an effect. */}
-        {role ? (
-          <PermissionsDialogBody key={role.id} role={role} onOpenChange={onOpenChange} />
-        ) : null}
-      </DialogContent>
-    </Dialog>
+    <Modal
+      opened={open}
+      onClose={() => onOpenChange(false)}
+      title={`Permissions — ${role?.name ?? ""}`}
+      size="lg"
+    >
+      {role && <PermissionsDialogBody key={role.id} role={role} onOpenChange={onOpenChange} />}
+    </Modal>
   );
 }
 
@@ -73,36 +72,40 @@ function PermissionsDialogBody({ role, onOpenChange }: { role: Role; onOpenChang
   });
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>Permissions — {role.name}</DialogTitle>
-        <DialogDescription>Choose exactly what this role can do. Replaces the full permission set for this role.</DialogDescription>
-      </DialogHeader>
+    <Stack gap="md">
+      <Text size="sm" c="dimmed">
+        Choose exactly what this role can do. Replaces the full permission set for this role.
+      </Text>
 
-      <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
-        {grouped.map(([module, modulePermissions]) => (
-          <div key={module} className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-muted-foreground">{module}</span>
-            <div className="grid grid-cols-2 gap-2">
-              {modulePermissions.map((permission) => (
-                <label key={permission.code} className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={selected.has(permission.code)} onCheckedChange={() => toggle(permission.code)} />
-                  {permission.code}
-                </label>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      <ScrollArea h={400} offsetScrollbars type="auto">
+        <Stack gap="lg">
+          {grouped.map(([module, modulePermissions]) => (
+            <Stack key={module} gap="xs">
+              <Text size="sm" fw={600} c="dimmed">{module}</Text>
+              <SimpleGrid cols={2} spacing="sm">
+                {modulePermissions.map((permission) => (
+                  <Checkbox
+                    key={permission.code}
+                    label={permission.code}
+                    checked={selected.has(permission.code)}
+                    onChange={() => toggle(permission.code)}
+                    size="sm"
+                  />
+                ))}
+              </SimpleGrid>
+            </Stack>
+          ))}
+        </Stack>
+      </ScrollArea>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+      <Group justify="flex-end" mt="md">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
-        <Button disabled={mutation.isPending} onClick={() => mutation.mutate()}>
-          {mutation.isPending ? "Saving..." : "Save permissions"}
+        <Button disabled={mutation.isPending} loading={mutation.isPending} onClick={() => mutation.mutate()} color="indigo">
+          Save permissions
         </Button>
-      </DialogFooter>
-    </>
+      </Group>
+    </Stack>
   );
 }
