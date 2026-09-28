@@ -139,6 +139,22 @@ export default function PurchaseDetailPage(props: PageProps<"/dashboard/purchase
                 <Text size="sm" fw={600}>Total</Text>
                 <Text size="sm" fw={600}><MoneyText value={purchase.totalAmount} /></Text>
               </Group>
+              <Group justify="space-between" mt="xs">
+                <Text size="sm" c="dimmed">Paid</Text>
+                <Text size="sm"><MoneyText value={purchase.paidAmount} /></Text>
+              </Group>
+              {purchase.returnedAmount > 0 && (
+                <Group justify="space-between" mt="xs">
+                  <Text size="sm" c="dimmed">Returned to supplier</Text>
+                  <Text size="sm">-<MoneyText value={purchase.returnedAmount} /></Text>
+                </Group>
+              )}
+              <Group justify="space-between" mt="xs">
+                <Text size="sm" fw={600}>Still owed</Text>
+                <Text size="sm" fw={600} c={purchase.dueAmount > 0 ? "red" : undefined}>
+                  <MoneyText value={purchase.dueAmount} />
+                </Text>
+              </Group>
             </Box>
             {purchase.remarks && (
               <Box mt="xs" pt="xs" style={{ borderTop: "1px solid var(--mantine-color-gray-2)" }}>

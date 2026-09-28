@@ -2,7 +2,11 @@ import { prisma } from "../../config/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { PAYMENT_METHOD_INPUT_MAP } from "../../common/utils/paymentMethod.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
-import { BadRequestError, NotFoundError } from "../../common/errors/AppError.js";
+import { BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
+import { MONEY_EPSILON, round2 } from "../../common/utils/money.js";
+import { recordDrawerMovement } from "../cashDrawer/cashDrawer.service.js";
+import { getPurchaseBalance, purchasePaymentStatus } from "../purchases/purchaseBalance.js";
+import { paymentStatusFor } from "../sales/saleReturnState.js";
 
 function toPaymentDto(payment: Prisma.PaymentGetPayload<object>) {
   return {
@@ -73,15 +77,34 @@ export interface CreatePaymentInput {
  */
 export async function createPayment(shopId: string, input: CreatePaymentInput, receivedById: string) {
   const method = PAYMENT_METHOD_INPUT_MAP[input.method]!;
+  const amount = round2(input.amount);
 
   if (input.type === "customer") {
     const sale = await prisma.sale.findFirst({ where: { id: input.referenceId, shopId } });
     if (!sale) throw new NotFoundError("Sale not found.");
-    if (input.amount > sale.dueAmount.toNumber()) {
+    if (sale.isCancelled) throw new BadRequestError("This sale was cancelled — it can't take payments.");
+    if (amount > sale.dueAmount.toNumber()) {
       throw new BadRequestError(`Amount exceeds the remaining due amount of ${sale.dueAmount}.`);
     }
 
     const payment = await prisma.$transaction(async (tx) => {
+      // Atomic: only applies if the sale still owes at least this much right
+      // now. Two people recording the same payment at once can't both succeed
+      // and push the balance below zero. dueAmount is the source of truth
+      // (not totalAmount − paid), since returns also reduce it.
+      const updated = await tx.sale.updateMany({
+        where: { id: sale.id, shopId, isCancelled: false, dueAmount: { gte: amount } },
+        data: { paidAmount: { increment: amount }, dueAmount: { decrement: amount } },
+      });
+      if (updated.count === 0) {
+        throw new ConflictError("This sale's balance just changed — please refresh and try again.");
+      }
+      const fresh = await tx.sale.findFirstOrThrow({ where: { id: sale.id, shopId } });
+      await tx.sale.update({
+        where: { id: sale.id },
+        data: { paymentStatus: paymentStatusFor(Number(fresh.paidAmount), Number(fresh.dueAmount)) },
+      });
+
       const created = await tx.payment.create({
         data: {
           shopId,
@@ -89,28 +112,24 @@ export async function createPayment(shopId: string, input: CreatePaymentInput, r
           referenceId: input.referenceId,
           paymentMethod: method,
           paymentDate: new Date(),
-          amount: input.amount,
+          amount,
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           receivedById,
-        },
-      });
-
-      const newPaidAmount = sale.paidAmount.plus(input.amount);
-      const newDueAmount = sale.totalAmount.minus(newPaidAmount);
-      await tx.sale.update({
-        where: { id: input.referenceId },
-        data: {
-          paidAmount: newPaidAmount,
-          dueAmount: newDueAmount,
-          paymentStatus: newDueAmount.lessThanOrEqualTo(0) ? "PAID" : "PARTIAL",
         },
       });
 
       if (sale.customerId) {
         await tx.customer.update({
           where: { id: sale.customerId },
-          data: { outstandingBalance: { decrement: input.amount } },
+          data: { outstandingBalance: { decrement: amount } },
         });
+      }
+
+      // Cash a customer brings in later goes into the till just like cash
+      // taken at the counter (skipped if the person recording it has no open
+      // drawer — same best-effort rule as sales).
+      if (method === "CASH") {
+        await recordDrawerMovement(tx, shopId, receivedById, "SALE", amount, sale.invoiceNumber);
       }
 
       return created;
@@ -122,17 +141,15 @@ export async function createPayment(shopId: string, input: CreatePaymentInput, r
   const purchase = await prisma.purchase.findFirst({ where: { id: input.referenceId, shopId } });
   if (!purchase) throw new NotFoundError("Purchase not found.");
 
-  const paidSoFarAgg = await prisma.payment.aggregate({
-    where: { paymentType: "PURCHASE_PAYMENT", referenceId: input.referenceId, shopId },
-    _sum: { amount: true },
-  });
-  const paidSoFar = paidSoFarAgg._sum.amount ?? 0;
-  const dueAmount = purchase.totalAmount.minus(paidSoFar);
-  if (input.amount > dueAmount.toNumber()) {
-    throw new BadRequestError(`Amount exceeds the remaining due amount of ${dueAmount}.`);
-  }
-
   const payment = await prisma.$transaction(async (tx) => {
+    // Lock the purchase so two payments recorded at once can't both pass the
+    // "not more than what's owed" check.
+    await tx.$queryRaw`SELECT id FROM purchases WHERE id = ${purchase.id}::uuid AND shop_id = ${shopId}::uuid FOR UPDATE`;
+    const { paid, due } = await getPurchaseBalance(tx, shopId, purchase);
+    if (amount > due + MONEY_EPSILON) {
+      throw new BadRequestError(`Amount exceeds the remaining due amount of ${due}.`);
+    }
+
     const created = await tx.payment.create({
       data: {
         shopId,
@@ -140,21 +157,20 @@ export async function createPayment(shopId: string, input: CreatePaymentInput, r
         referenceId: input.referenceId,
         paymentMethod: method,
         paymentDate: new Date(),
-        amount: input.amount,
+        amount,
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         receivedById,
       },
     });
 
-    const newDueAmount = dueAmount.minus(input.amount);
     await tx.purchase.update({
       where: { id: input.referenceId },
-      data: { paymentStatus: newDueAmount.lessThanOrEqualTo(0) ? "PAID" : "PARTIAL" },
+      data: { paymentStatus: purchasePaymentStatus(paid + amount, round2(due - amount)) },
     });
 
     await tx.supplier.update({
       where: { id: purchase.supplierId },
-      data: { outstandingBalance: { decrement: input.amount } },
+      data: { outstandingBalance: { decrement: amount } },
     });
 
     return created;
@@ -177,13 +193,9 @@ export async function getPaymentHistory(shopId: string, referenceId: string) {
     orderBy: { paymentDate: "desc" },
   });
 
-  let remainingBalance = sale?.dueAmount;
+  let remainingBalance: Prisma.Decimal | number | undefined = sale?.dueAmount;
   if (!sale && purchase) {
-    const paidAgg = await prisma.payment.aggregate({
-      where: { paymentType: "PURCHASE_PAYMENT", referenceId, shopId },
-      _sum: { amount: true },
-    });
-    remainingBalance = purchase.totalAmount.minus(paidAgg._sum.amount ?? 0);
+    remainingBalance = (await getPurchaseBalance(prisma, shopId, purchase)).due;
   }
 
   return { payments: payments.map(toPaymentDto), remainingBalance };

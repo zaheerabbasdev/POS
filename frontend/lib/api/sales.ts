@@ -29,6 +29,8 @@ export interface SaleDetail {
     tax: string;
     lineTotal: string;
     imei: string | null;
+    // Units of this line the customer has already brought back.
+    returnedQuantity: number;
     warranty: { warrantyNumber: string; periodMonths: number; startDate: string; expiryDate: string; status: string } | null;
   }[];
   subtotal: string;
@@ -90,14 +92,19 @@ export async function fetchSale(id: string): Promise<SaleDetail> {
   return data.data;
 }
 
-// POST /api/v1/sales (API Spec Chapter 34.3).
-export async function createSale(input: CreateSaleInput): Promise<SaleDetail> {
-  const { data } = await apiClient.post<{ data: SaleDetail }>("/sales", input);
+// POST /api/v1/sales (API Spec Chapter 34.3). changeGiven is cash handed
+// back when the customer paid more than the bill (never stored as payment).
+export async function createSale(input: CreateSaleInput): Promise<SaleDetail & { changeGiven: number }> {
+  const { data } = await apiClient.post<{ data: SaleDetail & { changeGiven: number } }>("/sales", input);
   return data.data;
 }
 
 // PATCH /api/v1/sales/{id}/cancel (API Spec Chapter 34.4).
-export async function cancelSale(id: string, reason?: string): Promise<SaleDetail> {
-  const { data } = await apiClient.patch<{ data: SaleDetail }>(`/sales/${id}/cancel`, reason ? { reason } : {});
+// refundMethod defaults (server-side) to however the customer paid.
+export async function cancelSale(id: string, reason?: string, refundMethod?: string): Promise<SaleDetail> {
+  const { data } = await apiClient.patch<{ data: SaleDetail }>(`/sales/${id}/cancel`, {
+    ...(reason ? { reason } : {}),
+    ...(refundMethod ? { refundMethod } : {}),
+  });
   return data.data;
 }

@@ -238,10 +238,30 @@ public shop registration (in progress — see §11 for what's built so far).
   `reservedQuantity`, `reorderLevel`), with every quantity change also writing an
   `InventoryTransaction` audit row (type + signed quantity + reference number).
 - **`CashDrawer`/`CashDrawerTransaction`** track per-cashier register sessions.
-  `CASH`-method sale payments and sale-cancellation/return refunds auto-log a
-  transaction against the cashier's currently open drawer (best-effort — a missing
-  open session never blocks the sale itself, since only cash payments touch the
-  physical drawer).
+  Every flow where cash physically moves auto-logs against the acting user's open
+  drawer (best-effort — a missing open session never blocks the operation):
+  cash kept at the counter on a sale (the bill amount only — change handed back
+  is never recorded as payment), cash collected later via Payments, cash refunds
+  from returns/cancellations, and cash expenses dated today (as `EXPENSE`,
+  referenced by expense number, kept in step on edit/delete while that session is
+  still open). Non-cash refunds and supplier payments never touch the drawer.
+- **Sale money after returns**: `Sale.paidAmount`/`dueAmount` are always the
+  *current* position, not the original checkout. A sales return reduces
+  `dueAmount` first (clearing what the customer still owes) and only pays back
+  the remainder in cash, reducing `paidAmount` by that much. Invariant:
+  `paidAmount + dueAmount` = value of the goods still with the customer. A
+  cancelled sale has `dueAmount = 0`. Which units are still with the customer is
+  worked out by `modules/sales/saleReturnState.ts` (phones via the IMEI's current
+  `saleId`; other products by consuming returned quantity across lines in a fixed
+  order), shared by Sales Returns, Cancel Sale and the sale detail's
+  `returnedQuantity`. Returned units are valued at what the customer was charged
+  (line discount, and the invoice discount spread across lines by line total).
+  `SalesReturn.refundAmount` stores that goods value; the cash actually handed
+  back is the REFUND `Payment` row.
+- **Purchase balance**: purchases have no paid/due columns, so "still owed" is
+  always `total − paid − returned`, computed in one place
+  (`modules/purchases/purchaseBalance.ts#getPurchaseBalance`) and used by
+  Payments, Purchase Returns and the purchase detail.
 
 ### 5.4 Deliberate deviations from the DDD
 
@@ -258,6 +278,7 @@ with a `// Not in DDD Table N — ...` comment explaining why. The full list:
 | `Sale.isCancelled` / `cancelledAt` / `cancelReason` | Sales | The API Spec's Cancel Sale endpoint (34.4) needs a cancelled state distinct from payment status, which DDD Table 21 has no field for. |
 | `PurchaseReturnItem` (whole model) | Purchase Returns | DDD Table 20 is a single row with one aggregate `return_amount` — but the API Spec's Create Purchase Return body sends a per-product `items` array, and reversing inventory correctly requires knowing exactly which product/quantity came back. |
 | `SalesReturnItem` (whole model) | Sales Returns | Same reasoning, mirrored for the customer-facing side (DDD Table 23 → API Spec 35.2's `items` array). |
+| `SaleItem.imeiId` not unique | Sale Items | DDD Table 22 makes `imei_id` one-to-one, but a returned or cancelled phone goes back on the shelf and is sold again, so one IMEI can sit on several sale lines over its life (the unique index made resale fail — `docs/bugs/BUG-010`). The current owner is `ImeiNumber.saleId`. |
 | `Customer.attachmentUrl` | Customers | API Spec Chapter 52 lists "Customer Attachment" as an upload type; DDD Table 16 has nowhere to put the resulting URL. |
 | `Employee.profileImage` | Employees | Same chapter's "Employee Photo" upload type; User already had `profileImage`, but an employee doesn't necessarily have a login. |
 | `Repair.imageUrl` | Repairs | Same chapter's "Repair Image" upload type (device condition at intake). |
@@ -439,15 +460,25 @@ CRUD + `GET /:id/history` (purchase/sales history per entity).
 ### Purchases — `/api/v1/purchases`
 `POST /` validates supplier + IMEI requirements, then in one transaction: creates the
 purchase, creates purchase items, increases inventory, registers IMEIs, records the
-initial payment. `DELETE /:id` reverses stock and removes IMEIs — refuses if any of
-that stock has already moved (sold IMEIs) or reversal would take stock negative.
+initial payment (duplicate IMEIs, a discount larger than the price, or a payment
+above the total are refused). `DELETE /:id` reverses stock and removes IMEIs —
+refuses if any of that stock has already moved (sold IMEIs), reversal would take
+stock negative, or any of it was already returned to the supplier. `GET /:id`
+includes `paidAmount`, `returnedAmount`, `dueAmount`, per-product
+`returnedQuantities` and per-item `availableImeis`.
 
 ### Sales (POS) — `/api/v1/sales`
 `POST /` follows the doc's flow exactly: validate stock → validate IMEI → create
 invoice → decrease stock → update IMEI status → create warranty (if applicable) →
-receive payment — one transaction. `PATCH /:id/cancel` reverses all of it (restores
-inventory, frees IMEIs, cancels warranties, records a refund) without deleting
-anything — full audit trail preserved.
+receive payment — one transaction. Payments above the bill are only allowed in
+cash: the excess is change, trimmed off the cash entries and returned as
+`changeGiven` (never recorded as payment). Discounts larger than the bill are
+refused. `PATCH /:id/cancel` (`{ reason?, refundMethod? }`) reverses what the
+customer still has — units already returned were restocked and refunded then —
+frees IMEIs, cancels active warranties, refunds the net `paidAmount` the same way
+the customer paid (cash if split, or the given `refundMethod`; only cash touches
+the drawer), clears what they owed, and deletes nothing. Returns and cancels
+lock the sale row (`SELECT … FOR UPDATE`) so they can't overlap.
 
 ### Cash Drawer — `/api/v1/cash-drawer`
 `POST /open` (opening balance), `POST /close` (computes `expectedBalance` from
@@ -458,21 +489,29 @@ matches API Spec 37.3 exactly), `GET /` (session history, for managers).
 
 ### Sales Returns & Purchase Returns — `/api/v1/sales-returns`, `/api/v1/purchase-returns`
 `POST /` on either: over-return protection (can't return more than was sold/bought
-minus what's already been returned), releases/removes IMEIs appropriately, and
-auto-creates a REFUND payment (sales side) or adjusts the supplier's outstanding
-balance (purchase side).
+minus what's already been returned), items accept optional exact `imeis`, one line
+per product, and the parent sale/purchase row is locked for the transaction.
+**Sales side**: values units at what the customer was charged, reduces what they
+owe first, pays back only the rest (REFUND payment + drawer if cash), updates the
+sale's `paidAmount`/`dueAmount`; the response adds `creditApplied`/`cashRefunded`.
+**Purchase side**: only stock still on the shelf can go back (atomic check),
+units valued at discounted cost, supplier balance reduced, and the return counts
+toward the purchase's "still owed".
 
 ### Payments — `/api/v1/payments`
 `POST /` records an additional payment against an existing sale or purchase (beyond
-what was taken at creation time). `GET /history/:id` — payment history + remaining
-balance for a given sale/purchase.
+what was taken at creation time) — refused on a cancelled sale or above what's
+still owed (sale: atomic against `dueAmount`; purchase: `getPurchaseBalance` under
+a row lock). A cash customer payment goes into the recorder's open drawer.
+`GET /history/:id` — payment history + remaining balance for a given sale/purchase.
 
 ### Repairs — `/api/v1/repairs`
 `POST /` (device + IMEI accepted as free text — only linked structurally when they
 match records this shop actually has; `technicianId` optional), `PATCH /:id/status`
 (auto-stamps `deliveredDate` on DELIVERED; locked once DELIVERED/CANCELLED), `PATCH
 /:id` (diagnosis/cost/technician/remarks), `POST /:id/items` ("Record Parts Used" —
-decrements real inventory), `GET /`, `GET /:id`.
+decrements real inventory atomically; refused on DELIVERED/CANCELLED repairs and
+for IMEI-tracked products), `GET /`, `GET /:id`.
 
 ### Warranties — `/api/v1/warranties`
 `GET /` (filterable by customer/product/status/expiring-within-days). `POST /claim`
@@ -503,6 +542,11 @@ cost: "profit" (Product Sales Report, Profit & Loss) uses each product's *curren
 `purchasePrice` as a cost proxy, not true historical COGS; "cash vs. credit sales"
 (Daily Sales Report) is inferred from `dueAmount` (paid-in-full vs. still-owing), not
 an explicit payment-method split.
+
+Every sales figure (reports, dashboard, platform shop totals) is **net of sales
+returns**, dated by when the goods came back; profit also removes the returned
+goods' cost. The sales summary adds `grossSales`/`totalReturns`, daily rows add
+`returns`.
 
 ### Export — `/api/v1/export`
 `POST /report` — `{ reportType, format, filters }`. `reportType` is any of the 17

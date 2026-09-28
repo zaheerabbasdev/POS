@@ -47,7 +47,8 @@ export async function findOpenDrawer(shopId: string, cashierId: string) {
 
 /**
  * Records a cash movement against a cashier's open drawer if one exists.
- * Called from the Sales/Sales-Returns modules on cash payments/refunds —
+ * Called from the Sales/Sales-Returns/Payments/Expenses modules on cash
+ * payments, refunds and cash expenses —
  * deliberately silent (no throw) when no drawer is open, since only cash
  * payments have any relationship to the physical drawer and a missing
  * session shouldn't block the sale itself.
@@ -56,7 +57,7 @@ export async function recordDrawerMovement(
   tx: Prisma.TransactionClient,
   shopId: string,
   cashierId: string,
-  transactionType: "SALE" | "REFUND",
+  transactionType: "SALE" | "REFUND" | "EXPENSE",
   amount: number,
   referenceNumber?: string,
 ) {

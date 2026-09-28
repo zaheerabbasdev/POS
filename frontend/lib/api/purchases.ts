@@ -25,12 +25,20 @@ export interface PurchaseDetail {
     tax: string;
     lineTotal: string;
     imeis: string[];
+    // Unsold IMEIs from this purchase — the only ones that can be returned.
+    availableImeis: string[];
   }[];
   subtotal: string;
   discount: string;
   tax: string;
   shippingCost: string;
   totalAmount: string;
+  paidAmount: number;
+  // Value of goods already sent back to the supplier.
+  returnedAmount: number;
+  // Still owed to the supplier: total − paid − returned.
+  dueAmount: number;
+  returnedQuantities: { productId: string; quantity: number }[];
   status: "PENDING" | "PARTIAL" | "PAID";
   remarks: string | null;
   payments: { id: string; amount: string; method: string; date: string; notes: string | null }[];

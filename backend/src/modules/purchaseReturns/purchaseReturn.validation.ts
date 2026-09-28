@@ -13,6 +13,8 @@ const purchaseReturnItemSchema = z.object({
   productId: z.string().uuid("A valid productId is required."),
   quantity: z.coerce.number().int().positive(),
   reason: z.string().trim().optional(),
+  // IMEI-tracked products only — which specific phone(s) go back.
+  imeis: z.array(z.string().trim().min(1)).optional(),
 });
 
 // POST /api/v1/purchase-returns (API Spec Chapter 33.2).

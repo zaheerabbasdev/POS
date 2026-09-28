@@ -141,11 +141,15 @@ stock into the system.
    payment record are all created **together** — if anything fails partway through
    (e.g. a duplicate IMEI already in the system), nothing is saved.
 5. **Returning damaged/wrong stock**: open the purchase → "Return Items" → pick
-   quantity per product (and a reason). This reduces stock back down, releases or
-   removes the specific IMEIs involved (an already-sold IMEI can't be returned to
-   the supplier), and reduces what you owe that supplier.
+   quantity per product (for phones, tick the exact IMEI going back) and a reason.
+   Only stock still on the shelf can go back — if you bought 10 covers and sold 8,
+   you can return at most 2. Stock goes down, the phones leave your inventory, and
+   the returned value comes off what you owe that supplier for this purchase. The
+   purchase page shows **Paid**, **Returned to supplier** and **Still owed**, and
+   you can't pay the supplier for goods you already sent back.
 6. **Deleting a purchase entirely** is only allowed if nothing from it has moved yet
-   (no IMEI sold, stock wouldn't go negative) — otherwise you use a Return instead.
+   (no IMEI sold, stock wouldn't go negative, nothing returned to the supplier) —
+   otherwise you use a Return instead.
 
 **Behind the scenes**: purchase price on the product record is what every later
 report uses as the "cost" for profit calculations — there's no per-purchase
@@ -187,7 +191,10 @@ still succeeds with no drawer open; it just won't have anything to log against).
 5. Session history (for managers) shows every past open/close cycle per cashier.
 
 **Behind the scenes**: this only tracks *cash*. A sale paid by card or bank transfer
-never touches the drawer total — only `CASH`-method payments and cash refunds do.
+never touches the drawer total. What does count: cash kept from a sale (just the bill
+amount — change you hand back isn't counted), cash a customer pays later towards
+what they owe, cash refunds, and cash expenses dated today (editing or deleting one
+while the drawer is still open updates the drawer too).
 
 ---
 
@@ -208,23 +215,37 @@ never touches the drawer total — only `CASH`-method payments and cash refunds 
    if the product has a warranty period *and* a customer was selected (walk-in sales
    don't get a warranty even if the product has one), and the payment is recorded.
    If it was a cash payment, it also logs against your currently open cash drawer.
+   **Paying with a bigger note**: type what the customer handed over (say 5,000 for
+   a 4,200 bill) and the screen shows **Change to give: 800**. Only the 4,200 is
+   recorded as paid. Only cash can be more than the bill; card or bank amounts
+   above it are refused as a typing mistake. A discount bigger than the bill is
+   refused too.
 6. An invoice number is generated; the sale now shows up in Sales list and on the
    customer's history.
 
 **Recording more payment later** (for a partially-paid sale): open the sale →
-"Record Payment" — pick a method, enter an amount up to what's still due.
+"Record Payment" — pick a method, enter an amount up to what's still due. Cash
+received this way goes into your open cash drawer. A cancelled sale can't take
+payments.
 
-**Cancelling a sale**: open the sale → Cancel Sale (with a reason). This reverses
-*everything*: stock goes back up, the IMEI returns to `AVAILABLE`, any warranty is
-marked cancelled, a refund payment is recorded, and the customer's outstanding
-balance adjusts — but nothing is deleted; the sale stays visible, just marked
-cancelled, for the audit trail.
+**Cancelling a sale**: open the sale → Cancel Sale. Choose how the money goes back
+(by default the same way the customer paid; only a cash refund comes out of the
+drawer). Whatever the customer still has goes back into stock, phones return to
+`AVAILABLE`, warranties are cancelled, what they paid is refunded, and anything they
+still owed is cleared. Items already returned earlier aren't restocked or refunded
+a second time. Nothing is deleted; the sale stays visible, just marked cancelled,
+for the audit trail.
 
 **Returning some items from a sale** (without cancelling the whole thing): open the
-sale → "Return Items" → pick quantity per product + a reason + refund method. You
-can't return more of a product than was actually sold minus what's already been
-returned. Stock goes back up, the specific IMEI units come back as `AVAILABLE`, and
-a refund is recorded (and logged to the cash drawer if paid in cash).
+sale → "Return Items" → pick a quantity per product (for phones, tick the exact
+IMEI coming back), a reason, and a refund method. The "Can return" column shows
+what the customer still has. Before you confirm, the screen shows the value of the
+returned items, how much of it just comes off what the customer still owes, and
+how much money to give back. For example, a phone sold for 50,000 with a 5,000
+discount is worth 45,000 when returned. If the customer bought it on credit and
+paid nothing, no money is given back: their 45,000 debt is simply cleared. Stock
+goes back up, the returned phone becomes `AVAILABLE` and can be sold again, and the
+sale's item list shows how many were returned.
 
 **Printing an invoice**: from a sale, choose "Print Invoice". The invoice opens in
 a separate, print-friendly tab with a Cancel button that returns to the sale
@@ -281,6 +302,8 @@ whether from a warranty claim or a walk-in.
    Delivered or Cancelled, the ticket is locked from further status changes.
 3. **Recording parts used**: on the ticket, "Add Part" → pick a product and
    quantity — this genuinely decrements real inventory, same as a sale would.
+   Phones (IMEI-tracked products) can't be used as parts, and parts can't be added
+   once a ticket is Delivered or Cancelled.
 4. Fill in diagnosis, actual cost (parts + labor combined — there's no separate
    labor line item), and notes as the job progresses; "Save Details" to persist.
 5. Optionally attach a photo of the device's condition at intake.
@@ -313,6 +336,8 @@ they can be deducted from revenue in the Financial Reports.
 Internet, Salaries, Maintenance, Marketing, Transportation, Office Supplies,
 Miscellaneous — or type a new one, which gets created on the spot), enter an
 amount, payment method, and description. Edit or delete any expense afterward.
+A **cash** expense dated today comes out of your open cash drawer, so the drawer's
+expected total stays right.
 
 ---
 
@@ -335,6 +360,10 @@ switchable categories.
      (cash in vs. out across all drawer sessions).
    - **Customers**: who's buying the most, and everyone's outstanding balance.
    - **Suppliers**: what you owe each one, and full payment history.
+
+   All sales figures here and on the Dashboard are **after returns**: if a customer
+   returns an item, its value comes off sales (and its cost off profit) on the day
+   it came back.
 
 ---
 

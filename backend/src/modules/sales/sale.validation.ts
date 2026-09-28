@@ -48,5 +48,8 @@ export const createSaleSchema = z.object({
 export const cancelSaleSchema = z
   .object({
     reason: z.string().trim().optional(),
+    // How the paid amount goes back to the customer. Optional — defaults to
+    // the method the sale was paid with (cash if it was split across several).
+    refundMethod: z.enum(PAYMENT_METHOD_INPUT_VALUES).optional(),
   })
   .optional();

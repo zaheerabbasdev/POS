@@ -4,6 +4,7 @@ import { generateCode } from "../../common/utils/code.js";
 import { PAYMENT_METHOD_INPUT_MAP } from "../../common/utils/paymentMethod.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
 import { NotFoundError } from "../../common/errors/AppError.js";
+import { recordDrawerMovement } from "../cashDrawer/cashDrawer.service.js";
 
 const expenseInclude = {
   category: { select: { id: true, categoryName: true } },
@@ -78,7 +79,7 @@ export interface CreateExpenseInput {
  * against ExpenseCategory (Module 21's fixed list, seeded at setup) and
  * created on the fly if the shop has added a custom one since.
  */
-export async function createExpense(shopId: string, input: CreateExpenseInput) {
+export async function createExpense(shopId: string, input: CreateExpenseInput, userId: string) {
   const trimmedName = input.category.trim();
   let category = await prisma.expenseCategory.findFirst({
     where: { shopId, categoryName: { equals: trimmedName, mode: "insensitive" } },
@@ -94,20 +95,56 @@ export async function createExpense(shopId: string, input: CreateExpenseInput) {
 
   const method = input.paymentMethod ? (PAYMENT_METHOD_INPUT_MAP[input.paymentMethod] ?? "CASH") : "CASH";
 
-  const expense = await prisma.expense.create({
-    data: {
-      shopId,
-      expenseNumber: generateCode("EXP"),
-      expenseCategoryId: category.id,
-      amount: input.amount,
-      paymentMethod: method,
-      expenseDate: input.expenseDate ?? new Date(),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(input.recordedById !== undefined ? { recordedById: input.recordedById } : {}),
-    },
-    include: expenseInclude,
+  const expenseDate = input.expenseDate ?? new Date();
+
+  const expense = await prisma.$transaction(async (tx) => {
+    const created = await tx.expense.create({
+      data: {
+        shopId,
+        expenseNumber: generateCode("EXP"),
+        expenseCategoryId: category.id,
+        amount: input.amount,
+        paymentMethod: method,
+        expenseDate,
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.recordedById !== undefined ? { recordedById: input.recordedById } : {}),
+      },
+      include: expenseInclude,
+    });
+
+    if (method === "CASH" && isToday(expenseDate)) {
+      await recordDrawerMovement(tx, shopId, userId, "EXPENSE", input.amount, created.expenseNumber);
+    }
+    return created;
   });
   return toExpenseDto(expense);
+}
+
+/**
+ * A cash expense paid today comes out of the till, so it's taken off the
+ * recording user's open drawer (skipped if they have none open — same
+ * best-effort rule as sales). A back-dated expense isn't: that cash left the
+ * till on an earlier day, not during today's session.
+ */
+function isToday(date: Date): boolean {
+  // Dates arrive as calendar days (stored at UTC midnight) while the server
+  // clock is UTC — a shop ahead of or behind UTC can legitimately be one
+  // calendar day off near midnight, so a one-day window counts as "today".
+  const day = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.abs(day - today) <= 24 * 60 * 60 * 1000;
+}
+
+/**
+ * The drawer entry an expense created, if its drawer session is still open.
+ * Entries in an already-closed session are left alone — that session's
+ * count is final.
+ */
+async function findOpenDrawerEntry(tx: Prisma.TransactionClient, shopId: string, expenseNumber: string) {
+  return tx.cashDrawerTransaction.findFirst({
+    where: { shopId, transactionType: "EXPENSE", referenceNumber: expenseNumber, cashDrawer: { status: "OPEN" } },
+  });
 }
 
 export interface UpdateExpenseInput {
@@ -118,21 +155,37 @@ export interface UpdateExpenseInput {
 }
 
 /** PATCH /api/v1/expenses/{id} — "Edit Expense" (SRS Module 21). */
-export async function updateExpense(shopId: string, id: string, input: UpdateExpenseInput) {
+export async function updateExpense(shopId: string, id: string, input: UpdateExpenseInput, userId: string) {
   const existing = await prisma.expense.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Expense not found.");
 
   const method = input.paymentMethod ? PAYMENT_METHOD_INPUT_MAP[input.paymentMethod] : undefined;
 
-  const expense = await prisma.expense.update({
-    where: { id },
-    data: {
-      ...(input.amount !== undefined ? { amount: input.amount } : {}),
-      ...(method !== undefined ? { paymentMethod: method } : {}),
-      ...(input.expenseDate !== undefined ? { expenseDate: input.expenseDate } : {}),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-    },
-    include: expenseInclude,
+  const expense = await prisma.$transaction(async (tx) => {
+    const updated = await tx.expense.update({
+      where: { id },
+      data: {
+        ...(input.amount !== undefined ? { amount: input.amount } : {}),
+        ...(method !== undefined ? { paymentMethod: method } : {}),
+        ...(input.expenseDate !== undefined ? { expenseDate: input.expenseDate } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+      },
+      include: expenseInclude,
+    });
+
+    // Keep the open drawer in step with the edit: a changed amount, a switch
+    // between cash and non-cash, or a date moved off today.
+    const entry = await findOpenDrawerEntry(tx, shopId, updated.expenseNumber);
+    const shouldBeInDrawer = updated.paymentMethod === "CASH" && isToday(updated.expenseDate);
+    if (entry && !shouldBeInDrawer) {
+      await tx.cashDrawerTransaction.delete({ where: { id: entry.id } });
+    } else if (entry) {
+      await tx.cashDrawerTransaction.update({ where: { id: entry.id }, data: { amount: updated.amount } });
+    } else if (shouldBeInDrawer && existing.paymentMethod !== "CASH") {
+      await recordDrawerMovement(tx, shopId, userId, "EXPENSE", Number(updated.amount), updated.expenseNumber);
+    }
+
+    return updated;
   });
   return toExpenseDto(expense);
 }
@@ -141,5 +194,10 @@ export async function updateExpense(shopId: string, id: string, input: UpdateExp
 export async function deleteExpense(shopId: string, id: string): Promise<void> {
   const existing = await prisma.expense.findFirst({ where: { id, shopId } });
   if (!existing) throw new NotFoundError("Expense not found.");
-  await prisma.expense.delete({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    // Put the cash back in the open drawer's count, if it was taken from one.
+    const entry = await findOpenDrawerEntry(tx, shopId, existing.expenseNumber);
+    if (entry) await tx.cashDrawerTransaction.delete({ where: { id: entry.id } });
+    await tx.expense.delete({ where: { id } });
+  });
 }

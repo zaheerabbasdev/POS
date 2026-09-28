@@ -309,9 +309,15 @@ enforcement are not built yet (see `PROJECT_DOCUMENTATION.md` §11.9).
   Purchases, Sales, Returns, Repairs (parts consumption), or a manual
   Adjustment.
 - **`CashDrawer`/`CashDrawerTransaction`** track per-cashier register
-  sessions; only `CASH`-method sale payments and cash refunds auto-log
-  against the cashier's open drawer (best-effort — a missing open session
-  never blocks the sale).
+  sessions; cash kept on sales, later cash payments, cash refunds and
+  today's cash expenses auto-log against the acting user's open drawer
+  (best-effort — a missing open session never blocks the operation).
+- **`Sale.paidAmount`/`dueAmount` are the current position, not the checkout
+  snapshot** — returns reduce `dueAmount` first, then `paidAmount` by the cash
+  refunded. Purchases have no such columns: "still owed" is
+  `total − paid − returned` via `modules/purchases/purchaseBalance.ts`.
+- **`SaleItem.imeiId` is not unique** (DDD deviation): a returned phone can be
+  resold; `ImeiNumber.saleId` says who has it now.
 
 ---
 
@@ -499,20 +505,20 @@ Identical CRUD shape on all three:
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/` | PURCHASE_VIEW, PURCHASE_RETURN |
-| POST | `/` (over-return protected) | PURCHASE_RETURN |
+| POST | `/` (over-return protected; only on-shelf stock, atomic; optional exact `imeis`; counts toward the purchase's still-owed) | PURCHASE_RETURN |
 
 ### Sales (POS) — `/sales`
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/` , `/:id` | SALE_VIEW, SALE_CREATE |
-| POST | `/` (transactional: validate stock/IMEI → invoice → stock → IMEI → warranty → payment) | SALE_CREATE |
-| PATCH | `/:id/cancel` (full reversal, nothing deleted) | SALE_CANCEL |
+| POST | `/` (transactional: validate stock/IMEI → invoice → stock → IMEI → warranty → payment; cash over the bill is change, returned as `changeGiven`, never recorded as paid) | SALE_CREATE |
+| PATCH | `/:id/cancel` (`{ reason?, refundMethod? }` — reverses only what the customer still has, refunds net `paidAmount` the way they paid; nothing deleted) | SALE_CANCEL |
 
 ### Sales Returns — `/sales-returns`
 | Method | Path | Permission |
 |---|---|---|
 | GET | `/` | SALE_VIEW, SALE_CANCEL |
-| POST | `/` (over-return protected, auto-creates REFUND payment) | SALE_CANCEL |
+| POST | `/` (over-return protected; optional exact `imeis`; valued at the discounted price, reduces what's owed first and refunds only the rest — see `modules/sales/saleReturnState.ts`) | SALE_CANCEL |
 
 ### Payments — `/payments`
 | Method | Path | Permission |
@@ -534,7 +540,7 @@ Identical CRUD shape on all three:
 | POST | `/` (device/IMEI as free text) | REPAIR_MANAGE |
 | PATCH | `/:id/status` (auto-stamps delivery date; locked after DELIVERED/CANCELLED) | REPAIR_MANAGE |
 | PATCH | `/:id` (diagnosis/cost/technician/remarks) | REPAIR_MANAGE |
-| POST | `/:id/items` ("Record Parts Used" — decrements real inventory) | REPAIR_MANAGE |
+| POST | `/:id/items` ("Record Parts Used" — decrements real inventory atomically; not on DELIVERED/CANCELLED repairs, not IMEI products) | REPAIR_MANAGE |
 
 ### Warranties — `/warranties`
 | Method | Path | Permission |
@@ -571,7 +577,8 @@ Gate: `REPORT_VIEW` or `REPORT_EXPORT` on every route below.
 | Customers | `/customers/purchases`, `/customers/balance` |
 | Suppliers | `/suppliers/balance`, `/suppliers/payments` |
 
-Known simplifications (no per-sale cost snapshot in the schema): "profit"
+All sales figures (reports, dashboard, platform totals) are net of sales
+returns, dated by return date. Known simplifications (no per-sale cost snapshot in the schema): "profit"
 figures use each product's *current* `purchasePrice`, not true historical
 COGS; "cash vs. credit" is inferred from `dueAmount`, not an explicit
 payment-method split.

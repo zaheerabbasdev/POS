@@ -235,9 +235,17 @@ export interface AddRepairItemInput {
 export async function addRepairItem(shopId: string, id: string, input: AddRepairItemInput) {
   const repair = await prisma.repair.findFirst({ where: { id, shopId } });
   if (!repair) throw new NotFoundError("Repair not found.");
+  if (repair.repairStatus === "DELIVERED" || repair.repairStatus === "CANCELLED") {
+    throw new ConflictError(`This repair is ${repair.repairStatus.toLowerCase()} — parts can't be added any more.`);
+  }
 
   const product = await prisma.product.findFirst({ where: { id: input.productId, shopId }, include: { inventory: true } });
   if (!product) throw new NotFoundError("Product not found.");
+  // A phone is tracked unit-by-unit by IMEI; using one as a "part" would take
+  // it off the stock count while its IMEI still shows as available to sell.
+  if (product.tracksImei) {
+    throw new BadRequestError(`"${product.productName}" is tracked by IMEI and can't be used as a repair part.`);
+  }
 
   const available = product.inventory?.availableQuantity ?? 0;
   if (available < input.quantity) {
@@ -251,10 +259,16 @@ export async function addRepairItem(shopId: string, id: string, input: AddRepair
       data: { repairId: id, productId: input.productId, quantity: input.quantity, unitPrice: input.unitPrice, totalPrice },
     });
 
-    const inventory = await tx.inventory.update({
-      where: { productId: input.productId },
+    // Atomic, same as a sale line: re-checks stock at the moment of the
+    // decrement, so two people using the last part at once can't both succeed.
+    const updated = await tx.inventory.updateMany({
+      where: { productId: input.productId, shopId, availableQuantity: { gte: input.quantity } },
       data: { quantity: { decrement: input.quantity }, availableQuantity: { decrement: input.quantity } },
     });
+    if (updated.count === 0) {
+      throw new ConflictError(`Not enough stock for "${product.productName}" — it may have just been used or sold.`);
+    }
+    const inventory = await tx.inventory.findFirstOrThrow({ where: { productId: input.productId, shopId } });
 
     await tx.inventoryTransaction.create({
       data: {

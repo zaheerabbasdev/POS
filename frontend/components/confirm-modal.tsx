@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Modal, Button, Text, Group, Stack, ThemeIcon, Box } from "@mantine/core";
 import { AlertTriangle, Trash2 } from "lucide-react";
 
@@ -14,6 +15,8 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   /** Destructive actions (delete, cancel, archive) get a red confirm button. */
   variant?: "destructive" | "default";
+  /** Optional extra fields shown under the description (e.g. a refund method). */
+  children?: ReactNode;
 }
 
 /**
@@ -29,6 +32,7 @@ export function ConfirmModal({
   isPending = false,
   onConfirm,
   variant = "destructive",
+  children,
 }: ConfirmModalProps) {
   return (
     <Modal
@@ -69,6 +73,8 @@ export function ConfirmModal({
             </Text>
           </Box>
         </Group>
+
+        {children}
 
         <Group justify="flex-end" gap="xs" mt="xs">
           <Button variant="subtle" color="gray" onClick={onClose} disabled={isPending}>

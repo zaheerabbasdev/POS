@@ -4,6 +4,8 @@ export interface SalesReturnItemInput {
   productId: string;
   quantity: number;
   reason?: string;
+  // Phones only — the exact IMEI(s) coming back.
+  imeis?: string[];
 }
 
 export interface CreateSalesReturnInput {
@@ -18,6 +20,8 @@ export interface SalesReturn {
   invoiceNumber: string;
   customer: string;
   returnDate: string;
+  // Value of the goods returned. Part may have cleared money the customer
+  // still owed rather than being paid out (see creditApplied/cashRefunded).
   refundAmount: string;
   returnReason: string | null;
   approvedBy: string | null;
@@ -46,7 +50,12 @@ export async function fetchSalesReturns(params: SalesReturnListParams = {}): Pro
 }
 
 // POST /api/v1/sales-returns (API Spec Chapter 35.2).
-export async function createSalesReturn(input: CreateSalesReturnInput): Promise<SalesReturn> {
-  const { data } = await apiClient.post<{ data: SalesReturn }>("/sales-returns", input);
+export async function createSalesReturn(
+  input: CreateSalesReturnInput,
+): Promise<SalesReturn & { creditApplied: number; cashRefunded: number }> {
+  const { data } = await apiClient.post<{ data: SalesReturn & { creditApplied: number; cashRefunded: number } }>(
+    "/sales-returns",
+    input,
+  );
   return data.data;
 }

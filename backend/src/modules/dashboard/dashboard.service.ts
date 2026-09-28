@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { round2 } from "../../common/utils/money.js";
 
 function startOfToday(): Date {
   const now = new Date();
@@ -118,13 +119,29 @@ export async function getDashboardSummary(shopId: string) {
   const lowStockProducts = inventoryLevels.filter((inv) => inv.quantity > 0 && inv.quantity <= inv.reorderLevel).length;
   const outOfStockProducts = inventoryLevels.filter((inv) => inv.quantity <= 0).length;
 
-  const totalRevenue = totalRevenueAgg._sum.totalAmount ?? 0;
+  // Returned goods come back off sales, dated by the day they came back.
+  // Returns of cancelled sales are skipped (those sales aren't counted at all).
+  const returnsSince = async (since?: Date) => {
+    const agg = await prisma.salesReturn.aggregate({
+      where: { shopId, sale: { isCancelled: false }, ...(since ? { returnDate: { gte: since } } : {}) },
+      _sum: { refundAmount: true },
+    });
+    return Number(agg._sum.refundAmount ?? 0);
+  };
+  const [todayReturns, monthlyReturns, totalReturns] = await Promise.all([
+    returnsSince(today),
+    returnsSince(monthStart),
+    returnsSince(),
+  ]);
+
+  // Sent as strings, the same shape the raw Decimal sums had before.
+  const totalRevenue = String(round2(Number(totalRevenueAgg._sum.totalAmount ?? 0) - totalReturns));
   const totalExpenses = totalExpensesAgg._sum.amount ?? 0;
 
   return {
-    todaySales: todaySalesAgg._sum.totalAmount ?? 0,
+    todaySales: String(round2(Number(todaySalesAgg._sum.totalAmount ?? 0) - todayReturns)),
     todayPurchases: todayPurchasesAgg._sum.totalAmount ?? 0,
-    monthlySales: monthlySalesAgg._sum.totalAmount ?? 0,
+    monthlySales: String(round2(Number(monthlySalesAgg._sum.totalAmount ?? 0) - monthlyReturns)),
     totalRevenue,
     totalExpenses,
     // Still simplified (revenue minus recorded expenses) — no per-sale cost

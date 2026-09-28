@@ -1,4 +1,5 @@
 import { prisma } from "../../config/prisma.js";
+import { round2 } from "../../common/utils/money.js";
 
 function ownerName(owner: { username: string; employee: { firstName: string; lastName: string | null } | null } | null): string | null {
   if (!owner) return null;
@@ -37,7 +38,16 @@ export async function getShopsPerformance() {
     }),
   ]);
 
-  const salesMap = new Map(salesByShop.map((s) => [s.shopId, s._sum.totalAmount ?? 0]));
+  // Net of returns, same as each shop's own dashboard/reports.
+  const returnsByShop = await prisma.salesReturn.groupBy({
+    by: ["shopId"],
+    where: { sale: { isCancelled: false } },
+    _sum: { refundAmount: true },
+  });
+  const returnsMap = new Map(returnsByShop.map((r) => [r.shopId, Number(r._sum.refundAmount ?? 0)]));
+  const salesMap = new Map(
+    salesByShop.map((s) => [s.shopId, String(round2(Number(s._sum.totalAmount ?? 0) - (returnsMap.get(s.shopId) ?? 0)))]),
+  );
   const purchasesMap = new Map(purchasesByShop.map((p) => [p.shopId, p._sum.totalAmount ?? 0]));
   const planMap = new Map(currentSubscriptions.map((s) => [s.shopId, s.plan.name]));
 

@@ -36,6 +36,7 @@ export default function SaleDetailPage(props: PageProps<"/dashboard/sales/[id]">
   const [returnOpen, setReturnOpen] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [cancelRefundMethod, setCancelRefundMethod] = useState<string>("original");
 
   const { data: sale, isLoading } = useQuery({
     queryKey: ["sales", id],
@@ -43,10 +44,12 @@ export default function SaleDetailPage(props: PageProps<"/dashboard/sales/[id]">
   });
 
   const cancelMutation = useMutation({
-    mutationFn: () => cancelSale(id, "Cancelled from sale detail screen"),
+    mutationFn: () =>
+      cancelSale(id, "Cancelled from sale detail screen", cancelRefundMethod === "original" ? undefined : cancelRefundMethod),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["sales", id] });
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      void queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Sale cancelled.");
       setCancelOpen(false);
     },
@@ -157,7 +160,14 @@ export default function SaleDetailPage(props: PageProps<"/dashboard/sales/[id]">
               key: "qty",
               header: "Qty",
               align: "right",
-              render: (item) => <Text size="sm">{item.quantity}</Text>,
+              render: (item) => (
+                <Text size="sm">
+                  {item.quantity}
+                  {item.returnedQuantity > 0 && (
+                    <Text span size="xs" c="orange"> ({item.returnedQuantity} returned)</Text>
+                  )}
+                </Text>
+              ),
             },
             {
               key: "price",
@@ -268,11 +278,25 @@ export default function SaleDetailPage(props: PageProps<"/dashboard/sales/[id]">
         opened={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title="Cancel this sale?"
-        description="Inventory will be restored, IMEIs freed, and any warranty cancelled. Paid amounts are refunded as a record — nothing is deleted."
+        description="Items still with the customer go back into stock, IMEIs are freed, and warranties cancelled. What the customer paid (less anything already refunded for returns) is refunded, and anything they still owed is cleared — nothing is deleted."
         confirmLabel="Cancel Sale"
         isPending={cancelMutation.isPending}
         onConfirm={() => cancelMutation.mutate()}
-      />
+      >
+        {Number(sale.paidAmount) > 0 && (
+          <Select
+            label="Give the money back by"
+            description="Only cash refunds come out of the cash drawer."
+            data={[
+              { value: "original", label: "Same way the customer paid" },
+              ...Object.entries(PAYMENT_METHOD_ITEMS).map(([value, label]) => ({ value, label })),
+            ]}
+            value={cancelRefundMethod}
+            onChange={(v) => setCancelRefundMethod(v ?? "original")}
+            allowDeselect={false}
+          />
+        )}
+      </ConfirmModal>
 
       <SalesReturnDialog open={returnOpen} onOpenChange={setReturnOpen} sale={sale} />
     </Stack>

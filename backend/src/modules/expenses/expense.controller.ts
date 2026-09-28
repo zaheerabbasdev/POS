@@ -4,6 +4,7 @@ import { sendPaginated, sendSuccess } from "../../common/utils/apiResponse.js";
 import { HttpStatus } from "../../common/constants/httpStatus.js";
 import { logAuditFromRequest } from "../../common/utils/auditLog.js";
 import { getShopId } from "../../common/middleware/tenant.js";
+import { UnauthorizedError } from "../../common/errors/AppError.js";
 import * as expenseService from "./expense.service.js";
 import type { ListExpensesInput } from "./expense.service.js";
 
@@ -21,13 +22,19 @@ export const listExpenses = asyncHandler(async (req: Request, res: Response) => 
 
 export const createExpense = asyncHandler(async (req: Request, res: Response) => {
   const shopId = getShopId(req);
-  const expense = await expenseService.createExpense(shopId, { ...req.body, recordedById: req.user?.employeeId ?? undefined });
+  if (!req.user) throw new UnauthorizedError();
+  const expense = await expenseService.createExpense(
+    shopId,
+    { ...req.body, recordedById: req.user.employeeId ?? undefined },
+    req.user.id,
+  );
   sendSuccess(res, expense, "Expense recorded successfully.", HttpStatus.CREATED);
 });
 
 export const updateExpense = asyncHandler(async (req: Request, res: Response) => {
   const shopId = getShopId(req);
-  const expense = await expenseService.updateExpense(shopId, req.params.id as string, req.body);
+  if (!req.user) throw new UnauthorizedError();
+  const expense = await expenseService.updateExpense(shopId, req.params.id as string, req.body, req.user.id);
   sendSuccess(res, expense, "Expense updated successfully.");
 });
 

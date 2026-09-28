@@ -4,7 +4,10 @@ import { generateCode } from "../../common/utils/code.js";
 import { PAYMENT_METHOD_INPUT_MAP } from "../../common/utils/paymentMethod.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
 import { AppError, BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
+import { MONEY_EPSILON, round2 } from "../../common/utils/money.js";
+import type { PaymentMethod } from "../../generated/prisma/client.js";
 import { recordDrawerMovement } from "../cashDrawer/cashDrawer.service.js";
+import { computeHeldQuantities, computeUnitValues } from "./saleReturnState.js";
 
 const saleListSelect = {
   id: true,
@@ -39,7 +42,7 @@ const saleDetailInclude = {
   items: {
     include: {
       product: { select: { id: true, sku: true, productName: true } },
-      imeiNumber: { select: { id: true, imeiNumber: true } },
+      imeiNumber: { select: { id: true, imeiNumber: true, saleId: true } },
       warranty: true,
     },
   },
@@ -48,10 +51,22 @@ const saleDetailInclude = {
 type SaleDetailRow = Prisma.SaleGetPayload<{ include: typeof saleDetailInclude }>;
 
 async function toSaleDetailDto(shopId: string, sale: SaleDetailRow) {
-  const payments = await prisma.payment.findMany({
-    where: { shopId, referenceId: sale.id, paymentType: { in: ["SALE_PAYMENT", "REFUND"] } },
-    orderBy: { paymentDate: "desc" },
-  });
+  const [payments, returned] = await Promise.all([
+    prisma.payment.findMany({
+      where: { shopId, referenceId: sale.id, paymentType: { in: ["SALE_PAYMENT", "REFUND"] } },
+      orderBy: { paymentDate: "desc" },
+    }),
+    prisma.salesReturnItem.groupBy({
+      by: ["productId"],
+      where: { shopId, salesReturn: { saleId: sale.id } },
+      _sum: { quantity: true },
+    }),
+  ]);
+  const held = computeHeldQuantities(
+    sale.id,
+    sale.items,
+    new Map(returned.map((r) => [r.productId, r._sum.quantity ?? 0])),
+  );
 
   return {
     id: sale.id,
@@ -77,6 +92,9 @@ async function toSaleDetailDto(shopId: string, sale: SaleDetailRow) {
       tax: item.tax,
       lineTotal: item.lineTotal,
       imei: item.imeiNumber?.imeiNumber ?? null,
+      // Units of this line already brought back (0 for a cancelled sale's
+      // lines too — cancellation isn't a return).
+      returnedQuantity: sale.isCancelled ? 0 : item.quantity - (held.get(item.id) ?? item.quantity),
       warranty: item.warranty
         ? {
             warrantyNumber: item.warranty.id,
@@ -219,6 +237,9 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
     const product = productMap.get(item.productId);
     if (!product) throw new NotFoundError(`Product ${item.productId} not found.`);
     if (!product.isActive) throw new BadRequestError(`"${product.productName}" is inactive and cannot be sold.`);
+    if ((item.discount ?? 0) > item.quantity * item.price) {
+      throw new BadRequestError(`The discount on "${product.productName}" is more than its price.`);
+    }
 
     // Fast-fail pre-check — catches the common single-cashier case with a
     // friendly error before a Sale row even gets created. This is NOT the
@@ -251,14 +272,17 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
     }
   }
 
-  const subtotal = input.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  const subtotal = round2(input.items.reduce((sum, item) => sum + item.quantity * item.price, 0));
   const itemDiscountTotal = input.items.reduce((sum, item) => sum + (item.discount ?? 0), 0);
-  const itemTaxTotal = input.items.reduce((sum, item) => sum + (item.tax ?? 0), 0);
-  const discount = (input.discount ?? 0) + itemDiscountTotal;
-  const totalAmount = subtotal - discount + itemTaxTotal;
-  const paidAmount = (input.payments ?? []).reduce((sum, p) => sum + p.paidAmount, 0);
-  const dueAmount = Math.max(0, totalAmount - paidAmount);
-  const paymentStatus = paidAmount <= 0 ? "UNPAID" : paidAmount >= totalAmount ? "PAID" : "PARTIAL";
+  const itemTaxTotal = round2(input.items.reduce((sum, item) => sum + (item.tax ?? 0), 0));
+  const discount = round2((input.discount ?? 0) + itemDiscountTotal);
+  const totalAmount = round2(subtotal - discount + itemTaxTotal);
+  if (totalAmount < 0) throw new BadRequestError("The discount is larger than the bill total.");
+
+  const { payments, changeGiven } = settlePayments(input.payments ?? [], totalAmount);
+  const paidAmount = round2(payments.reduce((sum, p) => sum + p.amount, 0));
+  const dueAmount = round2(Math.max(0, totalAmount - paidAmount));
+  const paymentStatus = paidAmount <= 0 ? "UNPAID" : dueAmount <= 0 ? "PAID" : "PARTIAL";
 
   const saleId = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
@@ -376,16 +400,15 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
     // One Payment row per split entry — e.g. "5000 Cash + 3000 Card" becomes
     // two separate records, not one blended one, so payment history/reports
     // accurately show how much came in through each method.
-    for (const p of input.payments ?? []) {
-      const method = PAYMENT_METHOD_INPUT_MAP[p.method]!;
+    for (const p of payments) {
       await tx.payment.create({
         data: {
           shopId,
           paymentType: "SALE_PAYMENT",
           referenceId: sale.id,
-          paymentMethod: method,
+          paymentMethod: p.method,
           paymentDate: new Date(),
-          amount: p.paidAmount,
+          amount: p.amount,
           receivedById: cashierId,
         },
       });
@@ -393,8 +416,8 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
       // Only cash physically moves through the drawer — best-effort, and
       // silently skipped if the cashier has no session open (SAD Chapter 26:
       // Cash Drawer tracks sessions, it doesn't gate the sale itself).
-      if (method === "CASH") {
-        await recordDrawerMovement(tx, shopId, cashierId, "SALE", p.paidAmount, sale.invoiceNumber);
+      if (p.method === "CASH") {
+        await recordDrawerMovement(tx, shopId, cashierId, "SALE", p.amount, sale.invoiceNumber);
       }
     }
 
@@ -406,9 +429,49 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
     }
 
     return sale.id;
-  });
+  }, { timeout: 15_000 });
 
-  return getSaleById(shopId, saleId);
+  return { ...(await getSaleById(shopId, saleId)), changeGiven };
+}
+
+/**
+ * Customers often hand over more cash than the bill (a 5,000 note for a
+ * 4,200 bill). Only the bill amount is kept as the sale's payment — the
+ * extra is change handed straight back, so it never counts as sale money in
+ * the drawer or reports. Only cash can produce change: card/bank/wallet
+ * amounts over the bill are a typing mistake and are rejected.
+ */
+function settlePayments(input: { method: string; paidAmount: number }[], totalAmount: number) {
+  const payments: { method: PaymentMethod; amount: number }[] = input.map((p) => ({
+    method: PAYMENT_METHOD_INPUT_MAP[p.method]!,
+    amount: round2(p.paidAmount),
+  }));
+
+  const changeGiven = round2(payments.reduce((sum, p) => sum + p.amount, 0) - totalAmount);
+  if (changeGiven <= 0) return { payments, changeGiven: 0 };
+
+  const cashTotal = payments.filter((p) => p.method === "CASH").reduce((sum, p) => sum + p.amount, 0);
+  if (changeGiven > cashTotal + MONEY_EPSILON) {
+    throw new BadRequestError(
+      "The card, bank or wallet payments add up to more than the bill. Only cash can be more than the bill (the extra is given back as change).",
+    );
+  }
+
+  let remaining = changeGiven;
+  for (let i = payments.length - 1; i >= 0 && remaining > 0; i--) {
+    const p = payments[i]!;
+    if (p.method !== "CASH") continue;
+    const take = Math.min(remaining, p.amount);
+    p.amount = round2(p.amount - take);
+    remaining = round2(remaining - take);
+  }
+
+  return { payments: payments.filter((p) => p.amount > 0), changeGiven };
+}
+
+export interface CancelSaleInput {
+  reason?: string;
+  refundMethod?: string;
 }
 
 /**
@@ -417,76 +480,127 @@ async function attemptCreateSale(shopId: string, input: CreateSaleInput, cashier
  * hard-deleted: inventory/IMEI/customer-balance changes are reversed, the
  * original payment stays on record, and a REFUND payment + isCancelled flag
  * document what happened.
+ *
+ * Only what the customer still has is reversed: units already brought back
+ * through a Sales Return were restocked and refunded then, so they're not
+ * restocked or refunded a second time here. The refund goes back the same
+ * way the customer paid unless a refundMethod is given; only a cash refund
+ * comes out of the drawer.
  */
-export async function cancelSale(shopId: string, id: string, reason: string | undefined, cancelledById: string) {
-  const sale = await prisma.sale.findFirst({
-    where: { id, shopId },
-    include: { items: { include: { imeiNumber: true, warranty: true } } },
-  });
-  if (!sale) throw new NotFoundError("Sale not found.");
-  if (sale.isCancelled) throw new ConflictError("Sale is already cancelled.");
+export async function cancelSale(shopId: string, id: string, input: CancelSaleInput, cancelledById: string) {
+  const requestedMethod = input.refundMethod ? PAYMENT_METHOD_INPUT_MAP[input.refundMethod] : undefined;
+  if (input.refundMethod && !requestedMethod) throw new BadRequestError(`Unknown refund method "${input.refundMethod}".`);
 
-  await prisma.$transaction(async (tx) => {
-    for (const item of sale.items) {
-      const inventory = await tx.inventory.update({
-        where: { productId: item.productId },
-        data: { quantity: { increment: item.quantity }, availableQuantity: { increment: item.quantity } },
+  await prisma.$transaction(
+    async (tx) => {
+      // Same row lock as Sales Returns — a return and a cancellation (or two
+      // cancellations) of one sale can't run at the same time.
+      await tx.$queryRaw`SELECT id FROM sales WHERE id = ${id}::uuid AND shop_id = ${shopId}::uuid FOR UPDATE`;
+
+      const sale = await tx.sale.findFirst({
+        where: { id, shopId },
+        include: { items: { include: { imeiNumber: true, warranty: true } } },
       });
+      if (!sale) throw new NotFoundError("Sale not found.");
+      if (sale.isCancelled) throw new ConflictError("Sale is already cancelled.");
 
-      await tx.inventoryTransaction.create({
-        data: {
-          shopId,
-          inventoryId: inventory.id,
-          productId: item.productId,
-          transactionType: "SALES_RETURN",
-          quantity: item.quantity,
-          referenceNumber: sale.invoiceNumber,
-          remarks: "Sale cancelled",
-          createdById: cancelledById,
-        },
+      const returned = await tx.salesReturnItem.groupBy({
+        by: ["productId"],
+        where: { shopId, salesReturn: { saleId: sale.id } },
+        _sum: { quantity: true },
       });
+      const held = computeHeldQuantities(sale.id, sale.items, new Map(returned.map((r) => [r.productId, r._sum.quantity ?? 0])));
+      const unitValues = computeUnitValues(sale.items, sale.totalAmount);
 
-      if (item.imeiNumber) {
-        await tx.imeiNumber.update({
-          where: { id: item.imeiNumber.id },
-          data: { status: "AVAILABLE", saleId: null },
+      let heldValue = 0;
+      for (const item of sale.items) {
+        const quantity = held.get(item.id) ?? 0;
+        if (quantity <= 0) continue;
+        heldValue += quantity * (unitValues.get(item.id) ?? 0);
+
+        const inventory = await tx.inventory.update({
+          where: { productId: item.productId },
+          data: { quantity: { increment: quantity }, availableQuantity: { increment: quantity } },
+        });
+
+        await tx.inventoryTransaction.create({
+          data: {
+            shopId,
+            inventoryId: inventory.id,
+            productId: item.productId,
+            transactionType: "SALES_RETURN",
+            quantity,
+            referenceNumber: sale.invoiceNumber,
+            remarks: "Sale cancelled",
+            createdById: cancelledById,
+          },
+        });
+
+        if (item.imeiNumber) {
+          await tx.imeiNumber.update({
+            where: { id: item.imeiNumber.id },
+            data: { status: "AVAILABLE", saleId: null },
+          });
+        }
+
+        if (item.warranty?.warrantyStatus === "ACTIVE") {
+          await tx.warranty.update({ where: { id: item.warranty.id }, data: { warrantyStatus: "CANCELLED" } });
+        }
+      }
+
+      // paidAmount is already net of any earlier return refunds. The cap by
+      // the value of what's still held only matters for sales returned before
+      // returns started reducing paidAmount (older data).
+      const paid = Number(sale.paidAmount);
+      const refund = round2(paid - heldValue < 0.05 ? paid : heldValue);
+
+      if (refund > 0) {
+        const method = requestedMethod ?? (await originalPaymentMethod(tx, shopId, sale.id));
+        await tx.payment.create({
+          data: {
+            shopId,
+            paymentType: "REFUND",
+            referenceId: sale.id,
+            paymentMethod: method,
+            paymentDate: new Date(),
+            amount: refund,
+            notes: "Sale cancellation refund",
+            receivedById: cancelledById,
+          },
+        });
+
+        if (method === "CASH") {
+          await recordDrawerMovement(tx, shopId, cancelledById, "REFUND", refund, sale.invoiceNumber);
+        }
+      }
+
+      if (sale.customerId && sale.dueAmount.greaterThan(0)) {
+        await tx.customer.update({
+          where: { id: sale.customerId },
+          data: { outstandingBalance: { decrement: sale.dueAmount } },
         });
       }
 
-      if (item.warranty) {
-        await tx.warranty.update({ where: { id: item.warranty.id }, data: { warrantyStatus: "CANCELLED" } });
-      }
-    }
-
-    if (sale.paidAmount.greaterThan(0)) {
-      await tx.payment.create({
-        data: {
-          shopId,
-          paymentType: "REFUND",
-          referenceId: sale.id,
-          paymentMethod: "CASH",
-          paymentDate: new Date(),
-          amount: sale.paidAmount,
-          notes: "Sale cancellation refund",
-          receivedById: cancelledById,
-        },
+      // Nothing is owed on a cancelled sale any more — zeroing dueAmount keeps
+      // it out of every "still owed" figure and blocks further payments.
+      await tx.sale.update({
+        where: { id },
+        data: { isCancelled: true, cancelledAt: new Date(), cancelReason: input.reason ?? null, dueAmount: 0 },
       });
-
-      await recordDrawerMovement(tx, shopId, cancelledById, "REFUND", sale.paidAmount.toNumber(), sale.invoiceNumber);
-    }
-
-    if (sale.customerId && sale.dueAmount.greaterThan(0)) {
-      await tx.customer.update({
-        where: { id: sale.customerId },
-        data: { outstandingBalance: { decrement: sale.dueAmount } },
-      });
-    }
-
-    await tx.sale.update({
-      where: { id },
-      data: { isCancelled: true, cancelledAt: new Date(), cancelReason: reason ?? null },
-    });
-  });
+    },
+    { timeout: 15_000 },
+  );
 
   return getSaleById(shopId, id);
 }
+
+/** The method the customer paid with — or cash, if they split it across several. */
+async function originalPaymentMethod(tx: Prisma.TransactionClient, shopId: string, saleId: string): Promise<PaymentMethod> {
+  const methods = await tx.payment.findMany({
+    where: { shopId, referenceId: saleId, paymentType: "SALE_PAYMENT" },
+    distinct: ["paymentMethod"],
+    select: { paymentMethod: true },
+  });
+  return methods.length === 1 ? methods[0]!.paymentMethod : "CASH";
+}
+

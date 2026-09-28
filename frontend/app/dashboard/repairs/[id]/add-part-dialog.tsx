@@ -47,7 +47,11 @@ function AddPartDialogBody({ repairId, onOpenChange }: { repairId: string; onOpe
     queryFn: () => fetchProducts({ status: "active", limit: 100 }),
   });
   const productItems = useMemo(
-    () => (products?.data ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
+    // Phones are tracked by IMEI and can't be used as parts (the server rejects them).
+    () =>
+      (products?.data ?? [])
+        .filter((p) => !p.tracksImei)
+        .map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` })),
     [products],
   );
 

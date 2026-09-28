@@ -4,6 +4,8 @@ import { generateCode } from "../../common/utils/code.js";
 import { PAYMENT_METHOD_INPUT_MAP } from "../../common/utils/paymentMethod.js";
 import { buildPaginationMeta, getPaginationParams, type PaginationQuery } from "../../common/utils/pagination.js";
 import { BadRequestError, ConflictError, NotFoundError } from "../../common/errors/AppError.js";
+import { MONEY_EPSILON } from "../../common/utils/money.js";
+import { getPurchaseBalance } from "./purchaseBalance.js";
 
 const purchaseListSelect = {
   id: true,
@@ -38,7 +40,7 @@ async function toPurchaseDetailDto(shopId: string, purchase: PurchaseDetailRow) 
   // purchase.id is already confirmed to belong to this shop by every caller
   // below (getPurchaseById always looks the purchase up shop-scoped first);
   // the shopId filters here are defense-in-depth.
-  const [imeiNumbers, payments] = await Promise.all([
+  const [imeiNumbers, payments, balance, returned] = await Promise.all([
     prisma.imeiNumber.findMany({
       where: { purchaseId: purchase.id, shopId },
       select: { id: true, imeiNumber: true, productId: true, status: true },
@@ -46,6 +48,12 @@ async function toPurchaseDetailDto(shopId: string, purchase: PurchaseDetailRow) 
     prisma.payment.findMany({
       where: { paymentType: "PURCHASE_PAYMENT", referenceId: purchase.id, shopId },
       orderBy: { paymentDate: "desc" },
+    }),
+    getPurchaseBalance(prisma, shopId, purchase),
+    prisma.purchaseReturnItem.groupBy({
+      by: ["productId"],
+      where: { shopId, purchaseReturn: { purchaseId: purchase.id } },
+      _sum: { quantity: true },
     }),
   ]);
 
@@ -70,12 +78,21 @@ async function toPurchaseDetailDto(shopId: string, purchase: PurchaseDetailRow) 
       tax: item.tax,
       lineTotal: item.lineTotal,
       imeis: imeiNumbers.filter((imei) => imei.productId === item.productId).map((imei) => imei.imeiNumber),
+      // Still in stock (not sold) — the only ones that can go back to the supplier.
+      availableImeis: imeiNumbers
+        .filter((imei) => imei.productId === item.productId && imei.status === "AVAILABLE")
+        .map((imei) => imei.imeiNumber),
     })),
     subtotal: purchase.subtotal,
     discount: purchase.discount,
     tax: purchase.tax,
     shippingCost: purchase.shippingCost,
     totalAmount: purchase.totalAmount,
+    paidAmount: balance.paid,
+    returnedAmount: balance.returned,
+    dueAmount: balance.due,
+    // Units of each product already sent back to the supplier.
+    returnedQuantities: returned.map((r) => ({ productId: r.productId, quantity: r._sum.quantity ?? 0 })),
     status: purchase.paymentStatus,
     remarks: purchase.remarks,
     payments: payments.map((p) => ({
@@ -164,9 +181,18 @@ export async function createPurchase(shopId: string, input: CreatePurchaseInput,
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 
+  const allImeis = input.items.flatMap((item) => item.imeis ?? []);
+  const repeated = allImeis.filter((imei, index) => allImeis.indexOf(imei) !== index);
+  if (repeated.length > 0) {
+    throw new BadRequestError(`The same IMEI was entered more than once: ${[...new Set(repeated)].join(", ")}`);
+  }
+
   for (const item of input.items) {
     const product = productMap.get(item.productId);
     if (!product) throw new NotFoundError(`Product ${item.productId} not found.`);
+    if ((item.discount ?? 0) > item.quantity * item.purchasePrice) {
+      throw new BadRequestError(`The discount on "${product.productName}" is more than its price.`);
+    }
     if (product.tracksImei) {
       if (!item.imeis || item.imeis.length !== item.quantity) {
         throw new BadRequestError(
@@ -189,6 +215,10 @@ export async function createPurchase(shopId: string, input: CreatePurchaseInput,
   const shippingCost = input.shippingCost ?? 0;
   const totalAmount = subtotal - discount + itemTaxTotal + shippingCost;
   const paidAmount = input.payment?.amount ?? 0;
+  if (totalAmount < 0) throw new BadRequestError("The discount is larger than the purchase total.");
+  if (paidAmount > totalAmount + MONEY_EPSILON) {
+    throw new BadRequestError("The payment is more than the purchase total.");
+  }
   const paymentStatus = paidAmount <= 0 ? "PENDING" : paidAmount >= totalAmount ? "PAID" : "PARTIAL";
 
   const purchaseId = await prisma.$transaction(async (tx) => {
@@ -332,6 +362,11 @@ export async function deletePurchase(shopId: string, id: string): Promise<void> 
     include: { items: true },
   });
   if (!purchase) throw new NotFoundError("Purchase not found.");
+
+  const returnCount = await prisma.purchaseReturn.count({ where: { purchaseId: id, shopId } });
+  if (returnCount > 0) {
+    throw new ConflictError("Cannot delete — some of this purchase was already returned to the supplier.");
+  }
 
   const imeiNumbers = await prisma.imeiNumber.findMany({ where: { purchaseId: id, shopId } });
   const nonAvailable = imeiNumbers.filter((imei) => imei.status !== "AVAILABLE");

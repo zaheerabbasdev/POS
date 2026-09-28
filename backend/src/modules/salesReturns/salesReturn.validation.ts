@@ -14,6 +14,9 @@ const salesReturnItemSchema = z.object({
   productId: z.string().uuid("A valid productId is required."),
   quantity: z.coerce.number().int().positive(),
   reason: z.string().trim().optional(),
+  // IMEI-tracked products only — which specific phone(s) are coming back.
+  // Not length-checked: it only has to match an IMEI already on the sale.
+  imeis: z.array(z.string().trim().min(1)).optional(),
 });
 
 // POST /api/v1/sales-returns (API Spec Chapter 35.2).

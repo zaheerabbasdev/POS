@@ -254,6 +254,10 @@ export default function PosPage() {
 
   const paidTotal = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const remainingDue = Math.max(0, totalAmount - paidTotal);
+  // Cash handed over beyond the bill is change to give back — the server
+  // only records the bill amount as paid, never the extra.
+  const changeDue = Math.max(0, paidTotal - totalAmount);
+  const discountTooBig = subtotal - itemDiscountTotal - overallDiscount < 0;
 
   const addPaymentRow = () => setPayments((prev) => [...prev, { id: crypto.randomUUID(), method: "cash", amount: "" }]);
   const removePaymentRow = (id: string) => setPayments((prev) => prev.filter((p) => p.id !== id));
@@ -309,7 +313,11 @@ export default function PosPage() {
   const mutation = useMutation({
     mutationFn: createSale,
     onSuccess: (sale) => {
-      toast.success(`Sale ${sale.invoiceNumber} completed.`);
+      toast.success(
+        sale.changeGiven > 0
+          ? `Sale ${sale.invoiceNumber} completed — give ${sale.changeGiven.toFixed(2)} change.`
+          : `Sale ${sale.invoiceNumber} completed.`,
+      );
       void queryClient.invalidateQueries({ queryKey: ["inventory"] });
       void queryClient.invalidateQueries({ queryKey: ["products"] });
       void queryClient.invalidateQueries({ queryKey: ["customers"] });
@@ -322,6 +330,10 @@ export default function PosPage() {
   const handleCompleteSale = () => {
     if (cart.length === 0) {
       toast.error("Add at least one item to the cart.");
+      return;
+    }
+    if (discountTooBig) {
+      toast.error("The discount is larger than the bill total.");
       return;
     }
     const missingImei = cart.find((line) => line.tracksImei && !line.imei.trim());
@@ -694,8 +706,15 @@ export default function PosPage() {
 
               <Group justify="space-between" mt="xs">
                 <Text size="xs" c="dimmed">Paid: {paidTotal.toFixed(2)}</Text>
-                <Text size="xs" c={remainingDue > 0 ? "red" : "dimmed"}>Due: {remainingDue.toFixed(2)}</Text>
+                {changeDue > 0 ? (
+                  <Text size="sm" fw={700} c="green">Change to give: {changeDue.toFixed(2)}</Text>
+                ) : (
+                  <Text size="xs" c={remainingDue > 0 ? "red" : "dimmed"}>Due: {remainingDue.toFixed(2)}</Text>
+                )}
               </Group>
+              {discountTooBig && (
+                <Text size="xs" c="red">The discount is larger than the bill.</Text>
+              )}
             </Stack>
 
             <Button

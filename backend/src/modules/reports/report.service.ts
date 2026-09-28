@@ -13,6 +13,64 @@ function dateRangeWhere(input: DateRangeInput): Prisma.DateTimeFilter | undefine
 }
 
 // =====================================================================
+// Returns — subtracted from every sales figure below
+// =====================================================================
+
+/**
+ * Returns of non-cancelled sales, dated by when the goods came back (the
+ * usual accounting rule: a return reduces sales in the period it happens,
+ * not the period of the original sale). refundAmount is the value of the
+ * goods returned — what the customer had been charged for them. Cancelled
+ * sales are skipped: they're already excluded from sales entirely.
+ */
+async function findReturns(shopId: string, range: Prisma.DateTimeFilter | undefined, saleWhere: Prisma.SaleWhereInput = {}) {
+  return prisma.salesReturn.findMany({
+    where: { shopId, ...(range ? { returnDate: range } : {}), sale: { isCancelled: false, ...saleWhere } },
+    select: {
+      returnDate: true,
+      refundAmount: true,
+      sale: { select: { cashierId: true, customerId: true } },
+    },
+  });
+}
+
+/**
+ * Per-product returned quantity, value and cost, for the product and
+ * profit reports. Each unit's value is what the customer was charged for it
+ * on that sale (line + invoice discounts spread across the lines).
+ */
+async function findReturnedProducts(shopId: string, range: Prisma.DateTimeFilter | undefined) {
+  const items = await prisma.salesReturnItem.findMany({
+    where: { shopId, salesReturn: { ...(range ? { returnDate: range } : {}), sale: { isCancelled: false } } },
+    select: {
+      productId: true,
+      quantity: true,
+      product: { select: { purchasePrice: true } },
+      salesReturn: { select: { sale: { select: { totalAmount: true, items: { select: { productId: true, quantity: true, lineTotal: true } } } } } },
+    },
+  });
+
+  const byProduct = new Map<string, { quantity: number; value: number; cost: number }>();
+  for (const item of items) {
+    const sale = item.salesReturn.sale;
+    const sumLineTotals = sale.items.reduce((sum, line) => sum + Number(line.lineTotal), 0);
+    const factor = sumLineTotals > 0 ? Number(sale.totalAmount) / sumLineTotals : 0;
+    const lines = sale.items.filter((line) => line.productId === item.productId);
+    const lineQty = lines.reduce((sum, line) => sum + line.quantity, 0);
+    const unitValue = lineQty > 0 ? (lines.reduce((sum, line) => sum + Number(line.lineTotal), 0) * factor) / lineQty : 0;
+
+    const row = byProduct.get(item.productId) ?? { quantity: 0, value: 0, cost: 0 };
+    row.quantity += item.quantity;
+    row.value += item.quantity * unitValue;
+    row.cost += item.quantity * Number(item.product.purchasePrice);
+    byProduct.set(item.productId, row);
+  }
+  return byProduct;
+}
+
+const sumRefunds = (returns: { refundAmount: Prisma.Decimal }[]) => returns.reduce((sum, r) => sum + Number(r.refundAmount), 0);
+
+// =====================================================================
 // Chapter 45 – Sales Reports
 // =====================================================================
 
@@ -34,12 +92,23 @@ export async function getSalesSummary(shopId: string, input: SalesSummaryInput) 
     ...(input.paymentStatus ? { paymentStatus: input.paymentStatus } : {}),
   };
 
-  const agg = await prisma.sale.aggregate({ where, _sum: { totalAmount: true }, _count: { id: true } });
-  const totalSales = Number(agg._sum.totalAmount ?? 0);
+  const [agg, returns] = await Promise.all([
+    prisma.sale.aggregate({ where, _sum: { totalAmount: true }, _count: { id: true } }),
+    findReturns(shopId, range, {
+      ...(input.employeeId ? { cashierId: input.employeeId } : {}),
+      ...(input.customerId ? { customerId: input.customerId } : {}),
+      ...(input.paymentStatus ? { paymentStatus: input.paymentStatus } : {}),
+    }),
+  ]);
+  const grossSales = Number(agg._sum.totalAmount ?? 0);
+  const totalReturns = sumRefunds(returns);
+  const totalSales = grossSales - totalReturns;
   const totalInvoices = agg._count.id;
 
   return {
     totalSales,
+    grossSales,
+    totalReturns,
     totalInvoices,
     averageSale: totalInvoices > 0 ? Math.round((totalSales / totalInvoices) * 100) / 100 : 0,
   };
@@ -54,19 +123,32 @@ export async function getSalesSummary(shopId: string, input: SalesSummaryInput) 
  */
 export async function getDailySalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const sales = await prisma.sale.findMany({
-    where: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) },
-    select: { saleDate: true, totalAmount: true, dueAmount: true },
-  });
+  const [sales, returns] = await Promise.all([
+    prisma.sale.findMany({
+      where: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) },
+      select: { saleDate: true, totalAmount: true, dueAmount: true },
+    }),
+    findReturns(shopId, range),
+  ]);
 
-  const byDay = new Map<string, { invoices: number; totalSales: number; cashSales: number; creditSales: number }>();
+  // totalSales is net of that day's returns; cash/credit stay the day's
+  // gross invoice split.
+  const emptyRow = () => ({ invoices: 0, totalSales: 0, cashSales: 0, creditSales: 0, returns: 0 });
+  const byDay = new Map<string, ReturnType<typeof emptyRow>>();
   for (const sale of sales) {
     const key = sale.saleDate.toISOString().slice(0, 10);
-    const row = byDay.get(key) ?? { invoices: 0, totalSales: 0, cashSales: 0, creditSales: 0 };
+    const row = byDay.get(key) ?? emptyRow();
     row.invoices += 1;
     row.totalSales += Number(sale.totalAmount);
     if (Number(sale.dueAmount) > 0) row.creditSales += Number(sale.totalAmount);
     else row.cashSales += Number(sale.totalAmount);
+    byDay.set(key, row);
+  }
+  for (const ret of returns) {
+    const key = ret.returnDate.toISOString().slice(0, 10);
+    const row = byDay.get(key) ?? emptyRow();
+    row.returns += Number(ret.refundAmount);
+    row.totalSales -= Number(ret.refundAmount);
     byDay.set(key, row);
   }
 
@@ -83,10 +165,13 @@ export async function getDailySalesReport(shopId: string, input: DateRangeInput)
  */
 export async function getProductSalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const items = await prisma.saleItem.findMany({
-    where: { sale: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) } },
-    select: { productId: true, quantity: true, lineTotal: true, product: { select: { productName: true, purchasePrice: true } } },
-  });
+  const [items, returned] = await Promise.all([
+    prisma.saleItem.findMany({
+      where: { sale: { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) } },
+      select: { productId: true, quantity: true, lineTotal: true, product: { select: { productName: true, purchasePrice: true } } },
+    }),
+    findReturnedProducts(shopId, range),
+  ]);
 
   const byProduct = new Map<string, { name: string; quantitySold: number; revenue: number; cost: number }>();
   for (const item of items) {
@@ -95,6 +180,16 @@ export async function getProductSalesReport(shopId: string, input: DateRangeInpu
     row.revenue += Number(item.lineTotal);
     row.cost += item.quantity * Number(item.product.purchasePrice);
     byProduct.set(item.productId, row);
+  }
+  // Returned units come back off quantity, revenue and cost. A product
+  // returned in this period but sold in an earlier one only appears if it
+  // also sold in this period — its return still counts in the totals reports.
+  for (const [productId, ret] of returned) {
+    const row = byProduct.get(productId);
+    if (!row) continue;
+    row.quantitySold -= ret.quantity;
+    row.revenue -= ret.value;
+    row.cost -= ret.cost;
   }
 
   return Array.from(byProduct.entries())
@@ -111,10 +206,13 @@ export async function getProductSalesReport(shopId: string, input: DateRangeInpu
 /** GET /api/v1/reports/sales/employees (45.4). */
 export async function getEmployeeSalesReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const sales = await prisma.sale.findMany({
-    where: { shopId, isCancelled: false, cashierId: { not: null }, ...(range ? { saleDate: range } : {}) },
-    select: { totalAmount: true, cashier: { select: { id: true, username: true } } },
-  });
+  const [sales, returns] = await Promise.all([
+    prisma.sale.findMany({
+      where: { shopId, isCancelled: false, cashierId: { not: null }, ...(range ? { saleDate: range } : {}) },
+      select: { totalAmount: true, cashier: { select: { id: true, username: true } } },
+    }),
+    findReturns(shopId, range, { cashierId: { not: null } }),
+  ]);
 
   const byEmployee = new Map<string, { name: string; totalSales: number; transactions: number }>();
   for (const sale of sales) {
@@ -123,6 +221,11 @@ export async function getEmployeeSalesReport(shopId: string, input: DateRangeInp
     row.totalSales += Number(sale.totalAmount);
     row.transactions += 1;
     byEmployee.set(sale.cashier.id, row);
+  }
+  // A return comes off the total of the cashier who made the original sale.
+  for (const ret of returns) {
+    const row = ret.sale.cashierId ? byEmployee.get(ret.sale.cashierId) : undefined;
+    if (row) row.totalSales -= Number(ret.refundAmount);
   }
 
   return Array.from(byEmployee.entries())
@@ -313,7 +416,7 @@ export async function getProfitLossReport(shopId: string, input: DateRangeInput)
   const range = dateRangeWhere(input);
   const saleWhere: Prisma.SaleWhereInput = { shopId, isCancelled: false, ...(range ? { saleDate: range } : {}) };
 
-  const [salesAgg, saleItems, expensesAgg] = await Promise.all([
+  const [salesAgg, saleItems, expensesAgg, returns, returned] = await Promise.all([
     prisma.sale.aggregate({ where: saleWhere, _sum: { totalAmount: true } }),
     prisma.saleItem.findMany({
       where: { sale: saleWhere },
@@ -323,10 +426,15 @@ export async function getProfitLossReport(shopId: string, input: DateRangeInput)
       where: { shopId, ...(range ? { expenseDate: range } : {}) },
       _sum: { amount: true },
     }),
+    findReturns(shopId, range),
+    findReturnedProducts(shopId, range),
   ]);
 
-  const totalSales = Number(salesAgg._sum.totalAmount ?? 0);
-  const costOfGoodsSold = saleItems.reduce((sum, item) => sum + item.quantity * Number(item.product.purchasePrice), 0);
+  // Returned goods are neither revenue nor cost — they're back on the shelf.
+  const totalSales = Number(salesAgg._sum.totalAmount ?? 0) - sumRefunds(returns);
+  const returnedCost = [...returned.values()].reduce((sum, row) => sum + row.cost, 0);
+  const costOfGoodsSold =
+    saleItems.reduce((sum, item) => sum + item.quantity * Number(item.product.purchasePrice), 0) - returnedCost;
   const expenses = Number(expensesAgg._sum.amount ?? 0);
 
   return {
@@ -390,10 +498,13 @@ export async function getCashFlowReport(shopId: string, input: DateRangeInput) {
 /** GET /api/v1/reports/customers/purchases (49.1). */
 export async function getCustomerPurchaseReport(shopId: string, input: DateRangeInput) {
   const range = dateRangeWhere(input);
-  const sales = await prisma.sale.findMany({
-    where: { shopId, isCancelled: false, customerId: { not: null }, ...(range ? { saleDate: range } : {}) },
-    select: { totalAmount: true, saleDate: true, customer: { select: { id: true, firstName: true, lastName: true } } },
-  });
+  const [sales, returns] = await Promise.all([
+    prisma.sale.findMany({
+      where: { shopId, isCancelled: false, customerId: { not: null }, ...(range ? { saleDate: range } : {}) },
+      select: { totalAmount: true, saleDate: true, customer: { select: { id: true, firstName: true, lastName: true } } },
+    }),
+    findReturns(shopId, range, { customerId: { not: null } }),
+  ]);
 
   const byCustomer = new Map<string, { name: string; totalPurchases: number; totalAmount: number; lastPurchaseDate: Date }>();
   for (const sale of sales) {
@@ -407,6 +518,10 @@ export async function getCustomerPurchaseReport(shopId: string, input: DateRange
     } else {
       byCustomer.set(sale.customer.id, { name, totalPurchases: 1, totalAmount: Number(sale.totalAmount), lastPurchaseDate: sale.saleDate });
     }
+  }
+  for (const ret of returns) {
+    const row = ret.sale.customerId ? byCustomer.get(ret.sale.customerId) : undefined;
+    if (row) row.totalAmount -= Number(ret.refundAmount);
   }
 
   return Array.from(byCustomer.entries())

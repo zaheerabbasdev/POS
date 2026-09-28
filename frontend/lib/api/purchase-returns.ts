@@ -4,6 +4,8 @@ export interface PurchaseReturnItemInput {
   productId: string;
   quantity: number;
   reason?: string;
+  // Phones only — the exact IMEI(s) going back to the supplier.
+  imeis?: string[];
 }
 
 export interface CreatePurchaseReturnInput {

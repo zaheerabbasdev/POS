@@ -624,7 +624,7 @@ model ImeiNumber {
   purchase Purchase? @relation(fields: [purchaseId], references: [id])
   sale     Sale?     @relation(fields: [saleId], references: [id])
 
-  saleItem   SaleItem?
+  saleItems  SaleItem[]
   repairs    Repair[]
   warranties Warranty[]
 
@@ -909,7 +909,11 @@ model SaleItem {
   id           String  @id @default(uuid()) @db.Uuid
   saleId       String  @map("sale_id") @db.Uuid
   productId    String  @map("product_id") @db.Uuid
-  imeiId       String? @unique @map("imei_id") @db.Uuid
+  // Not unique (the DDD's one-to-one sale_items.imei_id): a phone that's
+  // returned or on a cancelled sale goes back on the shelf and can be sold
+  // again, so the same IMEI can appear on more than one sale line over its
+  // life. Which sale currently has it is ImeiNumber.saleId.
+  imeiId       String? @map("imei_id") @db.Uuid
   quantity     Int     @default(1)
   sellingPrice Decimal @map("selling_price") @db.Decimal(12, 2)
   discount     Decimal @default(0) @db.Decimal(12, 2)
@@ -924,6 +928,7 @@ model SaleItem {
 
   @@index([saleId])
   @@index([productId])
+  @@index([imeiId])
   @@map("sale_items")
 }
 
